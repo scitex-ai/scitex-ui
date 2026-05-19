@@ -16,8 +16,11 @@ from scitex_ui._registry import get_component
 PKG_DIR = Path(scitex_ui.__file__).parent
 
 
-def _check_metadata(cls) -> None:
-    """Verify common metadata fields and on-disk asset existence."""
+def _check_metadata(cls):
+    """Verify common metadata fields and on-disk asset existence.
+
+    Returns the class on success so callers can `assert check_metadata(Cls)`.
+    """
     assert cls.name
     assert cls.version == "0.1.0"
     assert cls.description
@@ -32,6 +35,8 @@ def _check_metadata(cls) -> None:
 
     ts_path = PKG_DIR / "static" / (cls.ts_entry + ".ts")
     assert ts_path.exists(), f"TS entry not found: {ts_path}"
+
+    return cls
 
 
 @pytest.fixture

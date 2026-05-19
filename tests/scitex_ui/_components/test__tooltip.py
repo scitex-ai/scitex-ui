@@ -9,7 +9,10 @@ from scitex_ui._components._tooltip import Tooltip
 
 class TestTooltip:
     def test_metadata_and_files(self, check_metadata):
-        check_metadata(Tooltip)
+        # Arrange
+        # Act
+        # Assert
+        assert check_metadata(Tooltip) is Tooltip
 
 
 # EOF
