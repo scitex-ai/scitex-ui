@@ -52,22 +52,33 @@ def _scitex_session_works() -> bool:
     return r.returncode == 0
 
 
+def test_examples_directory_is_non_empty():
+    """The repository must ship at least one example script."""
+    # Arrange
+    # Act
+    found = EXAMPLES
+    # Assert
+    assert found, "no example scripts found"
+
+
 @pytest.mark.skipif(
     not _scitex_session_works(),
     reason="scitex.session machinery not functional in this environment",
 )
-def test_examples_smoke(tmp_path):
-    """Run every examples/*.py script to completion in `tmp_path`."""
-    assert EXAMPLES, "no example scripts found"
-    for ex in EXAMPLES:
-        r = subprocess.run(
-            [sys.executable, str(ex)],
-            cwd=tmp_path,
-            capture_output=True,
-            text=True,
-            timeout=180,
-        )
-        assert r.returncode == 0, f"{ex.name} failed: {r.stderr[-2000:]}"
+@pytest.mark.parametrize("ex", EXAMPLES, ids=lambda p: p.name)
+def test_example_script_runs_to_completion(ex, tmp_path):
+    """Run an examples/*.py script to completion in `tmp_path`."""
+    # Arrange
+    # Act
+    r = subprocess.run(
+        [sys.executable, str(ex)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=180,
+    )
+    # Assert
+    assert r.returncode == 0, f"{ex.name} failed: {r.stderr[-2000:]}"
 
 
 # EOF

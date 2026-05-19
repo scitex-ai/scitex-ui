@@ -19,19 +19,63 @@ PKG_DIR = Path(scitex_ui.__file__).parent
 
 
 class TestMonacoEditor:
-    def test_metadata_fields(self):
+    def test_metadata_fields_monacoeditor_name_equals_monaco_editor(self):
+        # Arrange
+        # Act
+        # Assert
+        # Arrange
+        # Act
+        # Assert
         assert MonacoEditor.name == "monaco-editor"
+
+    def test_metadata_fields_monacoeditor_version_equals_n_0_1_0(self):
+        # Arrange
+        # Act
+        # Assert
+        # Arrange
+        # Act
+        # Assert
         assert MonacoEditor.version == "0.1.0"
+
+    def test_metadata_fields_monacoeditor_description(self):
+        # Arrange
+        # Act
+        # Assert
+        # Arrange
+        # Act
+        # Assert
         assert MonacoEditor.description
+
+    def test_metadata_fields_monacoeditor_ts_entry(self):
+        # Arrange
+        # Act
+        # Assert
+        # Arrange
+        # Act
+        # Assert
         assert MonacoEditor.ts_entry
-        # Monaco CSS is imported via JS — css_file is intentionally None.
+
+    def test_metadata_fields_monacoeditor_css_file_is_none(self):
+        # Arrange
+        # Act
+        # Assert
+        # Arrange
+        # Act
+        # Assert
         assert MonacoEditor.css_file is None
 
-    def test_registered(self):
+
+    def test_registered_get_component_monaco_editor_is_monacoeditor(self):
+        # Arrange
+        # Act
+        # Assert
         assert get_component("monaco-editor") is MonacoEditor
 
     def test_ts_entry_exists(self):
+        # Arrange
+        # Act
         ts_path = PKG_DIR / "static" / (MonacoEditor.ts_entry + ".ts")
+        # Assert
         assert ts_path.exists(), f"TS entry not found: {ts_path}"
 
 

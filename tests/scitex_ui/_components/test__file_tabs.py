@@ -9,7 +9,10 @@ from scitex_ui._components._file_tabs import FileTabs
 
 class TestFileTabs:
     def test_metadata_and_files(self, check_metadata):
-        check_metadata(FileTabs)
+        # Arrange
+        # Act
+        # Assert
+        assert check_metadata(FileTabs) is FileTabs
 
 
 # EOF

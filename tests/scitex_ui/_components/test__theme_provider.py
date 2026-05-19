@@ -9,7 +9,10 @@ from scitex_ui._components._theme_provider import ThemeProvider
 
 class TestThemeProvider:
     def test_metadata_and_files(self, check_metadata):
-        check_metadata(ThemeProvider)
+        # Arrange
+        # Act
+        # Assert
+        assert check_metadata(ThemeProvider) is ThemeProvider
 
 
 # EOF

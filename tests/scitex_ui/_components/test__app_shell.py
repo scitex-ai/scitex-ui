@@ -9,7 +9,10 @@ from scitex_ui._components._app_shell import AppShell
 
 class TestAppShell:
     def test_metadata_and_files(self, check_metadata):
-        check_metadata(AppShell)
+        # Arrange
+        # Act
+        # Assert
+        assert check_metadata(AppShell) is AppShell
 
 
 # EOF

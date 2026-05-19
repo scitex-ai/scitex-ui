@@ -9,7 +9,10 @@ from scitex_ui._components._resizer import Resizer
 
 class TestResizer:
     def test_metadata_and_files(self, check_metadata):
-        check_metadata(Resizer)
+        # Arrange
+        # Act
+        # Assert
+        assert check_metadata(Resizer) is Resizer
 
 
 # EOF
