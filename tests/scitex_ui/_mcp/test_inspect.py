@@ -4,15 +4,16 @@
 
 """Tests for scitex_ui._mcp.inspect — element-inspection handlers.
 
-The handlers shell out to `playwright-cli`; we patch the subprocess so the
-suite runs in CI without a real browser.
+The handlers shell out to ``playwright-cli`` via ``subprocess.run``.  Tests
+inject a hand-rolled fake runner so the suite exercises the real subprocess
+codepath without requiring a real browser.
 """
 
 from __future__ import annotations
 
 import json
 import subprocess
-from unittest.mock import patch
+from typing import Any
 
 from scitex_ui._mcp.inspect import (
     inspect_element_handler,
@@ -20,13 +21,40 @@ from scitex_ui._mcp.inspect import (
 )
 
 
-def _fake_completed(stdout: str, returncode: int = 0):
-    return subprocess.CompletedProcess(
-        args=["playwright-cli", "eval", "..."],
-        returncode=returncode,
-        stdout=stdout,
-        stderr="",
-    )
+# ---------------------------------------------------------------------------
+# Hand-rolled fake subprocess runner
+# ---------------------------------------------------------------------------
+
+
+def _fake_runner(
+    *,
+    stdout: str = "",
+    returncode: int = 0,
+    side_effect: Exception | None = None,
+):
+    """Build a callable that mimics ``subprocess.run`` for testing.
+
+    Parameters
+    ----------
+    stdout : str
+        Standard output the fake process returns.
+    returncode : int
+        Exit code.
+    side_effect : Exception or None
+        If set, the callable raises this instead of returning.
+    """
+
+    def _run(_cmd: list[str], **_kw: Any) -> subprocess.CompletedProcess:
+        if side_effect is not None:
+            raise side_effect
+        return subprocess.CompletedProcess(
+            args=_cmd,
+            returncode=returncode,
+            stdout=stdout,
+            stderr="",
+        )
+
+    return _run
 
 
 def _wrap_eval_result(payload: dict | str) -> str:
@@ -41,148 +69,110 @@ def _wrap_eval_result(payload: dict | str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Shared payloads
+# ---------------------------------------------------------------------------
+
+_SUCCESS_PAYLOAD = {
+    "url": "http://example.com",
+    "element": {"tag": "div", "id": "foo", "classes": []},
+    "attributes": {},
+    "computed": {"display": "block"},
+    "inline": "",
+    "dimensions": {"width": 100, "height": 50, "top": 0, "left": 0},
+    "parentChain": [],
+    "matchingRules": [],
+}
+
+_ELEMENTS_PAYLOAD = {
+    "total": 2,
+    "elements": [
+        {"index": 0, "tag": "div", "id": None, "classes": "a"},
+        {"index": 1, "tag": "div", "id": None, "classes": "a"},
+    ],
+}
+
+
+# ---------------------------------------------------------------------------
 # inspect_element_handler
 # ---------------------------------------------------------------------------
 
 
-def test_inspect_element_returns_data_on_success_result_success_is_true():
+def test_inspect_element_returns_success_true_on_valid_result():
     # Arrange
-    # Arrange
-    payload = {
-        "url": "http://example.com",
-        "element": {"tag": "div", "id": "foo", "classes": []},
-        "attributes": {},
-        "computed": {"display": "block"},
-        "inline": "",
-        "dimensions": {"width": 100, "height": 50, "top": 0, "left": 0},
-        "parentChain": [],
-        "matchingRules": [],
-    }
+    runner = _fake_runner(stdout=_wrap_eval_result(_SUCCESS_PAYLOAD))
     # Act
-    with patch(
-        "subprocess.run", return_value=_fake_completed(_wrap_eval_result(payload))
-    ):
-        result = inspect_element_handler("#foo")
-    # Act
-    # Assert
+    result = inspect_element_handler("#foo", _run=runner)
     # Assert
     assert result["success"] is True
 
 
-def test_inspect_element_returns_data_on_success_result_data_element_tag_div():
+def test_inspect_element_returns_element_tag_from_data():
     # Arrange
-    # Arrange
-    payload = {
-        "url": "http://example.com",
-        "element": {"tag": "div", "id": "foo", "classes": []},
-        "attributes": {},
-        "computed": {"display": "block"},
-        "inline": "",
-        "dimensions": {"width": 100, "height": 50, "top": 0, "left": 0},
-        "parentChain": [],
-        "matchingRules": [],
-    }
+    runner = _fake_runner(stdout=_wrap_eval_result(_SUCCESS_PAYLOAD))
     # Act
-    with patch(
-        "subprocess.run", return_value=_fake_completed(_wrap_eval_result(payload))
-    ):
-        result = inspect_element_handler("#foo")
-    # Act
-    # Assert
+    result = inspect_element_handler("#foo", _run=runner)
     # Assert
     assert result["data"]["element"]["tag"] == "div"
 
 
-
-
-def test_inspect_element_propagates_browser_error_result_success_is_false():
-    # Arrange
+def test_inspect_element_reports_success_false_when_browser_returns_error():
     # Arrange
     err_payload = {"error": "Element not found: #missing"}
+    runner = _fake_runner(stdout=_wrap_eval_result(err_payload))
     # Act
-    with patch(
-        "subprocess.run", return_value=_fake_completed(_wrap_eval_result(err_payload))
-    ):
-        result = inspect_element_handler("#missing")
-    # Act
-    # Assert
+    result = inspect_element_handler("#missing", _run=runner)
     # Assert
     assert result["success"] is False
 
 
-def test_inspect_element_propagates_browser_error_element_not_found_in_result_error():
-    # Arrange
+def test_inspect_element_reports_error_message_when_element_not_found():
     # Arrange
     err_payload = {"error": "Element not found: #missing"}
+    runner = _fake_runner(stdout=_wrap_eval_result(err_payload))
     # Act
-    with patch(
-        "subprocess.run", return_value=_fake_completed(_wrap_eval_result(err_payload))
-    ):
-        result = inspect_element_handler("#missing")
-    # Act
-    # Assert
+    result = inspect_element_handler("#missing", _run=runner)
     # Assert
     assert "Element not found" in result["error"]
 
 
-
-
-def test_inspect_element_when_playwright_cli_missing_result_success_is_false():
+def test_inspect_element_reports_success_false_when_cli_missing():
     # Arrange
-    # Arrange
+    runner = _fake_runner(side_effect=FileNotFoundError())
     # Act
-    with patch("subprocess.run", side_effect=FileNotFoundError()):
-        result = inspect_element_handler("#foo")
-    # Act
-    # Assert
+    result = inspect_element_handler("#foo", _run=runner)
     # Assert
     assert result["success"] is False
 
 
-def test_inspect_element_when_playwright_cli_missing_playwright_cli_in_result_error():
+def test_inspect_element_reports_playwright_cli_in_error_when_cli_missing():
     # Arrange
-    # Arrange
+    runner = _fake_runner(side_effect=FileNotFoundError())
     # Act
-    with patch("subprocess.run", side_effect=FileNotFoundError()):
-        result = inspect_element_handler("#foo")
-    # Act
-    # Assert
+    result = inspect_element_handler("#foo", _run=runner)
     # Assert
     assert "playwright-cli" in result["error"]
 
 
-
-
-def test_inspect_element_on_subprocess_timeout_result_success_is_false():
+def test_inspect_element_reports_success_false_on_timeout():
     # Arrange
-    # Arrange
+    runner = _fake_runner(
+        side_effect=subprocess.TimeoutExpired(cmd="playwright-cli", timeout=10)
+    )
     # Act
-    with patch(
-        "subprocess.run",
-        side_effect=subprocess.TimeoutExpired(cmd="playwright-cli", timeout=10),
-    ):
-        result = inspect_element_handler("#foo")
-    # Act
-    # Assert
+    result = inspect_element_handler("#foo", _run=runner)
     # Assert
     assert result["success"] is False
 
 
-def test_inspect_element_on_subprocess_timeout_timed_out_in_result_error():
+def test_inspect_element_reports_timed_out_in_error_on_timeout():
     # Arrange
-    # Arrange
+    runner = _fake_runner(
+        side_effect=subprocess.TimeoutExpired(cmd="playwright-cli", timeout=10)
+    )
     # Act
-    with patch(
-        "subprocess.run",
-        side_effect=subprocess.TimeoutExpired(cmd="playwright-cli", timeout=10),
-    ):
-        result = inspect_element_handler("#foo")
-    # Act
-    # Assert
+    result = inspect_element_handler("#foo", _run=runner)
     # Assert
     assert "timed out" in result["error"]
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -190,116 +180,58 @@ def test_inspect_element_on_subprocess_timeout_timed_out_in_result_error():
 # ---------------------------------------------------------------------------
 
 
-def test_inspect_elements_returns_total_and_elements_result_success_is_true():
+def test_inspect_elements_returns_success_true_on_valid_result():
     # Arrange
-    # Arrange
-    payload = {
-        "total": 2,
-        "elements": [
-            {"index": 0, "tag": "div", "id": None, "classes": "a"},
-            {"index": 1, "tag": "div", "id": None, "classes": "a"},
-        ],
-    }
+    runner = _fake_runner(stdout=_wrap_eval_result(_ELEMENTS_PAYLOAD))
     # Act
-    with patch(
-        "subprocess.run", return_value=_fake_completed(_wrap_eval_result(payload))
-    ):
-        result = inspect_elements_handler(".a", limit=5)
-    # Act
-    # Assert
+    result = inspect_elements_handler(".a", limit=5, _run=runner)
     # Assert
     assert result["success"] is True
 
 
-def test_inspect_elements_returns_total_and_elements_result_selector_a():
+def test_inspect_elements_returns_selector_from_input():
     # Arrange
-    # Arrange
-    payload = {
-        "total": 2,
-        "elements": [
-            {"index": 0, "tag": "div", "id": None, "classes": "a"},
-            {"index": 1, "tag": "div", "id": None, "classes": "a"},
-        ],
-    }
+    runner = _fake_runner(stdout=_wrap_eval_result(_ELEMENTS_PAYLOAD))
     # Act
-    with patch(
-        "subprocess.run", return_value=_fake_completed(_wrap_eval_result(payload))
-    ):
-        result = inspect_elements_handler(".a", limit=5)
-    # Act
-    # Assert
+    result = inspect_elements_handler(".a", limit=5, _run=runner)
     # Assert
     assert result["selector"] == ".a"
 
 
-def test_inspect_elements_returns_total_and_elements_result_total_2():
+def test_inspect_elements_returns_total_count():
     # Arrange
-    # Arrange
-    payload = {
-        "total": 2,
-        "elements": [
-            {"index": 0, "tag": "div", "id": None, "classes": "a"},
-            {"index": 1, "tag": "div", "id": None, "classes": "a"},
-        ],
-    }
+    runner = _fake_runner(stdout=_wrap_eval_result(_ELEMENTS_PAYLOAD))
     # Act
-    with patch(
-        "subprocess.run", return_value=_fake_completed(_wrap_eval_result(payload))
-    ):
-        result = inspect_elements_handler(".a", limit=5)
-    # Act
-    # Assert
+    result = inspect_elements_handler(".a", limit=5, _run=runner)
     # Assert
     assert result["total"] == 2
 
 
-def test_inspect_elements_returns_total_and_elements_len_result_elements_is_2():
+def test_inspect_elements_returns_correct_elements_length():
     # Arrange
-    # Arrange
-    payload = {
-        "total": 2,
-        "elements": [
-            {"index": 0, "tag": "div", "id": None, "classes": "a"},
-            {"index": 1, "tag": "div", "id": None, "classes": "a"},
-        ],
-    }
+    runner = _fake_runner(stdout=_wrap_eval_result(_ELEMENTS_PAYLOAD))
     # Act
-    with patch(
-        "subprocess.run", return_value=_fake_completed(_wrap_eval_result(payload))
-    ):
-        result = inspect_elements_handler(".a", limit=5)
-    # Act
-    # Assert
+    result = inspect_elements_handler(".a", limit=5, _run=runner)
     # Assert
     assert len(result["elements"]) == 2
 
 
-
-
-def test_inspect_elements_passes_selector_through_on_failure_result_success_is_false():
+def test_inspect_elements_reports_success_false_when_cli_missing():
     # Arrange
-    # Arrange
+    runner = _fake_runner(side_effect=FileNotFoundError())
     # Act
-    with patch("subprocess.run", side_effect=FileNotFoundError()):
-        result = inspect_elements_handler(".a")
-    # Act
-    # Assert
+    result = inspect_elements_handler(".a", _run=runner)
     # Assert
     assert result["success"] is False
 
 
-def test_inspect_elements_passes_selector_through_on_failure_playwright_cli_in_result_error():
+def test_inspect_elements_reports_playwright_cli_in_error_when_cli_missing():
     # Arrange
-    # Arrange
+    runner = _fake_runner(side_effect=FileNotFoundError())
     # Act
-    with patch("subprocess.run", side_effect=FileNotFoundError()):
-        result = inspect_elements_handler(".a")
-    # Act
-    # Assert
+    result = inspect_elements_handler(".a", _run=runner)
     # Assert
     assert "playwright-cli" in result["error"]
-
-
 
 
 # EOF

@@ -12,12 +12,28 @@ from __future__ import annotations
 
 import json
 import subprocess
+from collections.abc import Callable
+from typing import Any
 
 
-def _run_playwright_eval(js_code: str, timeout: int = 10) -> dict:
-    """Execute JavaScript in the playwright-cli browser and return parsed result."""
+def _run_playwright_eval(
+    js_code: str,
+    timeout: int = 10,
+    *,
+    _run: Callable[..., subprocess.CompletedProcess | Any] | None = None,
+) -> dict:
+    """Execute JavaScript in the playwright-cli browser and return parsed result.
+
+    Parameters
+    ----------
+    _run : callable, optional
+        Subprocess runner (cmd, **kw) → CompletedProcess. Injected for tests;
+        defaults to ``subprocess.run``.
+    """
+    if _run is None:
+        _run = subprocess.run
     try:
-        result = subprocess.run(
+        result = _run(
             ["playwright-cli", "eval", js_code],
             capture_output=True,
             text=True,
@@ -111,6 +127,8 @@ _INSPECT_MULTI_JS = """JSON.stringify((() => {
 def inspect_element_handler(
     selector: str,
     timeout: int = 10,
+    *,
+    _run: Callable[..., subprocess.CompletedProcess | Any] | None = None,
 ) -> dict:
     """Inspect a single DOM element by CSS selector via playwright-cli.
 
@@ -122,9 +140,11 @@ def inspect_element_handler(
         CSS selector (e.g., '#ws-worktree-resizer', '.panel-resizer').
     timeout : int
         Evaluation timeout in seconds.
+    _run : callable, optional
+        Subprocess runner injected for tests; defaults to ``subprocess.run``.
     """
     js = _INSPECT_ONE_JS.replace("SELECTOR", json.dumps(selector))
-    result = _run_playwright_eval(js, timeout)
+    result = _run_playwright_eval(js, timeout, _run=_run)
 
     if not result.get("success"):
         return result
@@ -139,6 +159,8 @@ def inspect_elements_handler(
     selector: str,
     limit: int = 10,
     timeout: int = 10,
+    *,
+    _run: Callable[..., subprocess.CompletedProcess | Any] | None = None,
 ) -> dict:
     """Inspect multiple DOM elements matching a CSS selector via playwright-cli.
 
@@ -152,11 +174,13 @@ def inspect_elements_handler(
         Maximum number of elements to return.
     timeout : int
         Evaluation timeout in seconds.
+    _run : callable, optional
+        Subprocess runner injected for tests; defaults to ``subprocess.run``.
     """
     js = _INSPECT_MULTI_JS.replace("SELECTOR", json.dumps(selector)).replace(
         "LIMIT", str(limit)
     )
-    result = _run_playwright_eval(js, timeout)
+    result = _run_playwright_eval(js, timeout, _run=_run)
 
     if not result.get("success"):
         return result
