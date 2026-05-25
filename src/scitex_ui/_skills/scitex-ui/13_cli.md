@@ -1,7 +1,8 @@
 ---
-description: scitex-ui CLI reference — MCP server, docs, skills subcommands.
-name: cli
-tags: [scitex-ui, scitex-package]
+description: |
+  [TOPIC] scitex-ui CLI
+  [DETAILS] scitex-ui CLI reference — MCP server, docs, skills subcommands..
+tags: [scitex-ui-cli]
 ---
 
 # scitex-ui CLI

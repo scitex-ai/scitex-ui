@@ -1,0 +1,19 @@
+INFO: Workspace Frame Components:
+INFO: ==================================================
+INFO:   theme-provider v0.1.0
+INFO:     Light/dark theme manager with semantic color tokens
+INFO:     CSS: scitex_ui/css/shell/theme.css
+INFO:     TS:  scitex_ui/ts/shell/theme-provider/index
+INFO:   app-shell v0.1.0
+INFO:     Workspace layout shell with collapsible sidebar
+INFO:     CSS: scitex_ui/css/shell/app-shell.css
+INFO:     TS:  scitex_ui/ts/shell/app-shell/index
+INFO:   file-browser v0.1.0
+INFO:     Tree view for navigating file hierarchies
+INFO:     CSS: scitex_ui/css/app/file-browser.css
+INFO:     TS:  scitex_ui/ts/app/file-browser/index
+INFO:   status-bar v0.1.0
+INFO:     Bottom status bar with left/center/right sections
+INFO:     CSS: scitex_ui/css/shell/status-bar.css
+INFO:     TS:  scitex_ui/ts/shell/status-bar/index
+INFO: Saved to /home/ywatanabe/proj/scitex-ui/examples/02_workspace_components_out/RUNNING/2026Y-05M-07D-12h05m41s_twcT-main/workspace_components.txt

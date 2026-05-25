@@ -1,0 +1,15 @@
+INFO: Registered components (13):
+INFO:   app-shell v0.1.0 — Workspace layout shell with collapsible sidebar
+INFO:   confirm-modal v0.1.0 — Modern confirmation dialog replacing window.confirm()
+INFO:   data-table v0.1.0 — Full spreadsheet component with selection, editing, virtual scroll, CSV import
+INFO:   dropdown v0.1.0 — Context menu dropdown attached to a trigger element
+INFO:   file-browser v0.1.0 — Tree view for navigating file hierarchies
+INFO:   file-tabs v0.1.0 — Tab bar for managing open files with drag-reorder and rename
+INFO:   media-viewer v0.1.0 — Display images, PDFs, and diagrams with zoom/pan
+INFO:   monaco-editor v0.1.0 — Monaco code editor with diff support, themes, and language detection
+INFO:   package-docs-sidebar v0.1.0 — Navigable sidebar for Python package documentation
+INFO:   resizer v0.1.0 — Draggable panel divider with collapse, snap, and persistence
+INFO:   status-bar v0.1.0 — Bottom status bar with left/center/right sections
+INFO:   theme-provider v0.1.0 — Light/dark theme manager with semantic color tokens
+INFO:   tooltip v0.1.0 — Auto-positioned tooltip system using data-tooltip attributes
+INFO: Saved to /home/ywatanabe/proj/scitex-ui/examples/01_list_components_out/RUNNING/2026Y-05M-07D-12h05m30s_uqWa-main/components.txt

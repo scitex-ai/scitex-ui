@@ -1,7 +1,8 @@
 ---
-description: Python API for scitex-ui — component registry, static path resolution, Django integration. Use when introspecting components or configuring Django.
-name: python-api
-tags: [scitex-ui, scitex-package]
+description: |
+  [TOPIC] scitex-ui Python API
+  [DETAILS] Python API for scitex-ui — component registry, static path resolution, Django integration. Use when introspecting components or configuring Django..
+tags: [scitex-ui-python-api]
 ---
 
 # scitex-ui Python API

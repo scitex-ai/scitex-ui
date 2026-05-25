@@ -1,7 +1,8 @@
 ---
-description: Frontend components reference — DataTable, FileBrowser, MediaViewer, ConfirmModal quick start and Bridge entry point
-name: frontend-components
-tags: [scitex-ui, scitex-package]
+description: |
+  [TOPIC] SciTeX App Developer Guide
+  [DETAILS] Frontend components reference — DataTable, FileBrowser, MediaViewer, ConfirmModal quick start and Bridge entry point.
+tags: [scitex-ui-frontend-components]
 ---
 
 # SciTeX App Developer Guide

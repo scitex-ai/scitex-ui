@@ -1,0 +1,11 @@
+ID: 2026Y-05M-07D-12h05m41s_twcT
+PID: 411922
+START_DATETIME: 2026-05-07 12:05:41.465524
+FILE: /home/ywatanabe/proj/scitex-ui/examples/02_workspace_components.py
+SDIR_OUT: /home/ywatanabe/proj/scitex-ui/examples/02_workspace_components_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/scitex-ui/examples/02_workspace_components_out/RUNNING/2026Y-05M-07D-12h05m41s_twcT-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-05-07 12:05:45.972116
+RUN_DURATION: 00:00:04

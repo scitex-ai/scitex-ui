@@ -1,0 +1,11 @@
+ID: 2026Y-05M-07D-12h05m30s_uqWa
+PID: 409372
+START_DATETIME: 2026-05-07 12:05:30.663091
+FILE: /home/ywatanabe/proj/scitex-ui/examples/01_list_components.py
+SDIR_OUT: /home/ywatanabe/proj/scitex-ui/examples/01_list_components_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/scitex-ui/examples/01_list_components_out/RUNNING/2026Y-05M-07D-12h05m30s_uqWa-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-05-07 12:05:35.701050
+RUN_DURATION: 00:00:05

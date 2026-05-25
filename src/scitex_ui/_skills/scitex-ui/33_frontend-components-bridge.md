@@ -1,7 +1,8 @@
 ---
-description: Bridge infrastructure (BridgeConfig, installFetchOverride, mount/unmount, event bus) and usePanelResize hook
-name: frontend-components-bridge
-tags: [scitex-ui, scitex-package]
+description: |
+  [TOPIC] Frontend Components — Bridge & Panel Resize
+  [DETAILS] Bridge infrastructure (BridgeConfig, installFetchOverride, mount/unmount, event bus) and usePanelResize hook.
+tags: [scitex-ui-frontend-components-bridge]
 ---
 
 # Frontend Components — Bridge & Panel Resize

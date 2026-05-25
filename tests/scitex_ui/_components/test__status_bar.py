@@ -9,7 +9,10 @@ from scitex_ui._components._status_bar import StatusBar
 
 class TestStatusBar:
     def test_metadata_and_files(self, check_metadata):
-        check_metadata(StatusBar)
+        # Arrange
+        # Act
+        # Assert
+        assert check_metadata(StatusBar) is StatusBar
 
 
 # EOF

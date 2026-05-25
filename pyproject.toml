@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scitex-ui"
-version = "0.4.8"
+version = "0.4.9"
 description = "Shared frontend UI components for the SciTeX ecosystem"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -42,15 +42,17 @@ scitex-ui = "scitex_ui._cli:main"
 [project.optional-dependencies]
 cli = [
     "click>=8.0.0",
-    "scitex-dev",
+    "scitex-dev>=0.11.7",
 ]
 mcp = [
     "fastmcp>=2.0.0",
 ]
 dev = [
-    "pytest>=7.0.0",
+    "click>=8.0.0",  # tests/scitex_ui/test__cli.py
+    "fastmcp>=2.0.0",
     "pytest-cov>=4.0.0",
-    "scitex-dev",
+    "pytest>=7.0.0",
+    "scitex-dev>=0.11.7",
 ]
 docs = [
     "sphinx>=7.0",
@@ -80,6 +82,11 @@ packages = ["src/scitex_ui"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+parallel = true
+source = ["scitex_ui"]
+concurrency = ["multiprocessing", "thread"]
 
 [tool.scitex-linter]
 library_dirs = ["src", "tests", "examples"]

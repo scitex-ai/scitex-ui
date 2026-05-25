@@ -9,7 +9,10 @@ from scitex_ui._components._confirm_modal import ConfirmModal
 
 class TestConfirmModal:
     def test_metadata_and_files(self, check_metadata):
-        check_metadata(ConfirmModal)
+        # Arrange
+        # Act
+        # Assert
+        assert check_metadata(ConfirmModal) is ConfirmModal
 
 
 # EOF

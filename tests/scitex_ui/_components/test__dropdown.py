@@ -9,7 +9,10 @@ from scitex_ui._components._dropdown import Dropdown
 
 class TestDropdown:
     def test_metadata_and_files(self, check_metadata):
-        check_metadata(Dropdown)
+        # Arrange
+        # Act
+        # Assert
+        assert check_metadata(Dropdown) is Dropdown
 
 
 # EOF

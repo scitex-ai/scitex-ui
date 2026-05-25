@@ -34,7 +34,7 @@ else:
         context_settings=CONTEXT_SETTINGS,
         invoke_without_command=True,
     )
-    @click.version_option(version=_get_version(), prog_name="scitex-ui")
+    @click.version_option(_get_version(), "-V", "--version", prog_name="scitex-ui")
     @click.option(
         "--help-recursive", is_flag=True, help="Show help for all subcommands."
     )
@@ -302,3 +302,25 @@ else:
 
 
 # EOF
+
+
+# audit §4 — inject version into root --help
+try:
+    from importlib.metadata import version as _v
+
+    main.help = f"scitex-ui (v{_v('scitex-ui')}) — " + (main.help or "").lstrip()
+except Exception:
+    pass
+
+# audit-cli §1a — packages with _skills/ MUST expose
+# `<cli> skills {list,get,install}`.
+from ._skills import skills_group as _skills_group
+
+main.add_command(_skills_group, name="skills")
+
+try:
+    from scitex_dev._cli._completion import attach_shell_completion
+
+    attach_shell_completion(main, prog_name="scitex-ui")
+except Exception:
+    pass
