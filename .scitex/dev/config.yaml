@@ -1,0 +1,9 @@
+# scitex-dev project-type config
+# scitex-ui is a Python + Node frontend hybrid. The Node ecosystem
+# canonically expects `package.json`, `package-lock.json`, and
+# `node_modules/` at repo root — there's no equivalent of `src/` for npm.
+# `node_modules/` is gitignored.
+
+project-type:
+  - pip
+  - special

@@ -18,12 +18,19 @@ EXAMPLE = (
 )
 
 
-def test_example_exists():
+def test_example_exists_example_exists():
+    # Arrange
+    # Act
+    # Assert
     assert EXAMPLE.exists(), f"missing example: {EXAMPLE}"
 
 
-def test_compiles():
-    subprocess.run(
+def test_compiles_r_returncode_equals_n_0():
+    # Arrange
+    # Act
+    _r = subprocess.run(
         [sys.executable, "-m", "py_compile", str(EXAMPLE)],
         check=True,
     )
+    # Assert
+    assert _r.returncode == 0

@@ -9,7 +9,10 @@ from scitex_ui._components._file_browser import FileBrowser
 
 class TestFileBrowser:
     def test_metadata_and_files(self, check_metadata):
-        check_metadata(FileBrowser)
+        # Arrange
+        # Act
+        # Assert
+        assert check_metadata(FileBrowser) is FileBrowser
 
 
 # EOF

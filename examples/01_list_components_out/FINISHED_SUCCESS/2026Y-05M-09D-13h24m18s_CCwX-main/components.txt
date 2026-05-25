@@ -1,0 +1,13 @@
+  app-shell v0.1.0 — Workspace layout shell with collapsible sidebar
+  confirm-modal v0.1.0 — Modern confirmation dialog replacing window.confirm()
+  data-table v0.1.0 — Full spreadsheet component with selection, editing, virtual scroll, CSV import
+  dropdown v0.1.0 — Context menu dropdown attached to a trigger element
+  file-browser v0.1.0 — Tree view for navigating file hierarchies
+  file-tabs v0.1.0 — Tab bar for managing open files with drag-reorder and rename
+  media-viewer v0.1.0 — Display images, PDFs, and diagrams with zoom/pan
+  monaco-editor v0.1.0 — Monaco code editor with diff support, themes, and language detection
+  package-docs-sidebar v0.1.0 — Navigable sidebar for Python package documentation
+  resizer v0.1.0 — Draggable panel divider with collapse, snap, and persistence
+  status-bar v0.1.0 — Bottom status bar with left/center/right sections
+  theme-provider v0.1.0 — Light/dark theme manager with semantic color tokens
+  tooltip v0.1.0 — Auto-positioned tooltip system using data-tooltip attributes

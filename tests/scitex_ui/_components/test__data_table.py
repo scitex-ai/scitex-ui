@@ -9,7 +9,10 @@ from scitex_ui._components._data_table import DataTable
 
 class TestDataTable:
     def test_metadata_and_files(self, check_metadata):
-        check_metadata(DataTable)
+        # Arrange
+        # Act
+        # Assert
+        assert check_metadata(DataTable) is DataTable
 
 
 # EOF

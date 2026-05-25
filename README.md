@@ -1,15 +1,5 @@
 # SciTeX UI (<code>scitex-ui</code>)
 
-<!-- scitex-badges:start -->
-[![PyPI](https://img.shields.io/pypi/v/scitex-ui.svg)](https://pypi.org/project/scitex-ui/)
-[![Python](https://img.shields.io/pypi/pyversions/scitex-ui.svg)](https://pypi.org/project/scitex-ui/)
-[![Tests](https://github.com/ywatanabe1989/scitex-ui/actions/workflows/test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ui/actions/workflows/test.yml)
-[![Install Test](https://github.com/ywatanabe1989/scitex-ui/actions/workflows/install-test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ui/actions/workflows/install-test.yml)
-[![Coverage](https://codecov.io/gh/ywatanabe1989/scitex-ui/graph/badge.svg)](https://codecov.io/gh/ywatanabe1989/scitex-ui)
-[![Docs](https://readthedocs.org/projects/scitex-ui/badge/?version=latest)](https://scitex-ui.readthedocs.io/en/latest/)
-[![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-<!-- scitex-badges:end -->
-
 <p align="center">
   <a href="https://scitex.ai">
     <img src="docs/scitex-logo-blue-cropped.png" alt="SciTeX" width="400">
@@ -17,8 +7,20 @@
 </p>
 
 <p align="center">
-  <a href="https://scitex-ui.readthedocs.io/">Full Documentation</a> · <code>pip install scitex-ui</code>
+  <a href="https://scitex-ui.readthedocs.io/">Full Documentation</a> · <code>uv pip install scitex-ui[all]</code>
 </p>
+
+<!-- scitex-badges:start -->
+<p align="center">
+  <a href="https://pypi.org/project/scitex-ui/"><img src="https://img.shields.io/pypi/v/scitex-ui?label=pypi" alt="pypi"></a>
+  <a href="https://pypi.org/project/scitex-ui/"><img src="https://img.shields.io/pypi/pyversions/scitex-ui?label=python" alt="python"></a>
+  <a href="https://github.com/ywatanabe1989/scitex-ui/actions/workflows/rtd-sphinx-build-on-ubuntu-latest.yml"><img src="https://img.shields.io/github/actions/workflow/status/ywatanabe1989/scitex-ui/rtd-sphinx-build-on-ubuntu-latest.yml?branch=develop&label=docs" alt="docs"></a>
+</p>
+<p align="center">
+  <a href="https://github.com/ywatanabe1989/scitex-ui/actions/workflows/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml"><img src="https://img.shields.io/github/actions/workflow/status/ywatanabe1989/scitex-ui/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml?branch=develop&label=tests" alt="tests"></a>
+  <a href="https://codecov.io/gh/ywatanabe1989/scitex-ui"><img src="https://img.shields.io/codecov/c/github/ywatanabe1989/scitex-ui/develop?label=cov" alt="cov"></a>
+</p>
+<!-- scitex-badges:end -->
 
 ---
 
@@ -137,7 +139,7 @@ const browser = new FileBrowser({
 
 ## Three Interfaces
 
-<details>
+<details open>
 <summary><b>Python API</b></summary>
 
 | Function | Description |
@@ -165,6 +167,42 @@ scitex-ui version             # Show version
 MCP (Model Context Protocol) tools for AI agents to discover and query available UI components.
 
 </details>
+
+## Demo
+
+The package ships runnable example pages under `examples/` showing each component category in isolation:
+
+| Example | What it shows |
+|---------|---------------|
+| **`01_list_components.py`** | Iterates the registry: prints every Shell + App component with its version, TS entry, and CSS path |
+| **`02_workspace_components.py`** | Mounts `ThemeProvider` + `AppShell` + `StatusBar` as a minimal workspace frame |
+
+```mermaid
+flowchart LR
+    subgraph Page ["Browser Page (#app)"]
+        Theme[ThemeProvider<br/>tokens injected]
+        Shell[AppShell<br/>sidebar + content]
+        Bar[StatusBar<br/>L | C | R]
+        FB[FileBrowser<br/>tree view]
+    end
+    Static[Django static<br/>scitex_ui/static/] --> Page
+    Reg[(Python registry<br/>get_component)] --> Static
+    style Theme fill:#4a90d9,stroke:#2c3e50,color:#fff
+    style Shell fill:#4a90d9,stroke:#2c3e50,color:#fff
+    style Bar  fill:#4a90d9,stroke:#2c3e50,color:#fff
+    style FB   fill:#27ae60,stroke:#2c3e50,color:#fff
+```
+
+<p align="center"><sub><b>Figure 2.</b> Demo. Components are discovered via the Python registry, then mounted in TypeScript against DOM containers. CSS is shipped as Django static assets.</sub></p>
+
+```bash
+# List every registered component
+python examples/01_list_components.py
+
+# Run the workspace-shell example (Django dev server)
+python examples/02_workspace_components.py
+# → open http://localhost:8000/ to see ThemeProvider + AppShell + StatusBar
+```
 
 ## Role in SciTeX Ecosystem
 

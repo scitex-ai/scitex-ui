@@ -1,5 +1,10 @@
 ---
-description: Shared frontend framework for SciTeX web apps — vanilla TypeScript workspace shell + optional React app components + Django static-asset integration. Ships `ts/shell/` (initShell, adapters, panel resize), `ts/app/` (vanilla components), `react/app/` (`usePanelResize`, `DataTable`), `css/shell/` (design tokens, dark/light theme), and Django `templates/`. Python API — `list_components` / `get_component` / `register_component`, `get_static_dir`, `get_docs_path`. Add `scitex_ui` to `INSTALLED_APPS` so `AppDirectoriesFinder` discovers CSS/TS. 4 MCP tools — `ui_inspect_element(s)` (Playwright live DOM introspection), `ui_notify`, `ui_get_notification_config`. Drop-in replacement for hand-writing Django static directories, duplicating panel-resize hooks, per-project CSS theme variables, and manual Playwright DOM queries. Use when the user asks to "build a SciTeX workspace app", "add panel resizing", "share a React DataTable", "theme with design tokens", "set up Django static asset discovery", "inspect a DOM element", "send a desktop notification", or mentions initShell, usePanelResize, Bridge infrastructure.
+name: scitex-ui
+description: |
+  [WHAT] Shared frontend framework for SciTeX web apps — vanilla TS workspace shell + optional React components + Django static-asset integration.
+  [WHEN] Use when user asks to build a SciTeX workspace app, add panel resizing, share a React DataTable, theme with design tokens, set up Django static asset discovery, inspect a DOM element, or mentions initShell, usePanelResize, Bridge infrastructure.
+  [HOW] `pip install scitex-ui` then `import scitex_ui`; see leaf skills for details.
+tags: [scitex-ui]
 allowed-tools: mcp__scitex__ui_*
 primary_interface: mixed
 interfaces:
@@ -7,10 +12,7 @@ interfaces:
   cli: 1
   mcp: 2
   skills: 2
-  hook: 0
   http: 2
-name: scitex-ui
-tags: [scitex-ui, scitex-package]
 ---
 
 # scitex-ui — Workspace Shell Framework
@@ -33,19 +35,27 @@ See [../../general/02_interface-python-api.md] for the dual-install rule.
 
 ## Sub-skills
 
-### Core (01–09)
-- [01_python-api.md](01_python-api.md) — Python API: `list_components`, `get_component`, `get_static_dir`, Django integration
-- [02_cli.md](02_cli.md) — CLI commands: `scitex-ui mcp`, `docs`, `skills`
+### Mandatory (SK105–108)
+- [01_installation.md](01_installation.md) — pip install + Django static-asset wiring + smoke verify
+- [02_quick-start.md](02_quick-start.md) — wire shell into a Django template
+- [03_python-api.md](03_python-api.md) — Python registry + static-asset resolver
+- [04_cli-reference.md](04_cli-reference.md) — full `scitex-ui` subcommand surface
+
+### Legacy core (renumbered)
+- [12_python-api.md](12_python-api.md) — original Python API page (was 01)
+- [13_cli.md](13_cli.md) — original CLI page (was 02)
 
 ### Standards (20–29)
 - [20_css-theme.md](20_css-theme.md) — CSS design tokens, theme variables, dark/light mode
 
 ### Architecture (30–39)
 - [30_shell-framework.md](30_shell-framework.md) — Workspace shell framework overview
-- [31_shell-modules.md](31_shell-modules.md) — `initShell`, adapters, TypeScript shell module API
+- [31_shell-modules.md](31_shell-modules.md) — `initShell`, ShellConfig, adapter interfaces
 - [32_frontend-components.md](32_frontend-components.md) — React components quick start (DataTable, FileBrowser, MediaViewer)
 - [33_frontend-components-bridge.md](33_frontend-components-bridge.md) — Bridge infrastructure + usePanelResize
 - [34_frontend-components-theme.md](34_frontend-components-theme.md) — CSS theme, figrecipe reference, packaging
+- [35_shell-modules-reference.md](35_shell-modules-reference.md) — ShellFileTree, Toolbar, Terminal, Viewer, Chat
+- [36_shell-modules-app-shell.md](36_shell-modules-app-shell.md) — AppShell, StatusBar, ThemeProvider, RepoMonitor, Shortcuts, Events, Vendor
 
 ## Architecture
 
