@@ -22,6 +22,9 @@ import pytest
 CROSS_PACKAGE_IMPORTS = [
     "scitex_dev._cli._completion",
     "scitex_dev.cli",
+    "scitex_ui",
+    "scitex_ui._cli",
+    "scitex_ui._registry",
 ]
 # ===== END AUTO-GENERATED =====
 

@@ -27,5 +27,4 @@ def test_audit_all_clean():
         )
     from scitex_dev.testing import audit_all_for_package
 
-    # §6 (audit-mcp-tools): structural item — separate campaign.
-    audit_all_for_package('scitex-ui', skip_rules=("§6",))
+    audit_all_for_package('scitex-ui')

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# File: /home/ywatanabe/proj/scitex-ui/tests/integration/test_public_api.py
 
 """Cross-module integration: package initialization, public API surface,
 and the aggregate registration contract (every shipped component lands
@@ -12,46 +11,33 @@ import scitex_ui
 
 
 class TestPublicAPI:
-    def test_version_hasattr_scitex_ui_version(self):
-        # Arrange
-        # Act
-        # Assert
+    def test_version_attribute_exists(self):
         # Arrange
         # Act
         # Assert
         assert hasattr(scitex_ui, "__version__")
 
-    def test_version_re_match_d_d_d_scitex_ui_version(self):
+    def test_version_semver_format(self):
         # Arrange
-        # Arrange
-        # Act
         import re
 
         # Act
         # Assert
-        # Assert
         assert re.match(r"^\d+\.\d+\.\d+", scitex_ui.__version__)
 
-    def test_exports_hasattr_scitex_ui_get_component(self):
-        # Arrange
-        # Act
-        # Assert
+    def test_exports_get_component(self):
         # Arrange
         # Act
         # Assert
         assert hasattr(scitex_ui, "get_component")
 
-    def test_exports_hasattr_scitex_ui_list_components(self):
-        # Arrange
-        # Act
-        # Assert
+    def test_exports_list_components(self):
         # Arrange
         # Act
         # Assert
         assert hasattr(scitex_ui, "list_components")
 
     def test_register_component_accessible(self):
-        # Available but not in __all__ (advanced use)
         # Arrange
         # Act
         # Assert
@@ -70,33 +56,24 @@ class TestPublicAPI:
         # Assert
         assert expected == set(scitex_ui.__all__)
 
-    def test_get_static_dir_static_dir_is_dir(self):
-        # Arrange
+    def test_get_static_dir_is_dir(self):
         # Arrange
         # Act
         static_dir = scitex_ui.get_static_dir()
-        # Act
-        # Assert
         # Assert
         assert static_dir.is_dir()
 
-    def test_get_static_dir_static_dir_ts_is_dir(self):
-        # Arrange
+    def test_get_static_dir_has_ts_subdir(self):
         # Arrange
         # Act
         static_dir = scitex_ui.get_static_dir()
-        # Act
-        # Assert
         # Assert
         assert (static_dir / "ts").is_dir()
 
-    def test_get_static_dir_static_dir_css_is_dir(self):
-        # Arrange
+    def test_get_static_dir_has_css_subdir(self):
         # Arrange
         # Act
         static_dir = scitex_ui.get_static_dir()
-        # Act
-        # Assert
         # Assert
         assert (static_dir / "css").is_dir()
 
@@ -125,12 +102,6 @@ class TestPublicAPI:
 
 
 class TestAllComponentsRegistered:
-    """Importing scitex_ui must trigger registration of every component.
-
-    Lives in tests/integration/ because it spans every component module
-    in src/scitex_ui/_components/ — there is no single src counterpart.
-    """
-
     def test_all_components_registered(self):
         # Arrange
         names = scitex_ui.list_components()

@@ -32,83 +32,59 @@ def _invoke_json(runner, args):
 
 
 class TestCLIRoot:
-    def test_help_result_exit_code_equals_n_0(self, runner):
-        # Arrange
-        # Arrange
-        # Act
-        result = runner.invoke(main, ["--help"])
-        # Act
-        # Assert
-        # Assert
-        assert result.exit_code == 0
-
-    def test_help_scitex_ui_in_result_output(self, runner):
-        # Arrange
+    def test_help_exit_zero(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["--help"])
-        # Act
-        # Assert
-        # Assert
-        assert "SciTeX UI" in result.output
-
-    def test_no_args_shows_help_result_exit_code_equals_n_0(self, runner):
-        # Arrange
-        # Arrange
-        # Act
-        result = runner.invoke(main)
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_no_args_shows_help_scitex_ui_in_result_output(self, runner):
-        # Arrange
+    def test_help_contains_scitex_ui(self, runner):
         # Arrange
         # Act
-        result = runner.invoke(main)
-        # Act
-        # Assert
+        result = runner.invoke(main, ["--help"])
         # Assert
         assert "SciTeX UI" in result.output
 
-    def test_help_recursive_result_exit_code_equals_n_0(self, runner):
-        # Arrange
+    def test_no_args_shows_help_exit_zero(self, runner):
         # Arrange
         # Act
-        result = runner.invoke(main, ["--help-recursive"])
-        # Act
-        # Assert
+        result = runner.invoke(main)
         # Assert
         assert result.exit_code == 0
 
-    def test_help_recursive_mcp_in_result_output(self, runner):
+    def test_no_args_shows_help_contains_scitex_ui(self, runner):
         # Arrange
+        # Act
+        result = runner.invoke(main)
+        # Assert
+        assert "SciTeX UI" in result.output
+
+    def test_help_recursive_exit_zero(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["--help-recursive"])
-        # Act
         # Assert
+        assert result.exit_code == 0
+
+    def test_help_recursive_contains_mcp(self, runner):
+        # Arrange
+        # Act
+        result = runner.invoke(main, ["--help-recursive"])
         # Assert
         assert "mcp" in result.output
 
-    def test_version_result_exit_code_equals_n_0(self, runner):
-        # Arrange
+    def test_version_exit_zero(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["--version"])
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_version_scitex_ui_in_result_output(self, runner):
-        # Arrange
+    def test_version_contains_scitex_ui(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["--version"])
-        # Act
-        # Assert
         # Assert
         assert "scitex-ui" in result.output
 
@@ -119,64 +95,49 @@ class TestCLIRoot:
 
 
 class TestListPythonAPIs:
-    def test_list_apis_result_exit_code_equals_n_0(self, runner):
-        # Arrange
+    def test_list_apis_exit_zero(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["list-python-apis"])
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_list_apis_get_component_in_result_output(self, runner):
-        # Arrange
+    def test_list_apis_contains_get_component(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["list-python-apis"])
-        # Act
-        # Assert
         # Assert
         assert "get_component" in result.output
 
-    def test_list_apis_verbose_result_exit_code_equals_n_0(self, runner):
-        # Arrange
+    def test_list_apis_verbose_exit_zero(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["list-python-apis", "-v"])
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_list_apis_verbose_in_result_output(self, runner):
-        # Arrange
+    def test_list_apis_verbose_shows_signatures(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["list-python-apis", "-v"])
-        # Act
-        # Assert
         # Assert
         assert "(" in result.output  # signatures
 
-    def test_list_apis_json_result_exit_code_equals_n_0(self, runner):
-        # Arrange
+    def test_list_apis_json_exit_zero(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["list-python-apis", "--json"])
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_list_apis_json_data_module_scitex_ui(self, runner):
+    def test_list_apis_json_module_is_scitex_ui(self, runner):
         # Arrange
         # Act
         data = _invoke_json(runner, ["list-python-apis", "--json"])
         # Assert
         assert data["module"] == "scitex_ui"
 
-    def test_list_apis_json_apis_in_data(self, runner):
+    def test_list_apis_json_has_apis_key(self, runner):
         # Arrange
         # Act
         data = _invoke_json(runner, ["list-python-apis", "--json"])
@@ -197,80 +158,60 @@ class TestListPythonAPIs:
 
 
 class TestMCPGroup:
-    def test_mcp_help_result_exit_code_equals_n_0(self, runner):
-        # Arrange
+    def test_mcp_help_exit_zero(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["mcp", "--help"])
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_mcp_help_start_in_result_output(self, runner):
-        # Arrange
+    def test_mcp_help_contains_start(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["mcp", "--help"])
-        # Act
-        # Assert
         # Assert
         assert "start" in result.output
 
-    def test_mcp_help_doctor_in_result_output(self, runner):
-        # Arrange
+    def test_mcp_help_contains_doctor(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["mcp", "--help"])
-        # Act
-        # Assert
         # Assert
         assert "doctor" in result.output
 
-    def test_mcp_show_installation_result_exit_code_equals_n_0(self, runner):
+    def test_mcp_show_installation_exit_zero(self, runner):
         # Canonical leaf is `show-installation` (§3 mcp install was renamed
         # but scitex-ui still uses the show-installation name).
         # Arrange
-        # Arrange
         # Act
         result = runner.invoke(main, ["mcp", "show-installation"])
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_mcp_show_installation_mcpservers_in_result_output(self, runner):
+    def test_mcp_show_installation_contains_mcpservers(self, runner):
         # Canonical leaf is `show-installation` (§3 mcp install was renamed
         # but scitex-ui still uses the show-installation name).
         # Arrange
-        # Arrange
         # Act
         result = runner.invoke(main, ["mcp", "show-installation"])
-        # Act
-        # Assert
         # Assert
         assert "mcpServers" in result.output
 
-    def test_mcp_show_installation_json_result_exit_code_equals_n_0(self, runner):
-        # Arrange
+    def test_mcp_show_installation_json_exit_zero(self, runner):
         # Arrange
         # Act
         result = runner.invoke(main, ["mcp", "show-installation", "--json"])
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_mcp_show_installation_json_data_success_is_true(self, runner):
+    def test_mcp_show_installation_json_success_is_true(self, runner):
         # Arrange
         # Act
         data = _invoke_json(runner, ["mcp", "show-installation", "--json"])
         # Assert
         assert data["success"] is True
 
-    def test_mcp_show_installation_json_scitex_ui_in_data_config_mcpservers(
-        self, runner
-    ):
+    def test_mcp_show_installation_json_has_scitex_ui(self, runner):
         # Arrange
         # Act
         data = _invoke_json(runner, ["mcp", "show-installation", "--json"])

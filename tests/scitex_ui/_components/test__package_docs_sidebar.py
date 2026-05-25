@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# File: /home/ywatanabe/proj/scitex-ui/tests/scitex_ui/_components/test__package_docs_sidebar.py
 
 """Tests for scitex_ui._components._package_docs_sidebar."""
 

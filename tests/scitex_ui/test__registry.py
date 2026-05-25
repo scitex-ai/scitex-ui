@@ -20,32 +20,25 @@ class TestRegisterComponent:
         # Assert
         assert result is None
 
-    def test_list_components_sorted_names_is_list(self):
-        # Arrange
+    def test_list_returns_list_type(self):
         # Arrange
         register_component("z-widget", {})
         register_component("a-widget", {})
         # Act
         names = list_components()
-        # Act
-        # Assert
         # Assert
         assert isinstance(names, list)
 
-    def test_list_components_sorted_names_equals_sorted_names(self):
-        # Arrange
+    def test_list_returns_sorted_names(self):
         # Arrange
         register_component("z-widget", {})
         register_component("a-widget", {})
         # Act
         names = list_components()
-        # Act
-        # Assert
         # Assert
         assert names == sorted(names)
 
-
-    def test_list_components_includes_registered(self):
+    def test_list_includes_registered(self):
         # Arrange
         register_component("list-test-widget", {})
         # Act
