@@ -438,5 +438,7 @@
         <script src="{% static 'scitex_ui/js/shell/standalone-shell-init.js' %}"
                 defer></script>
         {% block extra_js %}{% endblock %}
+        <!-- Element inspector (Alt+I) — only emitted for DEBUG/staff -->
+        {% include "scitex_ui/_element_inspector.html" %}
     </body>
 </html>
