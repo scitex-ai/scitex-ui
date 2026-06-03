@@ -4,7 +4,7 @@
  *  Wires:
  *  - Console/Chat mode toggle
  *  - Toolbar buttons (camera, sketch, mic) → custom DOM events
- *  - Config popover gear toggle (direct, like scitex-cloud)
+ *  - Config popover gear toggle (direct, like scitex-hub)
  *  - Sidebar header double-click → collapse
  *
  *  Apps listen for these events to implement actual functionality:
