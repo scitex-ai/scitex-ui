@@ -36,6 +36,10 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build"]
 
 html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
+# html_static_path intentionally omitted — there are no custom static
+# files in docs/sphinx/_static/, and Sphinx warns about a missing dir
+# under -W (treats warnings as errors in CI). Re-add this entry the
+# day someone actually drops a custom CSS/JS file there.
+# html_static_path = ["_static"]
 
 autodoc_member_order = "bysource"
