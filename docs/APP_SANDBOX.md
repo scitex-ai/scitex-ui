@@ -16,7 +16,7 @@ scitex-ui ships three CSS bundles with distinct scopes:
 
 ### CSS Loading Strategy
 
-- **scitex-cloud** loads `shell.css` in the base template -- always present
+- **scitex-hub** loads `shell.css` in the base template -- always present
 - **Apps** import `app.css` in their entry point TypeScript (e.g., `import "scitex-ui/css/app.css"`)
 - Apps may also load their own CSS after `app.css` for app-specific styles
 
@@ -145,6 +145,6 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 ## Cross-References
 
-- **scitex-cloud** (`docs/ARCHITECTURE/APP_PLATFORM.md`) -- Platform context injection, manifest loading, URL mounting
+- **scitex-hub** (`docs/ARCHITECTURE/APP_PLATFORM.md`) -- Platform context injection, manifest loading, URL mounting
 - **scitex-app** (`docs/APP_SDK.md`) -- Python-side `FilesBackend` protocol, path resolution
 - **figrecipe** (`docs/SCITEX_APP_INTEGRATION.md`) -- Reference app using bridge init + fetch override pattern
