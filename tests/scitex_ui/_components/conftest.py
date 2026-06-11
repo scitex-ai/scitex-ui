@@ -36,6 +36,14 @@ def _check_metadata(cls):
     ts_path = PKG_DIR / "static" / (cls.ts_entry + ".ts")
     assert ts_path.exists(), f"TS entry not found: {ts_path}"
 
+    # Optional pre-built pure-JS sibling for Django-template consumers
+    # (no vite). Verified only when the component declares ``js_file`` —
+    # other components stay unchanged.
+    js_file = getattr(cls, "js_file", None)
+    if js_file:
+        js_path = PKG_DIR / "static" / js_file
+        assert js_path.exists(), f"JS bundle not found: {js_path}"
+
     return cls
 
 
