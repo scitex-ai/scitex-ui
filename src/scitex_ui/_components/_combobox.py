@@ -28,6 +28,12 @@ class Combobox:
     )
     ts_entry = "scitex_ui/ts/app/combobox/index"
     css_file = "scitex_ui/css/app/combobox.css"
+    # Pre-built pure-JS sibling for Django-template consumers that load
+    # static assets directly via ``{% static %}`` (no vite bundler in
+    # play — e.g. scitex-todo's board_v3.html). Mirrors the TS class
+    # API 1:1; exposes ``window.STX.Combobox``. Future scitex-app
+    # consumers that ship a bundler still import from ``ts_entry``.
+    js_file = "scitex_ui/js/app/combobox.js"
 
 
 register_component(Combobox.name, Combobox)
