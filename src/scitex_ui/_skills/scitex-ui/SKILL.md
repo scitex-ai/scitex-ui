@@ -57,6 +57,9 @@ See [../../general/02_interface-python-api.md] for the dual-install rule.
 - [35_shell-modules-reference.md](35_shell-modules-reference.md) — ShellFileTree, Toolbar, Terminal, Viewer, Chat
 - [36_shell-modules-app-shell.md](36_shell-modules-app-shell.md) — AppShell, StatusBar, ThemeProvider, RepoMonitor, Shortcuts, Events, Vendor
 
+### Doctrine + lint
+- [40_component-usage-doctrine.md](40_component-usage-doctrine.md) — UI-101..105 component-usage rules + `scitex-ui lint` walker
+
 ## Architecture
 
 ```
