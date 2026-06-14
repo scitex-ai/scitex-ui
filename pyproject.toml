@@ -80,6 +80,15 @@ scitex-ui = "scitex_ui"
 [project.entry-points."scitex_dev.skills"]
 scitex-ui = "scitex_ui"
 
+# UI-101..105 component-usage rules (operator directive 2026-06-14,
+# lead a2a `1f135ad4…`). Registers the rule corpus with scitex-dev's
+# linter for discoverability via `scitex-linter list-rules`. Active
+# scanning of *.css / *.html / *.tsx happens via `scitex-ui lint`
+# (see src/scitex_ui/_linter/_cli.py) since scitex-dev's in-tree
+# checker is Python-AST-only.
+[project.entry-points."scitex_dev.linter.plugins"]
+ui = "scitex_ui._linter_plugin:get_plugin"
+
 [project.urls]
 Homepage = "https://github.com/ywatanabe1989/scitex-ui"
 Repository = "https://github.com/ywatanabe1989/scitex-ui"
