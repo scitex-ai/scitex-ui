@@ -31,22 +31,28 @@ def test_get_plugin_checkers_is_empty_list():
     # Arrange — scitex-dev's checker is Python-AST-only; UI rules
     # target CSS/HTML/TSX and are enforced via `scitex-ui lint`.
     plugin = get_plugin()
-    # Act + Assert
-    assert plugin["checkers"] == []
+    # Act
+    checkers = plugin["checkers"]
+    # Assert
+    assert checkers == []
 
 
 def test_get_plugin_call_rules_is_empty_dict():
     # Arrange — UI rules are not call-pattern rules.
     plugin = get_plugin()
-    # Act + Assert
-    assert plugin["call_rules"] == {}
+    # Act
+    call_rules = plugin["call_rules"]
+    # Assert
+    assert call_rules == {}
 
 
 def test_get_plugin_axes_hints_is_empty_dict():
     # Arrange — UI rules don't contribute axes hints.
     plugin = get_plugin()
-    # Act + Assert
-    assert plugin["axes_hints"] == {}
+    # Act
+    axes_hints = plugin["axes_hints"]
+    # Assert
+    assert axes_hints == {}
 
 
 def test_get_plugin_is_idempotent():

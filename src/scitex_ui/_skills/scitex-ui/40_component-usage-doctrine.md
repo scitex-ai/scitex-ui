@@ -5,7 +5,7 @@ description: |
   components, never hand-roll vanilla &lt;select&gt; / native scrollbars /
   raw-hex CSS / shell-CSS edits. Maps directly onto the UI-101..105 lint
   rules shipped by `scitex-ui._linter_plugin`.
-tags: [scitex-ui-doctrine, component-usage, lint]
+tags: [scitex-ui-component-usage-doctrine, lint]
 ---
 
 # SciTeX-UI Component-Usage Doctrine

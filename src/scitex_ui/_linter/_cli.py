@@ -51,6 +51,12 @@ def lint(target: Path, treat_as_consumer: bool, as_json: bool) -> None:
     skips `node_modules/`, `.venv/`, `.git/` etc. by default.
 
     Exit code is 0 when no violations are found, 1 otherwise.
+
+    \b
+    Example:
+      $ scitex-ui lint src/my_app/static/my_app/
+      $ scitex-ui lint --json src/my_app/static/my_app/ > violations.jsonl
+      $ scitex-ui lint --treat-as-scitex-ui src/scitex_ui/   # ours own dev tree
     """
     violations = scan_path(target, treat_as_consumer=treat_as_consumer)
     if not violations:

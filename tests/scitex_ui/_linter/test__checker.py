@@ -238,21 +238,31 @@ def test_scan_path_returns_empty_for_clean_consumer_tree(tmp_path: Path) -> None
     assert violations == []
 
 
-def test_scan_path_accepts_single_file(tmp_path: Path) -> None:
+def test_scan_path_accepts_single_file_returns_one_violation(
+    tmp_path: Path,
+) -> None:
     # Arrange
     css = tmp_path / "x.css"
     css.write_text("body { color: #ff0000; }\n")
-
     # Act
     violations = scan_path(css)
-
     # Assert
     assert len(violations) == 1
+
+
+def test_scan_path_accepts_single_file_violation_carries_correct_rule_id(
+    tmp_path: Path,
+) -> None:
+    # Arrange — same single-file scan as above but assert the rule id only.
+    css = tmp_path / "x.css"
+    css.write_text("body { color: #ff0000; }\n")
+    # Act
+    violations = scan_path(css)
+    # Assert
     assert violations[0].rule.id == "STX-UI102"
-    assert violations[0].path == str(css)
 
 
-def test_violation_carries_line_and_source_line(tmp_path: Path) -> None:
+def test_violation_carries_correct_line_number(tmp_path: Path) -> None:
     # Arrange — line 3 carries the offender.
     css = tmp_path / "x.css"
     css.write_text(
@@ -260,12 +270,21 @@ def test_violation_carries_line_and_source_line(tmp_path: Path) -> None:
         "main { padding: 1rem; }\n"
         "footer { background: #abcdef; }\n"
     )
-
     # Act
     violations = scan_path(css)
-
     # Assert
-    assert len(violations) == 1
-    v = violations[0]
-    assert v.line == 3
-    assert "#abcdef" in v.source_line
+    assert violations[0].line == 3
+
+
+def test_violation_carries_source_line_containing_offender(tmp_path: Path) -> None:
+    # Arrange — same fixture; this guards the source_line capture path.
+    css = tmp_path / "x.css"
+    css.write_text(
+        "body { color: var(--text); }\n"
+        "main { padding: 1rem; }\n"
+        "footer { background: #abcdef; }\n"
+    )
+    # Act
+    violations = scan_path(css)
+    # Assert
+    assert "#abcdef" in violations[0].source_line

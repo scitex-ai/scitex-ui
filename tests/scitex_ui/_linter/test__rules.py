@@ -48,40 +48,64 @@ def test_rule_severity_matches_current_release(rule_id, expected_severity):
     assert rule.severity == expected_severity
 
 
-def test_ui104_message_documents_severity_flip_plan():
+def test_ui104_message_documents_severity_flip_keyword():
     # Arrange — UI-104 must self-document the WARN → ERROR migration plan
     # so users see it in `scitex-linter list-rules` output, not only in
     # the SKILL doc. This guards against silent severity flips.
     rules = build_rules()
     # Act
+    msg_lower = rules["STX-UI104"].message.lower()
+    # Assert
+    assert "warning → error" in msg_lower or "warning to error" in msg_lower
+
+
+def test_ui104_message_documents_severity_flip_version_number():
+    # Arrange — the flip date (scitex-ui 0.7.0) must appear inline; the
+    # version number is the most operator-actionable bit of the warning.
+    rules = build_rules()
+    # Act
     msg = rules["STX-UI104"].message
     # Assert
-    assert "warning → error" in msg.lower() or "warning to error" in msg.lower()
     assert "0.7" in msg
 
 
-def test_all_rules_carry_requires_scitex_ui_marker():
+@pytest.mark.parametrize(
+    "rule_id", ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105"]
+)
+def test_all_rules_carry_requires_scitex_ui_marker(rule_id):
     # Arrange — mirrors scitex-io's plugin convention so the linter knows
     # the rules require the scitex-ui package to make sense.
     rules = build_rules()
-    # Act + Assert
-    for rule in rules.values():
-        assert rule.requires == "scitex-ui"
+    # Act
+    rule = rules[rule_id]
+    # Assert
+    assert rule.requires == "scitex-ui"
 
 
-def test_each_rule_has_actionable_suggestion():
+@pytest.mark.parametrize(
+    "rule_id", ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105"]
+)
+def test_each_rule_suggestion_is_non_trivial_length(rule_id):
     # Arrange — every rule must teach the fix, not just the violation.
     rules = build_rules()
-    # Act + Assert
-    for rule in rules.values():
-        suggestion = rule.suggestion or ""
-        # The suggestion must be non-trivial — > 40 chars — and must
-        # reference either a scitex-ui component or a theme token.
-        assert len(suggestion) > 40, f"{rule.id} suggestion too short"
-        lowered = suggestion.lower()
-        assert (
-            "var(--" in lowered
-            or "scitex_ui." in lowered
-            or "scitex-ui" in lowered
-            or "dropdown" in lowered
-        ), f"{rule.id} suggestion doesn't mention a component or token"
+    # Act
+    suggestion = rules[rule_id].suggestion or ""
+    # Assert
+    assert len(suggestion) > 40
+
+
+@pytest.mark.parametrize(
+    "rule_id", ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105"]
+)
+def test_each_rule_suggestion_mentions_component_or_token(rule_id):
+    # Arrange — the suggestion must point at a concrete fix surface.
+    rules = build_rules()
+    # Act
+    lowered = (rules[rule_id].suggestion or "").lower()
+    # Assert
+    assert (
+        "var(--" in lowered
+        or "scitex_ui." in lowered
+        or "scitex-ui" in lowered
+        or "dropdown" in lowered
+    )
