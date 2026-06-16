@@ -24,6 +24,7 @@ import type { WorkspaceKeyboardHandler } from "./_handlers/WorkspaceKeyboardHand
 import type { ContextMenuActionHandler } from "./_handlers/ContextMenuActionHandler";
 import { TreeFileOperations } from "./_handlers/TreeFileOperations";
 import { TreeDataLoader } from "./_handlers/TreeDataLoader";
+import { BreadcrumbHandler } from "./_handlers/BreadcrumbHandler";
 import { showTreeMessage } from "./_handlers/TreeMessageHandler";
 import { type GitSummary } from "./_handlers/GitStatusHandler";
 import type { SearchUIHandler } from "./_handlers/SearchUIHandler";
@@ -32,6 +33,8 @@ import { initializeTreeHandlers } from "./_handlers/TreeInitHandler";
 export class WorkspaceFilesTree {
   private config: TreeConfig;
   private container: HTMLElement | null = null;
+  private breadcrumb: BreadcrumbHandler | null = null;
+  private currentRoot: string | null = null;
   private stateManager: TreeStateManager;
   private filter: TreeFilter;
   private renderer: TreeRenderer;
@@ -171,7 +174,16 @@ export class WorkspaceFilesTree {
       this.stateManager,
       (msg) => this.showError(msg),
     );
+    if (this.config.showBreadcrumb) {
+      this.breadcrumb = new BreadcrumbHandler((path) => this.setRoot(path));
+    }
     this.stateManager.subscribe(() => this.rerender());
+  }
+
+  /** Re-root the tree at `absPath` and reload (breadcrumb navigation). */
+  async setRoot(absPath: string): Promise<void> {
+    this.lastTreeHash = ""; // force re-render even if the new tree hashes equal
+    await this.loadTree(absPath);
   }
 
   private isItemDirectory(path: string): boolean {
@@ -239,14 +251,15 @@ export class WorkspaceFilesTree {
     this.selectionHandler.handleClick(path, event || new MouseEvent("click"));
   }
 
-  async loadTree(): Promise<void> {
+  async loadTree(rootPath?: string): Promise<void> {
     if (this.isLoading) return;
     this.isLoading = true;
     const treeEl = this.container?.querySelector(".wft-tree");
     const scrollTop = treeEl?.scrollTop || 0;
     try {
-      const result = await this.dataLoader.load();
+      const result = await this.dataLoader.load(rootPath);
       if (result.success) {
+        if (result.rootPath) this.currentRoot = result.rootPath;
         const hash = JSON.stringify(result.treeData);
         if (hash === this.lastTreeHash) return;
         this.lastTreeHash = hash;
@@ -280,7 +293,7 @@ export class WorkspaceFilesTree {
       el.className = "wft-content";
       const sb = this.container!.querySelector(":scope > .wft-search-box");
       Array.from(this.container!.children).forEach((c) => {
-        if (c !== sb) c.remove();
+        if (c !== sb && !c.classList.contains("wft-breadcrumb")) c.remove();
       });
       if (sb) this.container!.insertBefore(el, sb);
       else this.container!.appendChild(el);
@@ -298,6 +311,7 @@ export class WorkspaceFilesTree {
       : { matches: new Set<string>(), ancestors: new Set<string>() };
     this.renderer.setSearchInfo(info.matches, info.ancestors);
     this.contentEl().innerHTML = this.renderer.render(data, this.gitSummary);
+    this.breadcrumb?.render(this.container, this.currentRoot);
   }
 
   private rerender(): void {

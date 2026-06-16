@@ -35,6 +35,7 @@
 @import "./shell/viewer.css";
 @import "./shell/workspace-files-tree.css";
 @import "./shell/workspace-files-tree/base.css";
+@import "./shell/workspace-files-tree/breadcrumb.css";
 @import "./shell/workspace-files-tree/children.css";
 @import "./shell/workspace-files-tree/context-menu.css";
 @import "./shell/workspace-files-tree/git-panel.css";
