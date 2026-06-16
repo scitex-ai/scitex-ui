@@ -1,4 +1,7 @@
 // App components (React)
+export { AlertBanner } from "./alert-banner";
+export type { AlertBannerProps, AlertBannerType } from "./alert-banner";
+
 export { FileBrowser } from "./file-browser";
 export type { FileBrowserProps, FileNode } from "./file-browser";
 
