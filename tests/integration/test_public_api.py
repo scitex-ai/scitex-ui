@@ -101,6 +101,31 @@ class TestPublicAPI:
         assert "package-docs-sidebar" in components
 
 
+class TestCssImportsResolve:
+    def test_all_css_imports_resolve(self):
+        # Arrange -- collect every @import target across the shipped CSS and
+        # check it points at a real file. A dangling @import (e.g. a primitive
+        # referencing a never-migrated utilities/effects.css) passes scitex-ui's
+        # own build but breaks any downstream bundler (vite/postcss) that
+        # resolves @import, blocking consumer apps like the figrecipe editor.
+        import re
+
+        css_root = scitex_ui.get_static_dir() / "css"
+        pattern = re.compile(r"""@import\s+(?:url\()?\s*["']([^"')]+)["']""")
+        broken = []
+        # Act
+        for css_file in css_root.rglob("*.css"):
+            text = css_file.read_text(encoding="utf-8")
+            for raw in pattern.findall(text):
+                target = raw.split("?")[0].split("#")[0]
+                if target.startswith(("http://", "https://", "data:", "//")):
+                    continue
+                if not (css_file.parent / target).resolve().is_file():
+                    broken.append(f"{css_file.relative_to(css_root)} -> {target}")
+        # Assert
+        assert not broken, f"dangling CSS @imports: {broken}"
+
+
 class TestAllComponentsRegistered:
     def test_all_components_registered(self):
         # Arrange
