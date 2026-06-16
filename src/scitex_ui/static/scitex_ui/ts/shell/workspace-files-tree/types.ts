@@ -58,6 +58,9 @@ export interface TreeConfig {
   showFolderActions?: boolean;
   /** Show git status indicators */
   showGitStatus?: boolean;
+  /** Show a breadcrumb path bar above the tree that re-roots on click
+   *  (requires the adapter to honour fetchTree's rootPath argument). */
+  showBreadcrumb?: boolean;
   /** Custom CSS class for the tree container */
   className?: string;
   /** Backend adapter - abstracts all API calls */
@@ -104,8 +107,17 @@ export interface GitFileStat {
  * to connect the tree to their specific backend.
  */
 export interface FileTreeAdapter {
-  /** Fetch the file tree structure */
-  fetchTree(): Promise<{ success: boolean; tree: TreeItem[]; error?: string }>;
+  /** Fetch the file tree structure.
+   *  @param rootPath optional absolute directory to root the tree at (for
+   *    breadcrumb navigation); omit to use the adapter's default root.
+   *  @returns the tree and, when known, the absolute ``rootPath`` it is rooted
+   *    at (used to render the breadcrumb). */
+  fetchTree(rootPath?: string): Promise<{
+    success: boolean;
+    tree: TreeItem[];
+    error?: string;
+    rootPath?: string;
+  }>;
 
   /** Fetch git status (optional - return null to disable) */
   fetchGitStatus?(): Promise<{

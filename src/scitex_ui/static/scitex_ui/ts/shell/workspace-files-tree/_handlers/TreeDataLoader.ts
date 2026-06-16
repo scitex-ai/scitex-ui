@@ -17,6 +17,8 @@ export interface TreeLoadResult {
   success: boolean;
   treeData: TreeItem[];
   gitSummary: GitSummary;
+  /** Absolute directory the tree is rooted at (for the breadcrumb), when known. */
+  rootPath?: string;
   error?: string;
 }
 
@@ -52,13 +54,13 @@ export class TreeDataLoader {
     }
   }
 
-  async load(): Promise<TreeLoadResult> {
+  async load(rootPath?: string): Promise<TreeLoadResult> {
     const showGitStatus = this.config.showGitStatus !== false;
     const adapter = this.config.adapter;
 
     try {
       const [treeResponse, gitResponse] = await Promise.all([
-        adapter.fetchTree(),
+        adapter.fetchTree(rootPath),
         showGitStatus && adapter.fetchGitStatus
           ? adapter.fetchGitStatus()
           : Promise.resolve(null),
@@ -86,8 +88,11 @@ export class TreeDataLoader {
           success: true,
           treeData: tree,
           gitSummary,
+          rootPath: treeResponse.rootPath ?? rootPath,
         };
-        this.saveCache(result);
+        // Only cache the default root; re-rooted (breadcrumb) loads always
+        // fetch fresh so they never clobber the default-root cache.
+        if (!rootPath) this.saveCache(result);
         return result;
       } else {
         const errorMsg = treeResponse.error || "Failed to load file tree";
