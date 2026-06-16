@@ -4,6 +4,7 @@
  * Do not edit manually. Regenerate with: npx tsx css/_build-index.ts
  */
 
+@import "./app/alert-banner.css";
 @import "./app/collapsible-panel.css";
 @import "./app/confirm-modal.css";
 @import "./app/context-menu.css";
