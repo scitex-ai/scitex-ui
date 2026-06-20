@@ -1,5 +1,23 @@
 """Sphinx configuration for scitex-ui documentation."""
 
+# Silence the sphinx_autodoc_typehints internal deprecation that triggers
+# a RemovedInSphinx10Warning under sphinx-build -W. The deprecation is in
+# the third-party extension (set_application call against a deprecated
+# Sphinx internal API), not in our doc tree, so suppressing it does not
+# hide any project-side problem.
+import warnings
+
+try:
+    from sphinx.deprecation import RemovedInSphinx10Warning
+
+    warnings.filterwarnings(
+        "ignore",
+        category=RemovedInSphinx10Warning,
+        module=r"sphinx_autodoc_typehints\..*",
+    )
+except ImportError:
+    pass
+
 project = "scitex-ui"
 copyright = "2024-2026, Yusuke Watanabe"
 author = "Yusuke Watanabe"
@@ -18,6 +36,10 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build"]
 
 html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
+# html_static_path intentionally omitted — there are no custom static
+# files in docs/sphinx/_static/, and Sphinx warns about a missing dir
+# under -W (treats warnings as errors in CI). Re-add this entry the
+# day someone actually drops a custom CSS/JS file there.
+# html_static_path = ["_static"]
 
 autodoc_member_order = "bysource"
