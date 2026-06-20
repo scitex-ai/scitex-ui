@@ -2,9 +2,11 @@
 """Frontend component metadata definitions."""
 
 from ._app_shell import AppShell  # noqa: F401
+from ._combobox import Combobox  # noqa: F401
 from ._confirm_modal import ConfirmModal  # noqa: F401
 from ._data_table import DataTable  # noqa: F401
 from ._dropdown import Dropdown  # noqa: F401
+from ._element_inspector import ElementInspector  # noqa: F401
 from ._file_browser import FileBrowser  # noqa: F401
 from ._file_tabs import FileTabs  # noqa: F401
 from ._media_viewer import MediaViewer  # noqa: F401

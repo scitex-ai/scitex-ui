@@ -313,6 +313,14 @@ from ._skills import skills_group as _skills_group
 
 main.add_command(_skills_group, name="skills")
 
+# UI-101..105 component-usage lint walker — `scitex-ui lint <path>`.
+# Plugin entry-point (`scitex_dev.linter.plugins`) handles RULE registration;
+# this subcommand handles ACTIVE SCAN of .css/.html/.tsx files that the
+# in-tree scitex-dev checker (Python-AST-only) doesn't cover.
+from ._linter._cli import lint as _lint_command
+
+main.add_command(_lint_command, name="lint")
+
 try:
     from scitex_dev._cli._completion import attach_shell_completion
 

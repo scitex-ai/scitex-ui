@@ -4,6 +4,7 @@
  * Do not edit manually. Regenerate with: npx tsx css/_build-index.ts
  */
 
+@import "./app/alert-banner.css";
 @import "./app/collapsible-panel.css";
 @import "./app/confirm-modal.css";
 @import "./app/context-menu.css";
@@ -63,6 +64,7 @@
 @import "./shell/viewer.css";
 @import "./shell/workspace-files-tree.css";
 @import "./shell/workspace-files-tree/base.css";
+@import "./shell/workspace-files-tree/breadcrumb.css";
 @import "./shell/workspace-files-tree/children.css";
 @import "./shell/workspace-files-tree/context-menu.css";
 @import "./shell/workspace-files-tree/git-panel.css";
