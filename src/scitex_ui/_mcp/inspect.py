@@ -2,7 +2,7 @@
 """Element Inspector MCP handlers — inspect DOM elements via playwright-cli.
 
 Standalone: works on ANY website open in playwright-cli browser.
-No dependency on scitex-cloud or API keys.
+No dependency on scitex-hub or API keys.
 
 These handlers are consumed by the scitex MCP server (scitex-python)
 via `register_ui_tools()`.
