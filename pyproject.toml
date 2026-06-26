@@ -34,14 +34,22 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development :: User Interfaces",
 ]
-dependencies = ["django"]
+dependencies = [
+    "django",
+    # `click` is a HARD core dep — the `scitex-ui` console-script
+    # (`scitex_ui._cli:main`) does an UNGUARDED module-load `import click`
+    # at `src/scitex_ui/_cli.py`. Without it in core, bare
+    # `pip install scitex-ui` followed by `scitex-ui --help` raises
+    # ModuleNotFoundError. PS-213 console-script-deps-must-be-core
+    # enforces this rule ecosystem-wide.
+    "click>=8.0.0",
+]
 
 [project.scripts]
 scitex-ui = "scitex_ui._cli:main"
 
 [project.optional-dependencies]
 cli = [
-    "click>=8.0.0",
     "scitex-dev>=0.11.7",
 ]
 mcp = [
