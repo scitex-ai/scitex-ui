@@ -59,6 +59,7 @@ interface PdfjsDocument {
 interface PageView {
   pageNum: number;
   viewport: PdfjsViewport;
+  wrap: HTMLElement;
   page: HTMLCanvasElement;
   overlay: HTMLCanvasElement;
 }
@@ -78,13 +79,14 @@ function applyPalette(el: HTMLElement, palette: PdfPalette): void {
 class PdfViewer implements PdfViewerApi {
   private readonly container: HTMLElement;
   private readonly hooks: PdfViewerHooks;
-  private readonly scale: number;
+  private scale: number;
   private readonly workerSrc?: string;
   private marks: Mark[] = [];
   private tool: PdfTool;
   private views: PageView[] = [];
   private draw: DrawState | null = null;
   private destroyed = false;
+  private doc: PdfjsDocument | null = null;
 
   constructor(options: PdfViewerOptions) {
     this.container = options.container;
@@ -113,7 +115,14 @@ class PdfViewer implements PdfViewerApi {
         : { data: src };
     const doc = await pdfjs.getDocument(params).promise;
     if (this.destroyed) return;
+    this.doc = doc;
+    await this.renderAll();
+  }
 
+  /** (Re)render every page of the loaded document at the current scale. */
+  private async renderAll(): Promise<void> {
+    const doc = this.doc;
+    if (!doc) return;
     this.teardownViews();
     this.container.replaceChildren();
 
@@ -131,6 +140,35 @@ class PdfViewer implements PdfViewerApi {
       });
     }
     this.repaint();
+  }
+
+  getScale(): number {
+    return this.scale;
+  }
+
+  async setScale(scale: number): Promise<void> {
+    if (scale <= 0 || !this.doc) return;
+    // Preserve scroll position across the re-render as a height ratio.
+    const ratio =
+      this.container.scrollHeight > 0
+        ? this.container.scrollTop / this.container.scrollHeight
+        : 0;
+    this.scale = scale;
+    await this.renderAll();
+    this.container.scrollTop = ratio * this.container.scrollHeight;
+  }
+
+  async fitWidth(): Promise<void> {
+    const view = this.views[0];
+    if (!view) return;
+    const baseWidth = view.viewport.width / this.scale; // unscaled page width
+    const target = this.container.clientWidth / baseWidth;
+    if (target > 0 && Number.isFinite(target)) await this.setScale(target);
+  }
+
+  scrollToPage(page: number): void {
+    const view = this.views[page - 1];
+    view?.wrap.scrollIntoView({ block: "start" });
   }
 
   private mountPage(pageNum: number, viewport: PdfjsViewport): PageView {
@@ -155,7 +193,7 @@ class PdfViewer implements PdfViewerApi {
     wrap.append(page, overlay);
     this.container.append(wrap);
 
-    const view: PageView = { pageNum, viewport, page, overlay };
+    const view: PageView = { pageNum, viewport, wrap, page, overlay };
     this.bindPointer(view);
     this.views.push(view);
     return view;
@@ -397,6 +435,7 @@ class PdfViewer implements PdfViewerApi {
 
   destroy(): void {
     this.destroyed = true;
+    this.doc = null;
     this.teardownViews();
     this.marks = [];
     this.container.replaceChildren();
