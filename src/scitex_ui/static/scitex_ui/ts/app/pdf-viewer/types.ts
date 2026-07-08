@@ -83,6 +83,14 @@ export interface PdfViewerOptions {
   tool?: PdfTool;
   palette?: PdfPalette;
   hooks?: PdfViewerHooks;
+  /** Render scale (CSS px per PDF unit). Default 1.5. */
+  scale?: number;
+  /**
+   * Override the PDF.js worker URL. Defaults to resolving
+   * `pdfjs-dist/build/pdf.worker.min.mjs` relative to this module — which
+   * modern bundlers (Vite) handle. Set explicitly for other setups.
+   */
+  workerSrc?: string;
 }
 
 /**
