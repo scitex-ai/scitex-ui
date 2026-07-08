@@ -104,6 +104,14 @@ export interface PdfViewerApi {
   getCoords(clientX: number, clientY: number): PdfCoords | null;
   /** Set the active pen/overlay tool. */
   setTool(tool: PdfTool): void;
+  /** Re-render all pages at `scale` (CSS px per PDF unit); preserves scroll + marks. */
+  setScale(scale: number): Promise<void>;
+  /** Current render scale. */
+  getScale(): number;
+  /** Set the scale so the page width fills the container, then re-render. */
+  fitWidth(): Promise<void>;
+  /** Scroll the container to the given 1-based page. No-op if out of range. */
+  scrollToPage(page: number): void;
   /** Replace the controlled overlay marks (consumer owns the feed). */
   setMarks(marks: Mark[]): void;
   /** Current overlay marks (copy). */
