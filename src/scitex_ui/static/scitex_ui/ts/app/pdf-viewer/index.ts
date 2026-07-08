@@ -240,7 +240,7 @@ class PdfViewer implements PdfViewerApi {
   private bindPointer(view: PageView): void {
     view.overlay.addEventListener("pointerdown", (e) => this.onDown(view, e));
     view.overlay.addEventListener("pointermove", (e) => this.onMove(view, e));
-    view.overlay.addEventListener("pointerup", (e) => this.onUp(view, e));
+    view.overlay.addEventListener("pointerup", () => this.onUp(view));
     view.overlay.addEventListener("pointercancel", () => (this.draw = null));
   }
 
@@ -263,7 +263,7 @@ class PdfViewer implements PdfViewerApi {
     this.repaint();
   }
 
-  private onUp(view: PageView, e: PointerEvent): void {
+  private onUp(view: PageView): void {
     if (!this.draw || this.draw.view !== view) return;
     const { tool, points } = this.draw;
     this.draw = null;
