@@ -14,9 +14,19 @@
   },
   "main": "src/scitex_ui/static/scitex_ui/react/index.ts",
   "types": "src/scitex_ui/static/scitex_ui/react/index.ts",
+  "exports": {
+    ".": "./src/scitex_ui/static/scitex_ui/react/index.ts",
+    "./react": "./src/scitex_ui/static/scitex_ui/react/index.ts",
+    "./react/*": "./src/scitex_ui/static/scitex_ui/react/*",
+    "./pdf-viewer": "./src/scitex_ui/static/scitex_ui/ts/app/pdf-viewer/index.ts",
+    "./pdf-viewer/react": "./src/scitex_ui/static/scitex_ui/react/app/pdf-viewer/index.ts",
+    "./css/*": "./src/scitex_ui/static/scitex_ui/css/*",
+    "./package.json": "./package.json"
+  },
   "files": [
     "src/scitex_ui/static/scitex_ui/react/**/*.ts",
     "src/scitex_ui/static/scitex_ui/react/**/*.tsx",
+    "src/scitex_ui/static/scitex_ui/ts/app/pdf-viewer/**/*.ts",
     "src/scitex_ui/static/scitex_ui/css/**/*.css",
     "README.md",
     "LICENSE"
