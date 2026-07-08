@@ -21,12 +21,15 @@
     "./pdf-viewer": "./src/scitex_ui/static/scitex_ui/ts/app/pdf-viewer/index.ts",
     "./pdf-viewer/react": "./src/scitex_ui/static/scitex_ui/react/app/pdf-viewer/index.ts",
     "./css/*": "./src/scitex_ui/static/scitex_ui/css/*",
+    "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "files": [
     "src/scitex_ui/static/scitex_ui/react/**/*.ts",
     "src/scitex_ui/static/scitex_ui/react/**/*.tsx",
-    "src/scitex_ui/static/scitex_ui/ts/app/pdf-viewer/**/*.ts",
+    "src/scitex_ui/static/scitex_ui/ts/**/*.ts",
+    "src/scitex_ui/static/scitex_ui/ts/**/*.tsx",
+    "src/scitex_ui/static/scitex_ui/js/**/*.js",
     "src/scitex_ui/static/scitex_ui/css/**/*.css",
     "README.md",
     "LICENSE"
