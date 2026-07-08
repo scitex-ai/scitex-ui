@@ -86,7 +86,7 @@ Only needed when your app's inner resizers should push/pull shell column widths.
 
 ## 7. Packaging Requirement for Bridge Apps
 
-Apps with a `bridge` key in `_django/manifest.json` must keep `_django/frontend/src/` in their source tree. scitex-cloud discovers bridge paths by scanning sibling directories for `manifest.json` files, so the frontend TypeScript source must be present in the repo.
+Apps with a `bridge` key in `_django/manifest.json` must keep `_django/frontend/src/` in their source tree. scitex-hub discovers bridge paths by scanning sibling directories for `manifest.json` files, so the frontend TypeScript source must be present in the repo.
 
 **For pip packaging**, use an `[app]` optional extra for Python dependencies needed by the platform integration:
 
