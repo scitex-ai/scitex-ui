@@ -104,6 +104,12 @@ export interface PdfViewerApi {
   getCoords(clientX: number, clientY: number): PdfCoords | null;
   /** Set the active pen/overlay tool. */
   setTool(tool: PdfTool): void;
+  /**
+   * Toggle pen editing. `false` (Read/Review mode) disables pen input and
+   * lets scroll / text-selection through to the page; marks keep rendering.
+   * `true` (Markup mode) re-enables the pen overlay. Default is enabled.
+   */
+  setInteractive(enabled: boolean): void;
   /** Re-render all pages at `scale` (CSS px per PDF unit); preserves scroll + marks. */
   setScale(scale: number): Promise<void>;
   /** Current render scale. */

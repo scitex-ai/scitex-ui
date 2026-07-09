@@ -87,6 +87,7 @@ class PdfViewer implements PdfViewerApi {
   private draw: DrawState | null = null;
   private destroyed = false;
   private doc: PdfjsDocument | null = null;
+  private interactive = true;
 
   constructor(options: PdfViewerOptions) {
     this.container = options.container;
@@ -189,6 +190,9 @@ class PdfViewer implements PdfViewerApi {
     overlay.style.position = "absolute";
     overlay.style.inset = "0";
     overlay.style.touchAction = "none"; // let Pointer Events own gestures
+    // In non-interactive (Read/Review) mode the overlay must not capture
+    // pointer events, so scroll / text-selection reach the page beneath.
+    overlay.style.pointerEvents = this.interactive ? "auto" : "none";
 
     wrap.append(page, overlay);
     this.container.append(wrap);
@@ -251,6 +255,7 @@ class PdfViewer implements PdfViewerApi {
   }
 
   private onDown(view: PageView, e: PointerEvent): void {
+    if (!this.interactive) return;
     view.overlay.setPointerCapture(e.pointerId);
     this.draw = { view, tool: this.tool, points: [this.toPdf(view, e)] };
   }
@@ -290,6 +295,15 @@ class PdfViewer implements PdfViewerApi {
 
   setTool(tool: PdfTool): void {
     this.tool = tool;
+  }
+
+  setInteractive(enabled: boolean): void {
+    this.interactive = enabled;
+    if (!enabled) this.draw = null; // cancel any in-progress stroke
+    for (const view of this.views) {
+      view.overlay.style.pointerEvents = enabled ? "auto" : "none";
+    }
+    this.repaint(); // marks keep rendering; only the live pen preview clears
   }
 
   setMarks(marks: Mark[]): void {
