@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-07-10
+
+- **Fix (ASGI deadlock)**: `ElementInspectorMiddleware` is now a Django hybrid (async-capable) middleware. Previously it was sync-only, so under ASGI/daphne Django adapted it with `AsyncToSync` in a thread-sensitive executor. When daphne cancelled a slow request (`application_close_timeout`), the event loop — inside `executor.shutdown()` → `join()` — waited on the worker thread while that thread was blocked in `AsyncToSync` waiting on the loop: a hard deadlock that permanently wedged the daphne process so every later request, even `/healthz/`, hung forever. Declaring `async_capable`/`sync_capable` and awaiting the inner chain natively removes both the deadlock and the per-request sync↔async mode switch (which was also adding real latency). The deadlock was diagnosed with py-spy on a source/dev-install of scitex-ui on the scitex-hub staging box (which does carry `middleware.py`).
+- **Fix (inspector silently off under ASGI)**: the staff-user gate reads `request.user`, a DB-backed lazy object whose evaluation raises `SynchronousOnlyOperation` on the event loop; that was being swallowed by the "never break a page" guard, so the inspector silently failed for staff users under ASGI. The async path now resolves the gate off the loop via `sync_to_async`, keeping `element_inspector_enabled` the single source of truth for the gating precedence.
+- **Release note (0.6.0 shipped no middleware)**: `src/scitex_ui/middleware.py` landed on `develop` via PR #55 *after* 0.6.0 was cut, so the published 0.6.0 wheel contains only `context_processors.py` — every PyPI consumer (including scitex-hub production and staging) got the inspector *without* the universal middleware, so Alt+I only worked on pages that manually `{% include %}` the partial (the operator's "works in some GUI apps but not others"). 0.6.1 is therefore the first release that actually delivers the universal inspector — and it ships the deadlock-free async-capable middleware, so the release is mandatory, not cosmetic.
+
 ## [0.6.0] - 2026-06-20
 
 - **Components**: Combobox (fuzzy-typeahead select primitive) with a pre-built pure-JS bundle for Django-template consumers; dismissible alert/error banner (React); element-inspector wired shell-wide (DEBUG/staff-gated).
