@@ -1,15 +1,9 @@
 /* AUTO-GENERATED from ts/utils/element-inspector.ts via esbuild — do not edit by hand. Rebuild: npx esbuild ts/utils/element-inspector.ts --bundle --format=iife */
 (() => {
-  var __defProp = Object.defineProperty;
-  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-
-  // src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/_overlay-manager.ts
+  // ts/utils/_element-inspector/_overlay-manager.ts
   var OverlayManager = class {
-    constructor() {
-      __publicField(this, "overlayContainer", null);
-      __publicField(this, "styleElement", null);
-    }
+    overlayContainer = null;
+    styleElement = null;
     isActive() {
       return this.overlayContainer !== null;
     }
@@ -60,17 +54,17 @@
     }
   };
 
-  // src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/_LayerPickerPanel.ts
+  // ts/utils/_element-inspector/_LayerPickerPanel.ts
   var LayerPickerPanel = class {
+    panel = null;
+    elementsAtCursor = [];
+    currentDepthIndex = 0;
+    debugCollector;
+    notificationManager;
+    highlightCallback = null;
+    getDepthFn;
+    getColorFn;
     constructor(debugCollector, notificationManager, getDepthFn, getColorFn) {
-      __publicField(this, "panel", null);
-      __publicField(this, "elementsAtCursor", []);
-      __publicField(this, "currentDepthIndex", 0);
-      __publicField(this, "debugCollector");
-      __publicField(this, "notificationManager");
-      __publicField(this, "highlightCallback", null);
-      __publicField(this, "getDepthFn");
-      __publicField(this, "getColorFn");
       this.debugCollector = debugCollector;
       this.notificationManager = notificationManager;
       this.getDepthFn = getDepthFn;
@@ -193,9 +187,8 @@
           }
         });
         item.addEventListener("click", () => {
-          var _a;
           this.currentDepthIndex = index;
-          (_a = this.highlightCallback) == null ? void 0 : _a.call(this, el);
+          this.highlightCallback?.(el);
           this.updateSelection();
         });
         panel.appendChild(item);
@@ -206,7 +199,6 @@
      */
     setupKeyboardHandler(panel) {
       panel.addEventListener("keydown", async (e) => {
-        var _a, _b, _c;
         const maxIndex = this.elementsAtCursor.length - 1;
         switch (e.key) {
           case "ArrowDown":
@@ -218,8 +210,7 @@
                 this.currentDepthIndex + 1,
                 maxIndex
               );
-              (_a = this.highlightCallback) == null ? void 0 : _a.call(
-                this,
+              this.highlightCallback?.(
                 this.elementsAtCursor[this.currentDepthIndex]
               );
               this.updateSelection();
@@ -227,8 +218,7 @@
               e.preventDefault();
               e.stopPropagation();
               this.currentDepthIndex = Math.max(this.currentDepthIndex - 1, 0);
-              (_b = this.highlightCallback) == null ? void 0 : _b.call(
-                this,
+              this.highlightCallback?.(
                 this.elementsAtCursor[this.currentDepthIndex]
               );
               this.updateSelection();
@@ -238,8 +228,7 @@
             e.preventDefault();
             e.stopPropagation();
             this.currentDepthIndex = Math.max(this.currentDepthIndex - 1, 0);
-            (_c = this.highlightCallback) == null ? void 0 : _c.call(
-              this,
+            this.highlightCallback?.(
               this.elementsAtCursor[this.currentDepthIndex]
             );
             this.updateSelection();
@@ -297,7 +286,6 @@
      * Navigate to next/previous element via scroll
      */
     navigate(direction) {
-      var _a;
       if (this.elementsAtCursor.length <= 1) return;
       if (direction === "down") {
         this.currentDepthIndex = Math.min(
@@ -307,7 +295,7 @@
       } else {
         this.currentDepthIndex = Math.max(this.currentDepthIndex - 1, 0);
       }
-      (_a = this.highlightCallback) == null ? void 0 : _a.call(this, this.elementsAtCursor[this.currentDepthIndex]);
+      this.highlightCallback?.(this.elementsAtCursor[this.currentDepthIndex]);
       this.updateSelection();
     }
     /**
@@ -335,11 +323,11 @@
     }
   };
 
-  // src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/_LabelRenderer.ts
+  // ts/utils/_element-inspector/_LabelRenderer.ts
   var LabelRenderer = class {
+    debugCollector;
+    notificationManager;
     constructor(debugCollector, notificationManager) {
-      __publicField(this, "debugCollector");
-      __publicField(this, "notificationManager");
       this.debugCollector = debugCollector;
       this.notificationManager = notificationManager;
     }
@@ -492,7 +480,7 @@
     }
   };
 
-  // src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/_depth-utils.ts
+  // ts/utils/_element-inspector/_depth-utils.ts
   var DEPTH_COLORS = [
     "#3B82F6",
     // Blue (depth 0-2)
@@ -519,27 +507,31 @@
     return DEPTH_COLORS[index];
   }
 
-  // src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/_element-scanner.ts
-  var _ElementScanner = class _ElementScanner {
+  // ts/utils/_element-inspector/_element-scanner.ts
+  var ElementScanner = class _ElementScanner {
+    elementBoxMap = /* @__PURE__ */ new Map();
+    currentlyHoveredBox = null;
+    currentlyHoveredElement = null;
+    debugCollector;
+    notificationManager;
+    // Extracted managers
+    layerPicker;
+    labelRenderer;
+    // Scan all elements but only render those in viewport
+    // (viewport filter in renderBatch handles performance)
+    static BATCH_SIZE = 1e4;
+    static MIN_SIZE = 10;
+    // Skip elements smaller than 10px
+    // Pagination state
+    currentBatchStart = 0;
+    allVisibleElements = [];
+    overlayContainerRef = null;
+    // Overlapped element selection
+    lastCursorX = 0;
+    lastCursorY = 0;
+    wheelHandler = null;
+    directHighlightElement = null;
     constructor(debugCollector, notificationManager) {
-      __publicField(this, "elementBoxMap", /* @__PURE__ */ new Map());
-      __publicField(this, "currentlyHoveredBox", null);
-      __publicField(this, "currentlyHoveredElement", null);
-      __publicField(this, "debugCollector");
-      __publicField(this, "notificationManager");
-      // Extracted managers
-      __publicField(this, "layerPicker");
-      __publicField(this, "labelRenderer");
-      // Skip elements smaller than 10px
-      // Pagination state
-      __publicField(this, "currentBatchStart", 0);
-      __publicField(this, "allVisibleElements", []);
-      __publicField(this, "overlayContainerRef", null);
-      // Overlapped element selection
-      __publicField(this, "lastCursorX", 0);
-      __publicField(this, "lastCursorY", 0);
-      __publicField(this, "wheelHandler", null);
-      __publicField(this, "directHighlightElement", null);
       this.debugCollector = debugCollector;
       this.notificationManager = notificationManager;
       this.layerPicker = new LayerPickerPanel(
@@ -797,8 +789,7 @@
      */
     setupWheelHandler(_overlayContainer) {
       this.wheelHandler = (e) => {
-        var _a, _b;
-        if ((_b = (_a = e.target) == null ? void 0 : _a.closest) == null ? void 0 : _b.call(_a, ".element-inspector-layer-picker"))
+        if (e.target?.closest?.(".element-inspector-layer-picker"))
           return;
         const cursorMoved = Math.abs(e.clientX - this.lastCursorX) > 5 || Math.abs(e.clientY - this.lastCursorY) > 5;
         if (cursorMoved) {
@@ -870,16 +861,10 @@
       }
     }
   };
-  // Scan all elements but only render those in viewport
-  // (viewport filter in renderBatch handles performance)
-  __publicField(_ElementScanner, "BATCH_SIZE", 1e4);
-  __publicField(_ElementScanner, "MIN_SIZE", 10);
-  var ElementScanner = _ElementScanner;
 
-  // src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/_debug-info-collector.ts
+  // ts/utils/_element-inspector/_debug-info-collector.ts
   var DebugInfoCollector = class {
     gatherElementDebugInfo(element) {
-      var _a;
       const info = {};
       info.url = window.location.href;
       info.timestamp = (/* @__PURE__ */ new Date()).toISOString();
@@ -934,7 +919,7 @@
         };
         info.content = {
           innerHTML: element.innerHTML.substring(0, 200) + (element.innerHTML.length > 200 ? "..." : ""),
-          textContent: ((_a = element.textContent) == null ? void 0 : _a.substring(0, 200)) + (element.textContent && element.textContent.length > 200 ? "..." : "")
+          textContent: element.textContent?.substring(0, 200) + (element.textContent && element.textContent.length > 200 ? "..." : "")
         };
       }
       info.eventListeners = this.getEventListeners(element);
@@ -1053,7 +1038,6 @@
       return matchingRules;
     }
     formatDebugInfoForAI(info) {
-      var _a, _b, _c, _d, _e, _f, _g, _h;
       return `# Element Debug Information
 
 ## Page Context
@@ -1078,17 +1062,17 @@ ${info.inlineStyles}
 ` : ""}
 
 ## Dimensions & Position
-- Width: ${(_a = info.dimensions) == null ? void 0 : _a.width}px
-- Height: ${(_b = info.dimensions) == null ? void 0 : _b.height}px
-- Top: ${(_c = info.dimensions) == null ? void 0 : _c.top}px
-- Left: ${(_d = info.dimensions) == null ? void 0 : _d.left}px
+- Width: ${info.dimensions?.width}px
+- Height: ${info.dimensions?.height}px
+- Top: ${info.dimensions?.top}px
+- Left: ${info.dimensions?.left}px
 
 ## Scroll State
-- scrollTop: ${(_e = info.scroll) == null ? void 0 : _e.scrollTop}
-- scrollLeft: ${(_f = info.scroll) == null ? void 0 : _f.scrollLeft}
+- scrollTop: ${info.scroll?.scrollTop}
+- scrollLeft: ${info.scroll?.scrollLeft}
 
 ## Content (truncated)
-${((_g = info.content) == null ? void 0 : _g.textContent) || "none"}
+${info.content?.textContent || "none"}
 
 ## Event Listeners
 ${info.eventListeners.length > 0 ? info.eventListeners.join(", ") : "none detected"}
@@ -1099,7 +1083,7 @@ ${info.parentChain.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 ## Applied Stylesheets
 ${info.appliedStylesheets.slice(0, 10).map((s, i) => `${i + 1}. ${s}`).join("\n")}
 
-## Matching CSS Rules (${((_h = info.matchingCSSRules) == null ? void 0 : _h.length) || 0} rules)
+## Matching CSS Rules (${info.matchingCSSRules?.length || 0} rules)
 ${info.matchingCSSRules && info.matchingCSSRules.length > 0 ? info.matchingCSSRules.slice(0, 10).map(
         (rule, i) => `
 ### ${i + 1}. ${rule.selector}
@@ -1116,94 +1100,18 @@ Note: Exact CSS line numbers require browser DevTools API access.
     }
   };
 
-  // src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/_selection-manager.ts
+  // ts/utils/_element-inspector/_selection-manager.ts
   var SelectionManager = class {
+    selectionMode = false;
+    selectionStart = null;
+    selectionRect = null;
+    selectionOverlay = null;
+    currentlySelectedElements = /* @__PURE__ */ new Set();
+    elementBoxMap;
+    debugCollector;
+    notificationManager;
+    elementScanner = null;
     constructor(elementBoxMap, debugCollector, notificationManager) {
-      __publicField(this, "selectionMode", false);
-      __publicField(this, "selectionStart", null);
-      __publicField(this, "selectionRect", null);
-      __publicField(this, "selectionOverlay", null);
-      __publicField(this, "currentlySelectedElements", /* @__PURE__ */ new Set());
-      __publicField(this, "elementBoxMap");
-      __publicField(this, "debugCollector");
-      __publicField(this, "notificationManager");
-      __publicField(this, "elementScanner", null);
-      __publicField(this, "onSelectionMouseDown", (e) => {
-        if (!this.selectionMode) return;
-        e.preventDefault();
-        this.selectionStart = {
-          x: e.clientX,
-          y: e.clientY
-        };
-        this.selectionRect = document.createElement("div");
-        this.selectionRect.className = "selection-rectangle";
-        this.selectionRect.style.left = `${e.clientX}px`;
-        this.selectionRect.style.top = `${e.clientY}px`;
-        this.selectionRect.style.width = "0px";
-        this.selectionRect.style.height = "0px";
-        document.body.appendChild(this.selectionRect);
-      });
-      __publicField(this, "onSelectionMouseMove", (e) => {
-        if (!this.selectionMode || !this.selectionStart || !this.selectionRect) {
-          return;
-        }
-        e.preventDefault();
-        const currentX = e.clientX;
-        const currentY = e.clientY;
-        const left = Math.min(this.selectionStart.x, currentX);
-        const top = Math.min(this.selectionStart.y, currentY);
-        const width = Math.abs(currentX - this.selectionStart.x);
-        const height = Math.abs(currentY - this.selectionStart.y);
-        this.selectionRect.style.left = `${left}px`;
-        this.selectionRect.style.top = `${top}px`;
-        this.selectionRect.style.width = `${width}px`;
-        this.selectionRect.style.height = `${height}px`;
-        this.updateSelectionHighlights({ left, top, width, height });
-      });
-      __publicField(this, "onSelectionMouseUp", async (e) => {
-        if (!this.selectionMode || !this.selectionStart || !this.selectionRect)
-          return;
-        e.preventDefault();
-        const currentX = e.clientX;
-        const currentY = e.clientY;
-        const left = Math.min(this.selectionStart.x, currentX);
-        const top = Math.min(this.selectionStart.y, currentY);
-        const width = Math.abs(currentX - this.selectionStart.x);
-        const height = Math.abs(currentY - this.selectionStart.y);
-        if (width < 5 || height < 5) {
-          this.cancelSelectionMode();
-          this.notificationManager.showNotification("Selection too small", "error");
-          return;
-        }
-        const selectedElements = this.findElementsInRect({
-          left,
-          top,
-          width,
-          height
-        });
-        console.log(
-          `[ElementInspector] Found ${selectedElements.length} elements in selection`
-        );
-        const selectionInfo = this.gatherSelectionInfo(selectedElements, {
-          left,
-          top,
-          width,
-          height
-        });
-        try {
-          await navigator.clipboard.writeText(selectionInfo);
-          this.notificationManager.showNotification(
-            `\u2713 ${selectedElements.length} elements copied!`,
-            "success"
-          );
-          console.log("[ElementInspector] Selection info copied to clipboard");
-          this.notificationManager.triggerCopyCallback();
-        } catch (err) {
-          console.error("[ElementInspector] Failed to copy:", err);
-          this.notificationManager.showNotification("\u2717 Copy Failed", "error");
-        }
-        this.cancelSelectionMode();
-      });
       this.elementBoxMap = elementBoxMap;
       this.debugCollector = debugCollector;
       this.notificationManager = notificationManager;
@@ -1245,6 +1153,82 @@ Note: Exact CSS line numbers require browser DevTools API access.
       document.removeEventListener("mouseup", this.onSelectionMouseUp);
       this.selectionStart = null;
     }
+    onSelectionMouseDown = (e) => {
+      if (!this.selectionMode) return;
+      e.preventDefault();
+      this.selectionStart = {
+        x: e.clientX,
+        y: e.clientY
+      };
+      this.selectionRect = document.createElement("div");
+      this.selectionRect.className = "selection-rectangle";
+      this.selectionRect.style.left = `${e.clientX}px`;
+      this.selectionRect.style.top = `${e.clientY}px`;
+      this.selectionRect.style.width = "0px";
+      this.selectionRect.style.height = "0px";
+      document.body.appendChild(this.selectionRect);
+    };
+    onSelectionMouseMove = (e) => {
+      if (!this.selectionMode || !this.selectionStart || !this.selectionRect) {
+        return;
+      }
+      e.preventDefault();
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+      const left = Math.min(this.selectionStart.x, currentX);
+      const top = Math.min(this.selectionStart.y, currentY);
+      const width = Math.abs(currentX - this.selectionStart.x);
+      const height = Math.abs(currentY - this.selectionStart.y);
+      this.selectionRect.style.left = `${left}px`;
+      this.selectionRect.style.top = `${top}px`;
+      this.selectionRect.style.width = `${width}px`;
+      this.selectionRect.style.height = `${height}px`;
+      this.updateSelectionHighlights({ left, top, width, height });
+    };
+    onSelectionMouseUp = async (e) => {
+      if (!this.selectionMode || !this.selectionStart || !this.selectionRect)
+        return;
+      e.preventDefault();
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+      const left = Math.min(this.selectionStart.x, currentX);
+      const top = Math.min(this.selectionStart.y, currentY);
+      const width = Math.abs(currentX - this.selectionStart.x);
+      const height = Math.abs(currentY - this.selectionStart.y);
+      if (width < 5 || height < 5) {
+        this.cancelSelectionMode();
+        this.notificationManager.showNotification("Selection too small", "error");
+        return;
+      }
+      const selectedElements = this.findElementsInRect({
+        left,
+        top,
+        width,
+        height
+      });
+      console.log(
+        `[ElementInspector] Found ${selectedElements.length} elements in selection`
+      );
+      const selectionInfo = this.gatherSelectionInfo(selectedElements, {
+        left,
+        top,
+        width,
+        height
+      });
+      try {
+        await navigator.clipboard.writeText(selectionInfo);
+        this.notificationManager.showNotification(
+          `\u2713 ${selectedElements.length} elements copied!`,
+          "success"
+        );
+        console.log("[ElementInspector] Selection info copied to clipboard");
+        this.notificationManager.triggerCopyCallback();
+      } catch (err) {
+        console.error("[ElementInspector] Failed to copy:", err);
+        this.notificationManager.showNotification("\u2717 Copy Failed", "error");
+      }
+      this.cancelSelectionMode();
+    };
     updateSelectionHighlights(rect) {
       const selectedElements = this.findElementsInRect(rect);
       const newSelection = new Set(selectedElements);
@@ -1429,11 +1413,10 @@ ${"=".repeat(80)}
 
 `;
         elements.slice(maxDetailedElements).forEach((element, index) => {
-          var _a;
           const actualIndex = maxDetailedElements + index + 1;
           const selector = this.debugCollector.buildCSSSelector(element);
           const rect2 = element.getBoundingClientRect();
-          const text = (_a = element.textContent) == null ? void 0 : _a.trim().substring(0, 50);
+          const text = element.textContent?.trim().substring(0, 50);
           info += `### ${actualIndex}. ${selector}
 `;
           info += `- Position: (${Math.round(rect2.left)}, ${Math.round(rect2.top)}) | Size: ${Math.round(rect2.width)}x${Math.round(rect2.height)}px
@@ -1468,11 +1451,9 @@ Generated by Element Inspector - Rectangle Selection Mode (Enhanced)
     }
   };
 
-  // src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/_notification-manager.ts
+  // ts/utils/_element-inspector/_notification-manager.ts
   var NotificationManager = class {
-    constructor() {
-      __publicField(this, "onCopyCallback", null);
-    }
+    onCopyCallback = null;
     /**
      * Set callback to be called after successful copy
      * Used to trigger ESC/deactivate after copy
@@ -1486,8 +1467,7 @@ Generated by Element Inspector - Rectangle Selection Mode (Enhanced)
     triggerCopyCallback() {
       if (this.onCopyCallback) {
         setTimeout(() => {
-          var _a;
-          (_a = this.onCopyCallback) == null ? void 0 : _a.call(this);
+          this.onCopyCallback?.();
         }, 400);
       }
     }
@@ -1546,10 +1526,10 @@ Generated by Element Inspector - Rectangle Selection Mode (Enhanced)
     }
   };
 
-  // src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/_page-structure-exporter.ts
+  // ts/utils/_element-inspector/_page-structure-exporter.ts
   var PageStructureExporter = class {
+    notificationManager;
     constructor(notificationManager) {
-      __publicField(this, "notificationManager");
       this.notificationManager = notificationManager;
     }
     async copyPageStructure() {
@@ -1665,7 +1645,6 @@ Generated by Element Inspector - Rectangle Selection Mode (Enhanced)
       return text || void 0;
     }
     getAllStylesheets() {
-      var _a;
       const sheets = [];
       for (let i = 0; i < document.styleSheets.length; i++) {
         try {
@@ -1673,7 +1652,7 @@ Generated by Element Inspector - Rectangle Selection Mode (Enhanced)
           const sheetInfo = {
             index: i,
             href: sheet.href || "<inline>",
-            ruleCount: ((_a = sheet.cssRules) == null ? void 0 : _a.length) || 0
+            ruleCount: sheet.cssRules?.length || 0
           };
           if (sheet.cssRules && sheet.cssRules.length > 0) {
             const sampleRules = [];
@@ -1743,16 +1722,16 @@ Press Alt+I to toggle element inspector overlay.
     }
   };
 
-  // src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/_console-collector.ts
+  // ts/utils/_element-inspector/_console-collector.ts
   var ConsoleCollector = class {
+    notificationManager;
+    consoleLogs = [];
+    networkErrors = [];
+    maxLogs = 1e3;
+    isCapturing = false;
+    // Store original console methods
+    originalConsole;
     constructor(notificationManager) {
-      __publicField(this, "notificationManager");
-      __publicField(this, "consoleLogs", []);
-      __publicField(this, "networkErrors", []);
-      __publicField(this, "maxLogs", 1e3);
-      __publicField(this, "isCapturing", false);
-      // Store original console methods
-      __publicField(this, "originalConsole");
       this.notificationManager = notificationManager;
       this.originalConsole = {
         log: console.log.bind(console),
@@ -2011,16 +1990,16 @@ ${obj.stack || ""}`;
     }
   };
 
-  // src/scitex_ui/static/scitex_ui/ts/utils/element-inspector.ts
+  // ts/utils/element-inspector.ts
   var ElementInspector = class {
+    isActive = false;
+    overlayManager;
+    elementScanner;
+    debugCollector;
+    selectionManager;
+    notificationManager;
+    consoleCollector;
     constructor() {
-      __publicField(this, "isActive", false);
-      __publicField(this, "overlayManager");
-      __publicField(this, "elementScanner");
-      __publicField(this, "debugCollector");
-      __publicField(this, "selectionManager");
-      __publicField(this, "notificationManager");
-      __publicField(this, "consoleCollector");
       this.notificationManager = new NotificationManager();
       this.debugCollector = new DebugInfoCollector();
       this.overlayManager = new OverlayManager();
@@ -2069,12 +2048,17 @@ ${obj.stack || ""}`;
           return;
         }
         if (e.ctrlKey && !e.altKey && !e.shiftKey && key === "i") {
+          e.preventDefault();
           if (this.isActive) {
-            e.preventDefault();
             console.log("[ElementInspector] Ctrl+I pressed - loading next batch");
             this.elementScanner.loadNextBatch();
-            return;
+          } else {
+            console.log(
+              "[ElementInspector] Ctrl+I pressed - activating inspector"
+            );
+            this.toggle();
           }
+          return;
         }
         if (e.altKey && !e.shiftKey && !e.ctrlKey && key === "i") {
           e.preventDefault();
@@ -2094,8 +2078,8 @@ ${obj.stack || ""}`;
         }
       });
       console.log("[ElementInspector] Initialized");
-      console.log("  Alt+I: Toggle inspector overlay");
-      console.log("  Ctrl+I: Load next 512 elements (when active)");
+      console.log("  Ctrl+I / Alt+I: Toggle inspector overlay");
+      console.log("  Ctrl+I (while active): Load next 512 elements");
       console.log("  Ctrl+Alt+I: Rectangle selection mode");
       console.log("  Ctrl+Shift+I: Debug snapshot (screenshot + console logs)");
       console.log(
@@ -2145,8 +2129,7 @@ ${obj.stack || ""}`;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimeout);
     resizeTimeout = window.setTimeout(() => {
-      var _a;
-      if ((_a = window.elementInspector) == null ? void 0 : _a.isActive) {
+      if (window.elementInspector?.isActive) {
         window.elementInspector.refresh();
       }
     }, 500);
