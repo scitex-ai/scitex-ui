@@ -97,14 +97,21 @@ class ElementInspector {
         return;
       }
 
-      // Ctrl+I: Load next batch of elements (when inspector is active)
+      // Ctrl+I: Toggle the inspector open. While it is already active,
+      // Ctrl+I instead pages to the next batch of elements. (Close via
+      // Escape or Alt+I.)
       if (e.ctrlKey && !e.altKey && !e.shiftKey && key === "i") {
+        e.preventDefault();
         if (this.isActive) {
-          e.preventDefault();
           console.log("[ElementInspector] Ctrl+I pressed - loading next batch");
           this.elementScanner.loadNextBatch();
-          return;
+        } else {
+          console.log(
+            "[ElementInspector] Ctrl+I pressed - activating inspector",
+          );
+          this.toggle();
         }
+        return;
       }
 
       // Alt+I: Toggle inspector (no Ctrl, no Shift)
@@ -130,8 +137,8 @@ class ElementInspector {
     });
 
     console.log("[ElementInspector] Initialized");
-    console.log("  Alt+I: Toggle inspector overlay");
-    console.log("  Ctrl+I: Load next 512 elements (when active)");
+    console.log("  Ctrl+I / Alt+I: Toggle inspector overlay");
+    console.log("  Ctrl+I (while active): Load next 512 elements");
     console.log("  Ctrl+Alt+I: Rectangle selection mode");
     console.log("  Ctrl+Shift+I: Debug snapshot (screenshot + console logs)");
     console.log(
