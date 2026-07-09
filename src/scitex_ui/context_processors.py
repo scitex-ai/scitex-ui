@@ -11,26 +11,44 @@ Install in Django settings to expose scitex-ui flags to every template::
 from django.conf import settings
 
 
-def element_inspector(request):
-    """Expose whether the Alt+I element inspector should load.
+def element_inspector_enabled(request=None) -> bool:
+    """Return whether the element inspector should load for this request.
 
-    The inspector is a developer/QA tool, so it is gated:
+    Single source of truth for the gating, shared by the
+    :func:`element_inspector` context processor and
+    :class:`scitex_ui.middleware.ElementInspectorMiddleware`.
 
-    - Enabled when ``settings.DEBUG`` is true, or
-    - Enabled for authenticated staff users in production.
-    - ``settings.SCITEX_UI_ELEMENT_INSPECTOR`` (bool) overrides both.
+    Precedence:
 
-    Safe default: if this processor is not installed the flag is simply
-    absent (falsy) in templates, so ``_element_inspector.html`` renders
-    nothing and the inspector never loads for end users.
+    1. ``settings.SCITEX_UI_ELEMENT_INSPECTOR`` — if set (not ``None``), its
+       boolean value wins. This is the knob deployments use to turn the
+       inspector on in **develop and staging** and off in production
+       (e.g. ``SCITEX_UI_ELEMENT_INSPECTOR = SCITEX_ENV in {"development",
+       "staging"}`` in shared settings), independent of ``DEBUG``.
+    2. ``settings.DEBUG`` — on for local development.
+    3. Authenticated staff users — so it stays reachable in production for
+       operators without exposing it to end users.
+    4. Otherwise off.
     """
-    enabled = bool(getattr(settings, "DEBUG", False))
-    if not enabled:
-        user = getattr(request, "user", None)
-        enabled = bool(
-            user is not None
-            and getattr(user, "is_authenticated", False)
-            and getattr(user, "is_staff", False)
-        )
-    enabled = bool(getattr(settings, "SCITEX_UI_ELEMENT_INSPECTOR", enabled))
-    return {"stx_element_inspector_enabled": enabled}
+    override = getattr(settings, "SCITEX_UI_ELEMENT_INSPECTOR", None)
+    if override is not None:
+        return bool(override)
+    if getattr(settings, "DEBUG", False):
+        return True
+    user = getattr(request, "user", None)
+    return bool(
+        user is not None
+        and getattr(user, "is_authenticated", False)
+        and getattr(user, "is_staff", False)
+    )
+
+
+def element_inspector(request):
+    """Expose whether the Alt+I / Ctrl+I element inspector should load.
+
+    Sets ``stx_element_inspector_enabled`` for ``_element_inspector.html``.
+    Gating is delegated to :func:`element_inspector_enabled`. Safe default:
+    if this processor is not installed the flag is simply absent (falsy) in
+    templates, so nothing is loaded.
+    """
+    return {"stx_element_inspector_enabled": element_inspector_enabled(request)}
