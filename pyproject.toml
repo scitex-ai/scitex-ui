@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scitex-ui"
-version = "0.6.2"
+version = "0.6.3"
 description = "Shared frontend UI components for the SciTeX ecosystem"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -94,24 +94,31 @@ Homepage = "https://github.com/ywatanabe1989/scitex-ui"
 Repository = "https://github.com/ywatanabe1989/scitex-ui"
 Documentation = "https://scitex-ui.readthedocs.io"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/scitex_ui"]
-# Frontend source under static/ MUST ship in the wheel. hatchling honors
-# .gitignore, and the shared gitignore template's `**/*old*` rule (meant to
-# drop `.old/` trash dirs) is a *substring* match — it accidentally hits real
-# source files whose name merely contains "old", e.g. `_BinaryPlaceh(old)er.ts`.
-# git tracks the file, but hatchling silently omits it from the built wheel,
-# while an editable/source install still sees it. That skew is exactly what made
-# the hub's baked scitex-ui wheel partial and broke its boot-time Vite build
-# (missing _BinaryPlaceholder.ts). `artifacts` force-includes VCS-ignored paths,
-# so pin the frontend source extensions under static/ here — a belt that holds
-# regardless of which future filename trips a generic ignore rule.
+# Frontend source under static/ MUST ship in BOTH the sdist and the wheel.
+# hatchling honors .gitignore, and the shared gitignore template's `**/*old*`
+# rule (meant to drop `.old/` trash dirs) is a *substring* match — it
+# accidentally hits real source files whose name merely contains "old", e.g.
+# `_BinaryPlaceh(old)er.ts`. git tracks the file, but hatchling omits it from
+# built artifacts, while an editable/source install still sees it. That skew is
+# exactly what made the hub's baked scitex-ui wheel partial and broke its
+# boot-time Vite build (missing _BinaryPlaceholder.ts).
+#
+# `artifacts` MUST live at the shared [tool.hatch.build] level, NOT just the
+# wheel target: the release CI runs `python -m build`, which builds the sdist
+# first and then the wheel FROM that sdist — so a wheel-only `artifacts` was too
+# late (the file was already gone at the sdist stage; 0.6.2 shipped broken for
+# this reason). Shared artifacts force-include these paths in EVERY target
+# (sdist + wheel), holding regardless of which future filename trips an ignore.
+[tool.hatch.build]
 artifacts = [
     "src/scitex_ui/static/**/*.ts",
     "src/scitex_ui/static/**/*.tsx",
     "src/scitex_ui/static/**/*.css",
     "src/scitex_ui/static/**/*.html",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scitex_ui"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

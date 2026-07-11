@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-07-11
+
+- **Fix (0.6.2 was still broken — sdist-stage drop)**: 0.6.2 moved `artifacts` under `[tool.hatch.build.targets.wheel]`, which fixed a *direct* `pip wheel` build but NOT the release. The release CI runs `python -m build`, which builds the **sdist first and then the wheel from that sdist** — so `_BinaryPlaceholder.ts` was already dropped at the sdist stage (which had no `artifacts` config) before the wheel step could recover it, and the published 0.6.2 wheel shipped without it just like 0.6.1. Moved `artifacts` to the shared `[tool.hatch.build]` level so it force-includes the frontend sources in **every** target (sdist + wheel). Verified via `python -m build`: both the 0.6.3 sdist and the wheel-from-sdist now carry `_BinaryPlaceholder.ts` (wheel: 366 frontend files vs 365). Supersedes the broken 0.6.2.
+
 ## [0.6.2] - 2026-07-11
 
 - **Fix (wheel silently dropped a tracked frontend source)**: the built wheel omitted `src/scitex_ui/static/scitex_ui/ts/app/media-viewer/_BinaryPlaceholder.ts`. hatchling honors `.gitignore`, and the shared gitignore template's `**/*old*` rule (intended for `.old/` trash dirs) is a *substring* match that also hits any filename containing "old" — here `_BinaryPlaceh`**`old`**`er.ts`. git tracks the file, but every published wheel (0.6.1 and earlier) shipped without it, while editable/source installs still saw it. That skew is exactly what made scitex-hub's *baked* wheel partial and broke its boot-time Vite build (missing `_BinaryPlaceholder`), forcing the hub to editable-reinstall `develop` at boot as a workaround — the origin of the boot permission cascade. Fixed by pinning the frontend source extensions under `static/` into `[tool.hatch.build.targets.wheel] artifacts`, so they ship regardless of which filename a future generic ignore rule trips. Verified: the 0.6.2 wheel carries 366 frontend files (was 365) including the recovered `_BinaryPlaceholder.ts`.
