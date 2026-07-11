@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-07-11
+
+- **Fix (wheel silently dropped a tracked frontend source)**: the built wheel omitted `src/scitex_ui/static/scitex_ui/ts/app/media-viewer/_BinaryPlaceholder.ts`. hatchling honors `.gitignore`, and the shared gitignore template's `**/*old*` rule (intended for `.old/` trash dirs) is a *substring* match that also hits any filename containing "old" — here `_BinaryPlaceh`**`old`**`er.ts`. git tracks the file, but every published wheel (0.6.1 and earlier) shipped without it, while editable/source installs still saw it. That skew is exactly what made scitex-hub's *baked* wheel partial and broke its boot-time Vite build (missing `_BinaryPlaceholder`), forcing the hub to editable-reinstall `develop` at boot as a workaround — the origin of the boot permission cascade. Fixed by pinning the frontend source extensions under `static/` into `[tool.hatch.build.targets.wheel] artifacts`, so they ship regardless of which filename a future generic ignore rule trips. Verified: the 0.6.2 wheel carries 366 frontend files (was 365) including the recovered `_BinaryPlaceholder.ts`.
+
 ## [0.6.1] - 2026-07-10
 
 - **Fix (ASGI deadlock)**: `ElementInspectorMiddleware` is now a Django hybrid (async-capable) middleware. Previously it was sync-only, so under ASGI/daphne Django adapted it with `AsyncToSync` in a thread-sensitive executor. When daphne cancelled a slow request (`application_close_timeout`), the event loop — inside `executor.shutdown()` → `join()` — waited on the worker thread while that thread was blocked in `AsyncToSync` waiting on the loop: a hard deadlock that permanently wedged the daphne process so every later request, even `/healthz/`, hung forever. Declaring `async_capable`/`sync_capable` and awaiting the inner chain natively removes both the deadlock and the per-request sync↔async mode switch (which was also adding real latency). The deadlock was diagnosed with py-spy on a source/dev-install of scitex-ui on the scitex-hub staging box (which does carry `middleware.py`).

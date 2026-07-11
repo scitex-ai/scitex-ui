@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scitex-ui"
-version = "0.6.1"
+version = "0.6.2"
 description = "Shared frontend UI components for the SciTeX ecosystem"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -96,6 +96,22 @@ Documentation = "https://scitex-ui.readthedocs.io"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/scitex_ui"]
+# Frontend source under static/ MUST ship in the wheel. hatchling honors
+# .gitignore, and the shared gitignore template's `**/*old*` rule (meant to
+# drop `.old/` trash dirs) is a *substring* match — it accidentally hits real
+# source files whose name merely contains "old", e.g. `_BinaryPlaceh(old)er.ts`.
+# git tracks the file, but hatchling silently omits it from the built wheel,
+# while an editable/source install still sees it. That skew is exactly what made
+# the hub's baked scitex-ui wheel partial and broke its boot-time Vite build
+# (missing _BinaryPlaceholder.ts). `artifacts` force-includes VCS-ignored paths,
+# so pin the frontend source extensions under static/ here — a belt that holds
+# regardless of which future filename trips a generic ignore rule.
+artifacts = [
+    "src/scitex_ui/static/**/*.ts",
+    "src/scitex_ui/static/**/*.tsx",
+    "src/scitex_ui/static/**/*.css",
+    "src/scitex_ui/static/**/*.html",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
