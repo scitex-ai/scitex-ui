@@ -671,3 +671,4 @@ slurm_logs
 !docs/*.png
 !docs/sphinx/requirements.txt
 !examples/**/*.txt
+/.worktrees/
