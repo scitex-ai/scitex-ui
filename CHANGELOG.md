@@ -7,6 +7,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-07-12
+
+- **Shell**: `standalone_shell.html` gains an optional `favicon_href` context var, rendered as `<link rel="icon">` right after `<title>`. Completes the tab-branding contract alongside `app_label` — consuming GUIs (scholar, storage, writer, todo, figrecipe) set both together through one shared key instead of five bespoke `extra_css` workarounds (PR #65).
+
 ## [0.6.3] - 2026-07-11
 
 - **Fix (0.6.2 was still broken — sdist-stage drop)**: 0.6.2 moved `artifacts` under `[tool.hatch.build.targets.wheel]`, which fixed a *direct* `pip wheel` build but NOT the release. The release CI runs `python -m build`, which builds the **sdist first and then the wheel from that sdist** — so `_BinaryPlaceholder.ts` was already dropped at the sdist stage (which had no `artifacts` config) before the wheel step could recover it, and the published 0.6.2 wheel shipped without it just like 0.6.1. Moved `artifacts` to the shared `[tool.hatch.build]` level so it force-includes the frontend sources in **every** target (sdist + wheel). Verified via `python -m build`: both the 0.6.3 sdist and the wheel-from-sdist now carry `_BinaryPlaceholder.ts` (wheel: 366 frontend files vs 365). Supersedes the broken 0.6.2.
