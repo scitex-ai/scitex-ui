@@ -8,6 +8,7 @@ page.
 """
 
 import re
+from pathlib import Path
 
 import django
 from django.conf import settings
@@ -51,6 +52,18 @@ def _css(relative_path):
     from scitex_ui import get_static_dir
 
     return (get_static_dir() / relative_path).read_text()
+
+
+def _templates_dir():
+    import scitex_ui
+
+    return Path(scitex_ui.__file__).parent / "templates" / "scitex_ui"
+
+
+def _font_tokens(css):
+    """Map ``--<name>-font-family|font-size|line-height`` -> normalised value."""
+    found = re.findall(r"(--(?:base|heading|mono)-font-family)\s*:\s*([^;]+);", css)
+    return {name: " ".join(value.split()) for name, value in found}
 
 
 def _declared_accents():
@@ -167,6 +180,48 @@ def test_shared_favicon_asset_is_shipped_in_the_package():
     assert asset.is_file()
 
 
+# --- shell-free branding partial --------------------------------------------
+
+def test_branding_partial_renders_the_brand_favicon_without_the_shell():
+    # Arrange — scholar and hub own their own layout and never render the shell,
+    # so branding must be reachable without adopting the workspace.
+    context = {}
+    # Act
+    html = render_to_string("scitex_ui/_branding_head.html", context)
+    # Assert
+    assert FAVICON_STATIC_PATH in html
+
+
+def test_branding_partial_honours_an_explicit_favicon_override():
+    # Arrange
+    context = {"favicon_href": "/static/own.svg"}
+    # Act
+    html = render_to_string("scitex_ui/_branding_head.html", context)
+    # Assert
+    assert 'href="/static/own.svg"' in html
+
+
+def test_branding_partial_emits_no_layout_markup():
+    # Arrange — a consumer pastes this into its OWN <head>; anything structural
+    # would fight the layout it already has.
+    context = {}
+    # Act
+    html = render_to_string("scitex_ui/_branding_head.html", context).strip()
+    # Assert
+    assert html.startswith("<link") and html.endswith("/>")
+
+
+def test_shell_reuses_the_branding_partial_rather_than_duplicating_it():
+    # Arrange — one source for what SciTeX tab branding is.
+    shell = (
+        _templates_dir() / "standalone_shell.html"
+    ).read_text()
+    # Act
+    includes_partial = '{% include "scitex_ui/_branding_head.html" %}' in shell
+    # Assert
+    assert includes_partial
+
+
 # --- theme ------------------------------------------------------------------
 
 def test_shell_does_not_hardcode_a_resolved_theme():
@@ -197,25 +252,55 @@ def test_shell_honours_an_explicit_light_theme_default():
     assert 'data-theme-default="light"' in html
 
 
-def test_shell_loads_the_theme_boot_script_synchronously():
-    # Arrange — a defer/async here would paint the wrong theme first.
+def test_shell_inlines_the_theme_boot_rather_than_fetching_it():
+    # Arrange — an external or deferred script paints the wrong theme first, and
+    # costs a render-blocking request on every page (scitex-cards, 2026-07-18).
     context = {}
     # Act
     html = _render(context)
     # Assert
-    assert '<script src="/static/scitex_ui/js/shell/theme-boot.js"></script>' in html
+    assert 'localStorage.getItem("stx-theme")' in html
+
+
+def test_shell_head_makes_no_blocking_request_for_the_theme_boot():
+    # Arrange
+    context = {}
+    # Act
+    html = _render(context)
+    # Assert
+    assert "theme-boot.js" not in html
+
+
+def test_shell_head_makes_no_blocking_request_for_typography_tokens():
+    # Arrange — the font tokens moved into theme.css, which the shell already
+    # loads, so this stylesheet is no longer fetched separately.
+    context = {}
+    # Act
+    html = _render(context)
+    # Assert
+    assert "primitives/typography-vars.css" not in html
 
 
 # --- typography -------------------------------------------------------------
 
-def test_shell_loads_the_typography_tokens():
-    # Arrange — without these the UA default wins and body text renders in
+def test_shell_theme_css_defines_the_base_font_family():
+    # Arrange — without this token the UA default wins and body text renders in
     # Times New Roman on every standalone GUI.
-    context = {}
+    theme = _css("css/shell/theme.css")
     # Act
-    html = _render(context)
+    declares_font = "--base-font-family:" in theme
     # Assert
-    assert "scitex_ui/css/primitives/typography-vars.css" in html
+    assert declares_font
+
+
+def test_shell_font_tokens_match_the_primitives_layer():
+    # Arrange — theme.css duplicates the primitives font tokens to avoid a second
+    # blocking stylesheet. That copy must not drift, so compare the values.
+    shell = _font_tokens(_css("css/shell/theme.css"))
+    # Act
+    primitives = _font_tokens(_css("css/primitives/typography-vars.css"))
+    # Assert
+    assert shell == {k: primitives[k] for k in shell}
 
 
 # --- accent -----------------------------------------------------------------
