@@ -7,10 +7,12 @@ hardcoded dark theme, unset body font) were all only visible in the rendered
 page.
 """
 
+import functools
 import re
 from pathlib import Path
 
 import django
+import pytest
 from django.conf import settings
 
 if not settings.configured:
@@ -341,3 +343,75 @@ def test_every_referenced_accent_token_is_declared():
     undeclared = referenced - _declared_accents()
     # Assert
     assert undeclared == set()
+
+
+# --- declared pane contract -------------------------------------------------
+
+def test_shell_hides_a_pane_declared_unused():
+    # Arrange
+    context = shell_context("Storage", panes={"ai": "unused"})
+    # Act
+    html = _render(context)
+    # Assert
+    assert 'class="ws-ai-pane ws-pane-unused"' in html
+
+
+def test_shell_keeps_a_pane_declared_client_populated():
+    # Arrange — THE regression this design exists for. scitex-writer's file tree
+    # has zero server-rendered children (they do not override worktree_preseed)
+    # and fills from data-working-dir after mount, so an emptiness check would
+    # have collapsed their primary working surface on every page load.
+    context = shell_context("Writer", panes={"files": "client-populated"})
+    # Act
+    html = _render(context)
+    # Assert
+    assert "ws-pane-unused" not in html
+
+
+def test_shell_keeps_every_pane_when_nothing_is_declared():
+    # Arrange — opt-in: forgetting to declare leaves the page as it is today,
+    # which is the whole reason this is not opt-out.
+    context = shell_context("Writer")
+    # Act
+    html = _render(context)
+    # Assert
+    assert "ws-pane-unused" not in html
+
+
+def test_shell_hides_only_the_panes_declared_unused():
+    # Arrange
+    context = shell_context("Storage", panes={"ai": "unused", "files": "used"})
+    # Act
+    html = _render(context)
+    # Assert
+    assert html.count("ws-pane-unused") == 1
+
+
+def test_shell_context_rejects_an_unknown_pane_name():
+    # Arrange — a typo must fail loudly; silently leaving the pane visible is
+    # indistinguishable from never having declared it.
+    panes = {"files_tree": "unused"}
+    # Act
+    declare = functools.partial(shell_context, "Storage", panes=panes)
+    # Assert
+    with pytest.raises(ValueError, match="unknown pane"):
+        declare()
+
+
+def test_shell_context_rejects_an_unknown_pane_state():
+    # Arrange
+    panes = {"files": "hidden"}
+    # Act
+    declare = functools.partial(shell_context, "Storage", panes=panes)
+    # Assert
+    with pytest.raises(ValueError, match="unknown state"):
+        declare()
+
+
+def test_shell_context_omits_panes_when_none_are_declared():
+    # Arrange
+    tool = "Storage"
+    # Act
+    context = shell_context(tool)
+    # Assert
+    assert "panes" not in context
