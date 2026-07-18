@@ -7,6 +7,18 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-18
+
+- **Docs correction (0.8.0 shipped a false justification)**: `shell_context`'s docstring claimed an emptiness check "would have collapsed [scitex-writer's] primary working surface on every page load." That is wrong, and scitex-writer caught it while wiring their declaration. Standalone writer already hides all four shell panes itself via `body:has(.writer-app) .workspace-three-col > .ws-ai-pane` and siblings (verified at `editor.css:1785-1797`, with `.writer-app` on both `editor.html:31` and `viewer.html:30`), so nothing of theirs would have been hidden that they were not already hiding.
+
+  The design is unchanged and the reasoning is now stronger, because it no longer rests on any consumer's self-report. The load-bearing argument, which 0.8.0 missed: without a declared contract, apps reach into the shell's internals anyway. Writer's rule targets `.workspace-three-col > .ws-ai-pane` — private class names this package is free to rename, which would have broken them silently and invisibly to both sides. A declaration is an API the shell must not break; a stylesheet aimed at its DOM is not. That is verifiable from this repo and stays true whatever any consumer does.
+
+  A second claim was dropped rather than shipped, having failed the same check. The corrected text initially cited writer's *cloud* deployment as the real false-positive case, on the strength of a comment in their CSS ("Cloud deployments override this — their own shell JS populates the panes"). Writer then established they do not implement that override, and a look at scitex-cloud and scitex-hub shows both render their **own** `workspace_ai_pane.html` / `workspace_worktree_pane.html` partials rather than this shell — hub has no reference to `standalone_shell.html` at all. So this contract does not operate in cloud mode, and citing it as evidence would have been a second unverified claim replacing the first. The general point — a client-populated pane is empty at render time — stands on its own without attribution.
+
+- **Docs: adopting the shared favicon requires DELETING your workaround, not just upgrading**. 0.7.0 announced the shared mark as arriving "on upgrade." Measured at 0.7.1, it reached exactly **one of four** shell-extending GUIs: storage and figrecipe both set `favicon_href`, writer emits its own `<link rel="icon">` tags, and only cards supplied nothing and got the brand. The override is correct and unchanged — an app that wants its own mark must be able to keep it — but it means an upgrade alone changes nothing while still rendering *a* favicon, which is not the same as *the* mark, and nothing warns you. The module docstring now says so, along with two things consumers had to ask for individually: the shell emits exactly **one** `<link rel="icon">` (so setting `favicon_href` while keeping your existing tag moves the duplicate rather than removing it), and sized variants / `apple-touch-icon` belong in the app's own `extra_css` because the shell cannot express them.
+
+  No behaviour change; documentation only.
+
 ## [0.8.0] - 2026-07-18
 
 - **Declared pane contract (`shell_context(panes=...)`)**: an app states what each shell pane *is* — `{"ai": "unused", "files": "client-populated"}` — and a pane declared `unused` is hidden so the app's content reclaims the width. Fixes ~540px of dead space at 1440x900 on single-app standalone pages (scitex-hub's live audit of `/apps/storage/`: empty AI + files panes pushed content to x=539, 37% of the viewport).
