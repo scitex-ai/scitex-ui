@@ -7,6 +7,18 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-19
+
+- **Nine components were invisible to `list_components()`**. They shipped app-level CSS but were never registered, so the discovery API reported **15 of 24**. That API is how an app author answers "does scitex-ui already have a toggle-switch?" — the answer was silently NO, and the app rolled its own. The gap never surfaced as a bug; it surfaced as a duplicate implementation in someone else's repo months later.
+
+  Now registered: `alert-banner`, `collapsible-panel`, `context-menu`, `miller-columns`, `recent-pane`, `selector-nav`, `settings-card`, `sidebar-layout`, `toggle-switch`. All are generic `stx-app-*` BEM components with usage documentation in their stylesheets. Two of them — `recent-pane` and `selector-nav` — carry the header comment "Ported from scitex-cloud", so for those the harvest had already happened and only the registration never did.
+
+- **CSS-only and JS-only components are now both first-class.** The shared per-component test fixture required a component to declare *both* `ts_entry` and `css_file`, which is why `monaco-editor` (JS-only, `css_file = None`) had to be special-cased out of it with a hand-written test. Rather than add a second special case for the CSS-only nine, the fixture now checks each asset only when declared and requires at least one — the property that actually matters, since a component declaring no asset at all is a registry entry pointing at nothing.
+
+- **Guard against silent recurrence** (`tests/develop/test_component_coverage.py`): every `css/app/*.css` must be claimed by a registered component; every declared `css_file` / `ts_entry` must actually ship; every component's `name` must match its registry key and carry a description. Scoped to `css/app/` deliberately — `css/shell/` also holds non-component stylesheets (theme, mobile, workspace\*), so "every file is a component" is false there and the rule would need a growing allowlist to stay green, which is how a guard rots into a rubber stamp. Verified non-vacuous by mutation: dropping the `ToggleSwitch` registration fails with `toggle-switch.css ships but no registered component declares it`.
+
+  No behaviour change for existing consumers — the nine were already shipping their CSS; they were only undiscoverable. Minor bump because the discovery API's output changes.
+
 ## [0.8.1] - 2026-07-18
 
 - **Docs correction (0.8.0 shipped a false justification)**: `shell_context`'s docstring claimed an emptiness check "would have collapsed [scitex-writer's] primary working surface on every page load." That is wrong, and scitex-writer caught it while wiring their declaration. Standalone writer already hides all four shell panes itself via `body:has(.writer-app) .workspace-three-col > .ws-ai-pane` and siblings (verified at `editor.css:1785-1797`, with `.writer-app` on both `editor.html:31` and `viewer.html:30`), so nothing of theirs would have been hidden that they were not already hiding.
