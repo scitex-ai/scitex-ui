@@ -18,6 +18,7 @@ class SidebarLayout:
     name = "sidebar-layout"
     version = "0.1.0"
     description = "Sidebar + content layout frame with nav list styling"
+    ts_entry = None  # CSS-only component
     css_file = "scitex_ui/css/app/sidebar-layout.css"
 
 

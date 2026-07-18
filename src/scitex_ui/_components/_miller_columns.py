@@ -17,6 +17,7 @@ class MillerColumns:
     name = "miller-columns"
     version = "0.1.0"
     description = "Finder-style multi-column browser with detail column"
+    ts_entry = None  # CSS-only component
     css_file = "scitex_ui/css/app/miller-columns.css"
 
 

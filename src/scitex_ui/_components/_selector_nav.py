@@ -17,6 +17,7 @@ class SelectorNav:
     name = "selector-nav"
     version = "0.1.0"
     description = "Vertical icon+label navigation strip with footer section"
+    ts_entry = None  # CSS-only component
     css_file = "scitex_ui/css/app/selector-nav.css"
 
 

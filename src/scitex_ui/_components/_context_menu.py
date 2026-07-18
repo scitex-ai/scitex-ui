@@ -17,6 +17,7 @@ class ContextMenu:
     name = "context-menu"
     version = "0.1.0"
     description = "Right-click context menu surface with items and dividers"
+    ts_entry = None  # CSS-only component
     css_file = "scitex_ui/css/app/context-menu.css"
 
 

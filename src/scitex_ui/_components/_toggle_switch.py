@@ -17,6 +17,7 @@ class ToggleSwitch:
     name = "toggle-switch"
     version = "0.1.0"
     description = "Checkbox-backed toggle switch with small size variant"
+    ts_entry = None  # CSS-only component
     css_file = "scitex_ui/css/app/toggle-switch.css"
 
 

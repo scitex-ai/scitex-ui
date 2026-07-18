@@ -17,6 +17,7 @@ class SettingsCard:
     name = "settings-card"
     version = "0.1.0"
     description = "Settings row card with icon, description and grid container"
+    ts_entry = None  # CSS-only component
     css_file = "scitex_ui/css/app/settings-card.css"
 
 

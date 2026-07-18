@@ -18,6 +18,7 @@ class AlertBanner:
     name = "alert-banner"
     version = "0.1.0"
     description = "Dismissible top-fixed alert / error banner"
+    ts_entry = None  # CSS-only component
     css_file = "scitex_ui/css/app/alert-banner.css"
 
 

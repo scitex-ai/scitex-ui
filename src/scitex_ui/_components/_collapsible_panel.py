@@ -18,6 +18,7 @@ class CollapsiblePanel:
     name = "collapsible-panel"
     version = "0.1.0"
     description = "Collapsed-state styling for app split-panes"
+    ts_entry = None  # CSS-only component
     css_file = "scitex_ui/css/app/collapsible-panel.css"
 
 
