@@ -2,8 +2,19 @@
  * SciTeX Shell — Workspace Layout (sidebar + content)
  * =============================================================================
  * Prefix: stx-shell-
- * Requires: shell/theme.css
+ * Requires: shell/theme.css, primitives/typography-vars.css
  * ============================================================================= */
+
+/* Base document typography.
+ * The shell loads only shell/*.css, never primitives/typography.css (which is
+ * the app-level stylesheet and carries heading/margin rules the shell does not
+ * want). Without this, body font-family is unset and the UA default wins —
+ * Times New Roman on every standalone GUI. Vars come from typography-vars.css. */
+body {
+  font-family: var(--base-font-family);
+  font-size: var(--base-font-size, 14px);
+  line-height: var(--base-line-height, 1.6);
+}
 
 .stx-shell-layout {
   display: flex;

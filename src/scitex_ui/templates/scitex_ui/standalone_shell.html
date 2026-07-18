@@ -1,16 +1,27 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme-default="{{ shell_theme_default|default:'dark' }}">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- Title convention: "SciTeX <Tool>" (SciTeX Writer, SciTeX Scholar, ...).
+             scitex_ui.branding.shell_context() builds app_label in that form. -->
         <title>{{ app_label|default:"SciTeX App" }}</title>
-        <!-- favicon_href: optional context var (data: URI or static path). Consuming
-             apps (scholar, storage, writer, todo, figrecipe, ...) set app_label +
-             favicon_href together to brand the tab; omit favicon_href for none. -->
-        {% if favicon_href %}<link rel="icon" href="{{ favicon_href }}">{% endif %}
+        <!-- favicon_href: optional context var (data: URI or static path) for an app
+             that wants its own mark. Omitted -> every SciTeX GUI gets the shared
+             brand favicon, so tab branding is consistent by default rather than
+             per-app opt-in. -->
+        <link rel="icon"
+              href="{% if favicon_href %}{{ favicon_href }}{% else %}{% static 'scitex_ui/img/scitex-favicon.svg' %}{% endif %}" />
+        <!-- Must stay synchronous and above the stylesheets: it resolves the stored
+             theme preference before first paint. See js/shell/theme-boot.js. -->
+        <script src="{% static 'scitex_ui/js/shell/theme-boot.js' %}"></script>
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+        <!-- Design tokens the shell CSS depends on (font stacks/sizes). Without this
+             the UA default wins and body text renders in Times New Roman. -->
+        <link rel="stylesheet"
+              href="{% static 'scitex_ui/css/primitives/typography-vars.css' %}" />
         <!-- scitex-ui workspace shell CSS (canonical source) -->
         <link rel="stylesheet" href="{% static 'scitex_ui/css/shell/theme.css' %}" />
         <link rel="stylesheet"
@@ -41,7 +52,10 @@
               href="{% static 'scitex_ui/css/shell/media-viewer.css' %}" />
         {% block extra_css %}{% endblock %}
     </head>
-    <body class="dark-theme workspace-page footer-collapsed no-transition">
+    <!-- No hardcoded theme class here: theme-boot.js applies the RESOLVED theme
+         (data-theme + .dark-theme/.light-theme) to <html> pre-paint and mirrors
+         the class onto <body> for consumer CSS that still selects body.dark-theme. -->
+    <body class="workspace-page footer-collapsed no-transition">
         <!--
           Standalone shell: vanilla TS layout matching scitex-cloud's global_base.html.
           Structure: Console/Chat | Files | Viewer | App Content
@@ -430,7 +444,11 @@
                 </div>
             </div>
             <!-- ── App Content (React or other app mounts here) ── -->
-            <main id="main-content" class="ws-module-pane">
+            <!-- app_accent drives the shell's accent line; the value needs a
+                 matching selector row in css/shell/stx-shell-sidebar.css. -->
+            <main id="main-content"
+                  class="ws-module-pane"
+                  {% if app_accent %}data-app-accent="{{ app_accent }}"{% endif %}>
                 {% block app_content %}
                     <div id="root"
                          data-working-dir="{{ working_dir|default:'' }}"
