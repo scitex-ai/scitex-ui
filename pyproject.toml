@@ -115,6 +115,11 @@ artifacts = [
     "src/scitex_ui/static/**/*.tsx",
     "src/scitex_ui/static/**/*.css",
     "src/scitex_ui/static/**/*.html",
+    "src/scitex_ui/static/**/*.js",
+    # Brand/UI artwork. The shared gitignore's blanket `**/*.svg` rule targets
+    # generated figures but also matches packaged assets — the shipped favicon
+    # was silently dropped from the 0.7.0 wheel until this line was added.
+    "src/scitex_ui/static/**/*.svg",
 ]
 
 [tool.hatch.build.targets.wheel]
