@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Shared SciTeX GUI branding: tab title convention + brand favicon.
 
-Every SciTeX tool GUI renders through ``scitex_ui/standalone_shell.html``.
 Before this module each tool hand-rolled its own tab branding, so the fleet
 drifted: some tabs showed the generic browser globe, and titles read
 "FigRecipe Editor" / "SciTeX Writer" / "default-project — SciTeX".
@@ -11,10 +10,8 @@ The convention is:
 * **Title** — ``"SciTeX <Tool>"`` (SciTeX Writer, SciTeX Scholar, SciTeX
   FigRecipe, SciTeX Todo). :func:`shell_title` normalises a tool name into
   that form and is idempotent, so passing ``"SciTeX Writer"`` is also fine.
-* **Favicon** — the shared brand mark shipped at
-  ``scitex_ui/img/scitex-favicon.svg``. The shell falls back to it whenever a
-  view supplies no ``favicon_href``, so a tool gets correct branding by doing
-  nothing. Pass ``favicon_href`` only to deliberately override it.
+* **Favicon** — the shared brand mark at ``scitex_ui/img/scitex-favicon.svg``,
+  rendered whenever a view supplies no ``favicon_href``.
 
 Usage in a view::
 
@@ -26,8 +23,25 @@ Usage in a view::
             ...,
         })
 
-which yields ``app_label="SciTeX Storage"`` and, for apps that want it, the
-``data-app-accent`` value for the shell's accent line.
+**Adopting the shared mark means DELETING your workaround, not just
+upgrading.** An existing ``favicon_href`` — or your own ``<link rel="icon">``
+in ``extra_css`` — wins, deliberately: an app that wants its own mark must be
+able to keep it. But that means upgrading alone changes nothing, and the tab
+still shows the old icon. It renders *a* favicon, which is not the same as
+rendering *the* mark, and nothing warns you. At 0.7.1 three of the four
+shell-extending GUIs were in exactly that state. To adopt: remove the
+``favicon_href`` key from your context, or delete the local link tag.
+
+**The shell emits exactly ONE ``<link rel="icon">``.** Setting ``favicon_href``
+while keeping your existing tag moves the duplicate rather than removing it.
+Sized variants (``rel="icon" sizes="32x32"``) and ``apple-touch-icon`` cannot be
+expressed here and belong in your own ``extra_css`` — the shell owns the single
+primary icon, the app owns the rest.
+
+**Not every GUI renders this shell.** These helpers assume
+``standalone_shell.html``; a GUI that owns its own layout can still get the
+mark via ``{% include "scitex_ui/_branding_head.html" %}`` in its own
+``<head>``, with no shell adoption and no layout migration.
 """
 
 from __future__ import annotations
