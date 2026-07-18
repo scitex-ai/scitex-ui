@@ -92,19 +92,18 @@ def shell_context(
         Keys from :data:`PANE_NAMES`, values from :data:`PANE_STATES`. Omitted
         panes are left visible.
 
-    **Why panes are declared rather than detected.** Two reasons, the second
-    stronger than the first.
+    **Why panes are declared rather than detected.** Two reasons.
 
-    1. "Collapse a pane with no content" measures the wrong thing: a pane filled
-       by JS after mount has no content at render time either. scitex-writer's
-       cloud deployment is exactly that — its shell JS populates the panes post
-       mount — so an emptiness check would false-positive there. Emptiness at
-       render time is uncorrelated with whether a pane matters.
-    2. Without a contract, apps reach into the shell's internals instead.
-       scitex-writer hid these panes with a stylesheet targeting
+    1. Apps were reaching into the shell's internals instead. scitex-writer hid
+       these panes with a stylesheet targeting
        ``.workspace-three-col > .ws-ai-pane`` and siblings — private class names
-       this package is free to rename, which would have broken them silently.
-       A declaration is an API the shell is obliged not to break.
+       this package is free to rename, which would have broken them silently
+       and invisibly to both sides. A declaration is an API the shell is
+       obliged not to break; a stylesheet aimed at its DOM is not.
+    2. "Collapse a pane with no content" would measure the wrong thing anyway.
+       A pane filled by JS after mount has no content at render time either, so
+       emptiness is uncorrelated with whether the pane matters. This is a
+       property of client-side rendering, not a claim about any one app.
 
     Only the app knows which of its panes it uses, so the app says.
 
