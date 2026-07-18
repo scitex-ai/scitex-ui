@@ -7,6 +7,7 @@ hardcoded dark theme, unset body font) were all only visible in the rendered
 page.
 """
 
+import functools
 import re
 from pathlib import Path
 
@@ -390,17 +391,21 @@ def test_shell_context_rejects_an_unknown_pane_name():
     # Arrange — a typo must fail loudly; silently leaving the pane visible is
     # indistinguishable from never having declared it.
     panes = {"files_tree": "unused"}
-    # Act / Assert
+    # Act
+    declare = functools.partial(shell_context, "Storage", panes=panes)
+    # Assert
     with pytest.raises(ValueError, match="unknown pane"):
-        shell_context("Storage", panes=panes)
+        declare()
 
 
 def test_shell_context_rejects_an_unknown_pane_state():
     # Arrange
     panes = {"files": "hidden"}
-    # Act / Assert
+    # Act
+    declare = functools.partial(shell_context, "Storage", panes=panes)
+    # Assert
     with pytest.raises(ValueError, match="unknown state"):
-        shell_context("Storage", panes=panes)
+        declare()
 
 
 def test_shell_context_omits_panes_when_none_are_declared():
