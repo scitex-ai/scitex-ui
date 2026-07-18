@@ -7,6 +7,14 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-18
+
+- **Docs correction (0.8.0 shipped a false justification)**: `shell_context`'s docstring claimed an emptiness check "would have collapsed [scitex-writer's] primary working surface on every page load." That is wrong, and scitex-writer caught it while wiring their declaration. Standalone writer already hides all four shell panes itself via `body:has(.writer-app) .workspace-three-col > .ws-ai-pane` and siblings (verified at `editor.css:1785-1797`, with `.writer-app` on both `editor.html:31` and `viewer.html:30`), so nothing of theirs would have been hidden that they were not already hiding.
+
+  The design is unchanged and the reasoning is now stronger, not weaker. The real false-positive case is writer's **cloud** deployment, where their own shell JS populates the panes after mount — their CSS comment says so explicitly. And the better argument, which 0.8.0 missed: without a declared contract, apps reach into the shell's internals anyway. Writer's rule targets `.workspace-three-col > .ws-ai-pane` — private class names this package is free to rename, which would have broken them silently. A declaration is an API the shell is obliged not to break; a stylesheet targeting internals is not.
+
+  No behaviour change; documentation only.
+
 ## [0.8.0] - 2026-07-18
 
 - **Declared pane contract (`shell_context(panes=...)`)**: an app states what each shell pane *is* — `{"ai": "unused", "files": "client-populated"}` — and a pane declared `unused` is hidden so the app's content reclaims the width. Fixes ~540px of dead space at 1440x900 on single-app standalone pages (scitex-hub's live audit of `/apps/storage/`: empty AI + files panes pushed content to x=539, 37% of the viewport).
