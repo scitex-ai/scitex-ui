@@ -97,8 +97,15 @@
   --app-accent-example-tint: rgba(138, 96, 48, 0.07);
   --app-accent-notebook: #4a7a3a;
   --app-accent-notebook-tint: rgba(74, 122, 58, 0.07);
-  --app-accent-apps: #7a5a6a;
-  --app-accent-apps-tint: rgba(122, 90, 106, 0.07);
+  /* `apps` and `cards` have no tokens of their own: their selector rows are
+     aliases pointing at --app-accent-store / --app-accent-todo. A duplicate
+     token here would be dead weight (tests assert every token is referenced). */
+  --app-accent-storage: #4a7a8a;
+  --app-accent-storage-tint: rgba(74, 122, 138, 0.07);
+  --app-accent-todo: #8a5a4a;
+  --app-accent-todo-tint: rgba(138, 90, 74, 0.07);
+  --app-accent-comms: #5a6a9a;
+  --app-accent-comms-tint: rgba(90, 106, 154, 0.07);
 
   /* --- Custom App Accent (user/creator override) --- */
   --stx-app-accent: var(--app-accent-color);
@@ -175,8 +182,13 @@
   --app-accent-example-tint: rgba(192, 136, 80, 0.08);
   --app-accent-notebook: #7a9a6a;
   --app-accent-notebook-tint: rgba(122, 154, 106, 0.08);
-  --app-accent-apps: #b88a9a;
-  --app-accent-apps-tint: rgba(184, 138, 154, 0.08);
+  /* No `apps` / `cards` tokens — see the light block above. */
+  --app-accent-storage: #7ab0c0;
+  --app-accent-storage-tint: rgba(122, 176, 192, 0.08);
+  --app-accent-todo: #c08a78;
+  --app-accent-todo-tint: rgba(192, 138, 120, 0.08);
+  --app-accent-comms: #8a9ad0;
+  --app-accent-comms-tint: rgba(138, 154, 208, 0.08);
 }
 
 /* --- Custom Accent Override ---

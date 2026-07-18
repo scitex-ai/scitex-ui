@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+"""Tests for the shared GUI branding convention and how the shell renders it.
+
+The shell assertions render the real ``standalone_shell.html`` rather than
+grepping it, because the defects these guard against (missing favicon,
+hardcoded dark theme, unset body font) were all only visible in the rendered
+page.
+"""
+
+import re
+
+import django
+from django.conf import settings
+
+if not settings.configured:
+    settings.configure(
+        DEBUG=False,
+        STATIC_URL="/static/",
+        DATABASES={},
+        INSTALLED_APPS=["django.contrib.staticfiles", "scitex_ui"],
+        TEMPLATES=[
+            {
+                "BACKEND": "django.template.backends.django.DjangoTemplates",
+                "APP_DIRS": True,
+                "DIRS": [],
+            }
+        ],
+        DEFAULT_CHARSET="utf-8",
+    )
+    django.setup()
+
+from django.template.loader import render_to_string  # noqa: E402
+
+from scitex_ui.branding import (  # noqa: E402
+    FAVICON_STATIC_PATH,
+    shell_context,
+    shell_title,
+)
+
+_SHELL = "scitex_ui/standalone_shell.html"
+
+# Accent names the shell reserves for its own state rather than for an app.
+_RESERVED_ACCENTS = {"color", "tint"}
+
+
+def _render(context=None):
+    return render_to_string(_SHELL, context or {})
+
+
+def _css(relative_path):
+    from scitex_ui import get_static_dir
+
+    return (get_static_dir() / relative_path).read_text()
+
+
+def _declared_accents():
+    """Accent names declared as ``--app-accent-<name>`` tokens in theme.css."""
+    names = set(
+        re.findall(r"--app-accent-([a-z0-9-]+)\s*:", _css("css/shell/theme.css"))
+    )
+    return {n for n in names if not n.endswith("-tint")} - _RESERVED_ACCENTS
+
+
+def _referenced_accents():
+    """Accent tokens the sidebar's mapping rows actually reference.
+
+    Keyed on ``var(--app-accent-<name>)`` rather than on the selector name,
+    because alias rows are legitimate: ``[data-app-accent="vis"]`` groups with
+    ``"visualizer"`` and points at the *visualizer* token, so it neither needs
+    nor has a token of its own.
+    """
+    names = set(
+        re.findall(
+            r"var\(--app-accent-([a-z0-9-]+)\)",
+            _css("css/shell/stx-shell-sidebar.css"),
+        )
+    )
+    stripped = {n[: -len("-tint")] if n.endswith("-tint") else n for n in names}
+    return stripped - _RESERVED_ACCENTS
+
+
+# --- title convention -------------------------------------------------------
+
+def test_shell_title_adds_the_brand_prefix():
+    # Arrange
+    tool = "Writer"
+    # Act
+    title = shell_title(tool)
+    # Assert
+    assert title == "SciTeX Writer"
+
+
+def test_shell_title_is_idempotent_for_an_already_branded_name():
+    # Arrange
+    tool = "SciTeX Writer"
+    # Act
+    title = shell_title(tool)
+    # Assert
+    assert title == "SciTeX Writer"
+
+
+def test_shell_title_degrades_to_the_bare_brand_for_a_blank_name():
+    # Arrange
+    tool = "   "
+    # Act
+    title = shell_title(tool)
+    # Assert
+    assert title == "SciTeX"
+
+
+def test_shell_context_exposes_the_branded_title_as_app_label():
+    # Arrange
+    tool = "Storage"
+    # Act
+    context = shell_context(tool)
+    # Assert
+    assert context["app_label"] == "SciTeX Storage"
+
+
+def test_shell_context_omits_favicon_href_when_not_overridden():
+    # Arrange — absent (not None), so it cannot shadow a value merged in
+    # earlier and the shell falls through to the shared brand mark.
+    tool = "Storage"
+    # Act
+    context = shell_context(tool)
+    # Assert
+    assert "favicon_href" not in context
+
+
+def test_shell_context_keeps_an_explicit_favicon_override():
+    # Arrange
+    own = "/static/own.svg"
+    # Act
+    context = shell_context("Storage", favicon_href=own)
+    # Assert
+    assert context["favicon_href"] == own
+
+
+# --- favicon ----------------------------------------------------------------
+
+def test_shell_falls_back_to_the_shared_brand_favicon():
+    # Arrange
+    context = {"app_label": "SciTeX Storage"}
+    # Act
+    html = _render(context)
+    # Assert
+    assert FAVICON_STATIC_PATH in html
+
+
+def test_shell_uses_favicon_href_when_the_app_overrides_it():
+    # Arrange
+    context = {"favicon_href": "/static/own.svg"}
+    # Act
+    html = _render(context)
+    # Assert
+    assert 'href="/static/own.svg"' in html
+
+
+def test_shared_favicon_asset_is_shipped_in_the_package():
+    # Arrange — get_static_dir() is the staticfiles root's scitex_ui/ dir, so
+    # the namespaced FAVICON_STATIC_PATH is relative to its parent.
+    from scitex_ui import get_static_dir
+
+    # Act
+    asset = get_static_dir().parent / FAVICON_STATIC_PATH
+    # Assert
+    assert asset.is_file()
+
+
+# --- theme ------------------------------------------------------------------
+
+def test_shell_does_not_hardcode_a_resolved_theme():
+    # Arrange — regression: <html data-theme="dark"> overrode a stored light
+    # preference on every standalone GUI.
+    context = {}
+    # Act
+    html = _render(context)
+    # Assert
+    assert 'data-theme="dark"' not in html
+
+
+def test_shell_defaults_the_theme_to_dark_for_the_boot_script():
+    # Arrange
+    context = {}
+    # Act
+    html = _render(context)
+    # Assert
+    assert 'data-theme-default="dark"' in html
+
+
+def test_shell_honours_an_explicit_light_theme_default():
+    # Arrange
+    context = shell_context("Storage", theme_default="light")
+    # Act
+    html = _render(context)
+    # Assert
+    assert 'data-theme-default="light"' in html
+
+
+def test_shell_loads_the_theme_boot_script_synchronously():
+    # Arrange — a defer/async here would paint the wrong theme first.
+    context = {}
+    # Act
+    html = _render(context)
+    # Assert
+    assert '<script src="/static/scitex_ui/js/shell/theme-boot.js"></script>' in html
+
+
+# --- typography -------------------------------------------------------------
+
+def test_shell_loads_the_typography_tokens():
+    # Arrange — without these the UA default wins and body text renders in
+    # Times New Roman on every standalone GUI.
+    context = {}
+    # Act
+    html = _render(context)
+    # Assert
+    assert "scitex_ui/css/primitives/typography-vars.css" in html
+
+
+# --- accent -----------------------------------------------------------------
+
+def test_shell_sets_the_app_accent_when_one_is_given():
+    # Arrange
+    context = shell_context("Storage", accent="storage")
+    # Act
+    html = _render(context)
+    # Assert
+    assert 'data-app-accent="storage"' in html
+
+
+def test_shell_omits_the_app_accent_attribute_when_none_is_given():
+    # Arrange
+    context = {}
+    # Act
+    html = _render(context)
+    # Assert
+    assert "data-app-accent" not in html
+
+
+def test_every_accent_token_is_referenced_by_a_mapping_row():
+    # Arrange — a token no row references is dead: apps set the attribute and
+    # nothing lights up. `notebook` sat in that state until 0.7.0.
+    declared = _declared_accents()
+    # Act
+    unreferenced = declared - _referenced_accents()
+    # Assert
+    assert unreferenced == set()
+
+
+def test_every_referenced_accent_token_is_declared():
+    # Arrange — the mirror failure: a row pointing at a var that was never
+    # declared resolves to nothing, so the accent line silently disappears.
+    referenced = _referenced_accents()
+    # Act
+    undeclared = referenced - _declared_accents()
+    # Assert
+    assert undeclared == set()
