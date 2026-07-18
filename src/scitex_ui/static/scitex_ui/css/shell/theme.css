@@ -7,6 +7,22 @@
 
 :root,
 [data-theme="light"] {
+  /* --- Typography ---
+   * Mirrors primitives/typography-vars.css. Duplicated deliberately: the shell
+   * loads only shell/*.css, and 0.7.0 pulled in a second stylesheet just for
+   * these three tokens — a render-blocking request on every page for ~600B.
+   * A test asserts these stay identical to the primitives layer, so the copy
+   * fails CI if the two drift rather than diverging silently. */
+  --base-font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --heading-font-family: var(--base-font-family);
+  --mono-font-family:
+    ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, Monaco,
+    "Andale Mono", monospace;
+  --base-font-size: 14px;
+  --base-line-height: 1.6;
+
   /* --- Text --- */
   --text-primary: #333333;
   --text-secondary: #4a4a4a;
@@ -102,8 +118,11 @@
      token here would be dead weight (tests assert every token is referenced). */
   --app-accent-storage: #4a7a8a;
   --app-accent-storage-tint: rgba(74, 122, 138, 0.07);
-  --app-accent-todo: #8a5a4a;
-  --app-accent-todo-tint: rgba(138, 90, 74, 0.07);
+  /* todo/cards: scitex-cards' own board values (2026-07-18), not a colour
+     picked here — the board already renders this amber, so mapping to it keeps
+     continuity for the operator instead of shifting a familiar UI. */
+  --app-accent-todo: #d99700;
+  --app-accent-todo-tint: #fff7e6;
   --app-accent-comms: #5a6a9a;
   --app-accent-comms-tint: rgba(90, 106, 154, 0.07);
 
@@ -185,8 +204,10 @@
   /* No `apps` / `cards` tokens — see the light block above. */
   --app-accent-storage: #7ab0c0;
   --app-accent-storage-tint: rgba(122, 176, 192, 0.08);
-  --app-accent-todo: #c08a78;
-  --app-accent-todo-tint: rgba(192, 138, 120, 0.08);
+  /* todo/cards dark: cards' amber (#d99700) lightened for dark surfaces; their
+     #fff7e6 soft is a light-mode wash, so the tint is an alpha of the accent. */
+  --app-accent-todo: #e8ad2e;
+  --app-accent-todo-tint: rgba(232, 173, 46, 0.08);
   --app-accent-comms: #8a9ad0;
   --app-accent-comms-tint: rgba(138, 154, 208, 0.08);
 }

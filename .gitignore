@@ -678,3 +678,7 @@ slurm_logs
 # missing (same class as the **/*old* rule that broke 0.6.1/0.6.2).
 !src/scitex_ui/static/scitex_ui/img/**
 /.worktrees/
+# Agent/session runtime logs land here in a working checkout. Untracked but not
+# ignored meant PS-102 flagged the repo as dirty and a stray `git add -A` could
+# have committed a session log. Runtime artifact — regenerable, never shipped.
+/logs/

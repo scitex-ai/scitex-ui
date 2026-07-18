@@ -7,22 +7,17 @@
         <!-- Title convention: "SciTeX <Tool>" (SciTeX Writer, SciTeX Scholar, ...).
              scitex_ui.branding.shell_context() builds app_label in that form. -->
         <title>{{ app_label|default:"SciTeX App" }}</title>
-        <!-- favicon_href: optional context var (data: URI or static path) for an app
-             that wants its own mark. Omitted -> every SciTeX GUI gets the shared
-             brand favicon, so tab branding is consistent by default rather than
-             per-app opt-in. -->
-        <link rel="icon"
-              href="{% if favicon_href %}{{ favicon_href }}{% else %}{% static 'scitex_ui/img/scitex-favicon.svg' %}{% endif %}" />
-        <!-- Must stay synchronous and above the stylesheets: it resolves the stored
-             theme preference before first paint. See js/shell/theme-boot.js. -->
-        <script src="{% static 'scitex_ui/js/shell/theme-boot.js' %}"></script>
+        <!-- Tab branding. Shared with GUIs that do NOT extend this shell, so the
+             favicon markup lives in one partial rather than only here. -->
+        {% include "scitex_ui/_branding_head.html" %}
+        <!-- Must stay above the stylesheets: resolves the stored theme before the
+             first paint. Inline by design — an external script would cost a
+             render-blocking request on every page. -->
+        {% include "scitex_ui/_theme_boot.html" %}
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-        <!-- Design tokens the shell CSS depends on (font stacks/sizes). Without this
-             the UA default wins and body text renders in Times New Roman. -->
-        <link rel="stylesheet"
-              href="{% static 'scitex_ui/css/primitives/typography-vars.css' %}" />
-        <!-- scitex-ui workspace shell CSS (canonical source) -->
+        <!-- scitex-ui workspace shell CSS (canonical source).
+             theme.css carries the font tokens the base body typography needs. -->
         <link rel="stylesheet" href="{% static 'scitex_ui/css/shell/theme.css' %}" />
         <link rel="stylesheet"
               href="{% static 'scitex_ui/css/shell/app-shell.css' %}" />
@@ -52,9 +47,10 @@
               href="{% static 'scitex_ui/css/shell/media-viewer.css' %}" />
         {% block extra_css %}{% endblock %}
     </head>
-    <!-- No hardcoded theme class here: theme-boot.js applies the RESOLVED theme
-         (data-theme + .dark-theme/.light-theme) to <html> pre-paint and mirrors
-         the class onto <body> for consumer CSS that still selects body.dark-theme. -->
+    <!-- No hardcoded theme class here: the theme boot partial applies the RESOLVED
+         theme (data-theme + .dark-theme/.light-theme) to <html> pre-paint and
+         mirrors the class onto <body> for consumer CSS that selects
+         body.dark-theme. -->
     <body class="workspace-page footer-collapsed no-transition">
         <!--
           Standalone shell: vanilla TS layout matching scitex-cloud's global_base.html.
