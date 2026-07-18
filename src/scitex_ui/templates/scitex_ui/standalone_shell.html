@@ -60,7 +60,11 @@
         -->
         <div id="workspace-three-col" class="workspace-three-col">
             <!-- ── Console/Chat Pane ──────────────────── -->
-            <div class="ws-ai-pane" id="ws-ai-pane">
+            <!-- panes.ai == "unused" hides this. DECLARED by the app, never
+                 inferred from emptiness: a pane populated after mount is empty
+                 here too, so guessing would hide a working surface. -->
+            <div class="ws-ai-pane{% if panes.ai == 'unused' %} ws-pane-unused{% endif %}"
+                 id="ws-ai-pane">
                 <div id="stx-shell-ai-panel"
                      class="stx-shell-sidebar stx-shell-ai-panel"
                      aria-hidden="false">
@@ -307,7 +311,11 @@
                 </div>
             </div>
             <!-- ── File Tree Pane ─────────────────────── -->
-            <div class="ws-worktree-pane" id="ws-worktree-pane">
+            <!-- panes.files == "unused" hides this. scitex-writer declares
+                 "client-populated" here: their tree has no server-rendered
+                 children and is filled from data-working-dir after mount. -->
+            <div class="ws-worktree-pane{% if panes.files == 'unused' %} ws-pane-unused{% endif %}"
+                 id="ws-worktree-pane">
                 <div class="stx-shell-sidebar" id="ws-worktree-sidebar">
                     <div id="ws-worktree-resizer"
                          class="panel-resizer stx-shell-resizer-right"
@@ -387,7 +395,9 @@
                 </div>
             </div>
             <!-- ── Viewer Pane ────────────────────────── -->
-            <div class="ws-viewer-pane" id="ws-viewer-pane">
+            <!-- panes.viewer == "unused" hides this. -->
+            <div class="ws-viewer-pane{% if panes.viewer == 'unused' %} ws-pane-unused{% endif %}"
+                 id="ws-viewer-pane">
                 <div class="stx-shell-sidebar collapsed"
                      id="ws-viewer-sidebar"
                      data-ai-hint="General Editor Pane: shared file viewer across all modules (Writer, Scholar, Console, etc.). Supports text (.py .js .ts .html .css .json .md .yaml .sh .tex .bib .txt), images (.png .jpg .gif .webp .svg), PDF (.pdf), tables (.csv .tsv), diagrams (.mmd .mermaid), audio (.mp3 .wav .ogg .flac), video (.mp4 .webm .avi .mov). Open files via ui_action(steps=[{action:'open-file', path:'relative/path'}]). The currently open file path is tracked in data-ai-viewer-active on this element."

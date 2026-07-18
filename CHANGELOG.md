@@ -7,6 +7,18 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-18
+
+- **Declared pane contract (`shell_context(panes=...)`)**: an app states what each shell pane *is* — `{"ai": "unused", "files": "client-populated"}` — and a pane declared `unused` is hidden so the app's content reclaims the width. Fixes ~540px of dead space at 1440x900 on single-app standalone pages (scitex-hub's live audit of `/apps/storage/`: empty AI + files panes pushed content to x=539, 37% of the viewport).
+
+  The obvious design — collapse a pane with no content — is wrong, and was rejected on evidence rather than taste. scitex-writer's file tree has **zero** server-rendered children (their templates never override `worktree_preseed`, empty by default) and fills from `data-working-dir` after mount. An emptiness check would have collapsed their primary working surface on *every* page load: a 100% false-positive rate, not an edge case. Emptiness at render time is uncorrelated with whether a pane matters — storage's panes are genuinely unused, writer's are genuinely used and merely late, and no inspection distinguishes those. So the app declares and the shell never guesses.
+
+  Opt-in, chosen for the failure mode: forgetting to declare leaves the page exactly as it is today, whereas an opt-out default that guessed wrong would hide a working pane. When one direction's failure is invisible and the other's is destructive, take the invisible one.
+
+  Unknown pane names or states raise `ValueError` — a typo that silently left a pane visible would look identical to never having declared it. Hidden via `display: none` rather than `width: 0`, because a zero-width pane keeps its resizer draggable and a user could drag open a pane the app declared it does not use.
+
+  Design proposed by scitex-writer, agreed by scitex-storage.
+
 ## [0.7.1] - 2026-07-18
 
 Consumer feedback on 0.7.0, same day. Two of these correct mistakes in 0.7.0 rather than adding scope.
