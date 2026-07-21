@@ -72,6 +72,8 @@ docs = [
 all = [
     "scitex-ui[cli]",
     "scitex-ui[mcp]",
+    "scitex-ui[dev]",
+    "scitex-ui[docs]",
 ]
 
 [project.entry-points."scitex_dev.docs"]
