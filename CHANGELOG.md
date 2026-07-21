@@ -7,6 +7,14 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-21
+
+- **New component: `badge`** (`.stx-app-badge`) — a standalone tonal pill for short status/type labels. figrecipe, scitex-writer and scitex-cards had each rolled their own (`.badge` / `.badge` / `.activity-badge`) with convergent declarations: small inline pill, 600 weight, tonal background. Base already had eight badge selectors, but every one welded to a host component (`.stx-app-recent-pane__badge`, `.stx-app-sidebar-nav__badge`, …) — badges, but no badge an app could reuse. Neutral by default; `--info` / `--success` / `--warning` / `--error` map onto the existing `--status-{tone}-{bg,text,border}` variable triplets (light and dark both already ship them, so the component adds zero new color decisions); `--caps` covers uppercase type labels. CSS-only, registered, so `list_components()` now reports 25.
+
+  Deliberately not covered: scitex-cards' five-step age gradation (`.age-pill--today/…/--rotten`) — a domain scale, not a tone; forcing it into the modifier set would bloat it for one consumer.
+
+- **Packaging: the `all` extra is now closed over `dev` and `docs`** (PS-221 §3). scitex-dev's audit gate began enforcing that every public extra is a subset of `all`; `dev` and `docs` were missing, turning the gate red on every PR. Same shape as scitex-dev and scitex-cards: `all` self-references the public extras rather than renaming them internal, since both have in-repo consumers (the quality-audit workflow installs `.[dev]`, Read the Docs installs `.[docs]`) and both are published, making a rename a contract migration for no gain.
+
 ## [0.9.0] - 2026-07-19
 
 - **Nine components were invisible to `list_components()`**. They shipped app-level CSS but were never registered, so the discovery API reported **15 of 24**. That API is how an app author answers "does scitex-ui already have a toggle-switch?" — the answer was silently NO, and the app rolled its own. The gap never surfaced as a bug; it surfaced as a duplicate implementation in someone else's repo months later.
