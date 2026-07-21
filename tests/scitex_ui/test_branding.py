@@ -305,6 +305,44 @@ def test_shell_font_tokens_match_the_primitives_layer():
     assert shell == {k: primitives[k] for k in shell}
 
 
+# --- mobile layout ----------------------------------------------------------
+
+def test_shell_links_the_mobile_stylesheet():
+    # Arrange — regression: the shell linked every desktop layout stylesheet
+    # but never mobile.css, whose @media (max-width: 768px) rules are the only
+    # thing that collapses the fixed-width side panes. Without it the
+    # overflow-hidden flex row pushed .ws-module-pane off-screen, so every
+    # standalone GUI rendered completely blank on phones (scitex.ai
+    # /apps/storage/, 2026-07-22).
+    context = {}
+    # Act
+    html = _render(context)
+    # Assert
+    assert "scitex_ui/css/shell/mobile.css" in html
+
+
+def test_mobile_stylesheet_is_shipped_in_the_package():
+    # Arrange — a linked-but-unshipped stylesheet would 404 and reproduce the
+    # same blank page; the favicon shipped exactly that way in 0.7.0.
+    from scitex_ui import get_static_dir
+
+    # Act
+    asset = get_static_dir() / "css/shell/mobile.css"
+    # Assert
+    assert asset.is_file()
+
+
+def test_mobile_stylesheet_scopes_its_rules_to_small_viewports():
+    # Arrange — the shell now loads mobile.css unconditionally, so its rules
+    # must stay inside a small-viewport media query or they would restyle
+    # desktop layouts too.
+    css = _css("css/shell/mobile.css")
+    # Act
+    scoped = "@media (max-width: 768px)" in css
+    # Assert
+    assert scoped
+
+
 # --- accent -----------------------------------------------------------------
 
 def test_shell_sets_the_app_accent_when_one_is_given():
