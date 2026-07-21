@@ -72,6 +72,10 @@ docs = [
 all = [
     "scitex-ui[cli]",
     "scitex-ui[mcp]",
+    # PS-221 closure: every public extra is a subset of `all`, so
+    # `pip install scitex-ui[all]` pulls everything public.
+    "scitex-ui[dev]",
+    "scitex-ui[docs]",
 ]
 
 [project.entry-points."scitex_dev.docs"]
