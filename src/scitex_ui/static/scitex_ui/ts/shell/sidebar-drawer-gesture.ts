@@ -76,7 +76,7 @@ function onSidebarTouchEnd(e: TouchEvent): void {
 
 // --- Init ---
 
-function init(): void {
+export function init(): void {
   if (listenersActive) return;
 
   document.addEventListener("touchstart", onEdgeTouchStart, { passive: true });
