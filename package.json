@@ -22,6 +22,7 @@
     "./pdf-viewer/react": "./src/scitex_ui/static/scitex_ui/react/app/pdf-viewer/index.ts",
     "./monaco-editor": "./src/scitex_ui/static/scitex_ui/ts/app/monaco-editor/index.ts",
     "./css/*": "./src/scitex_ui/static/scitex_ui/css/*",
+    "./ts/*": "./src/scitex_ui/static/scitex_ui/ts/*",
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
