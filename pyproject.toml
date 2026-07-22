@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scitex-ui"
-version = "0.6.0"
+version = "0.11.1"
 description = "Shared frontend UI components for the SciTeX ecosystem"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -72,8 +72,6 @@ docs = [
 all = [
     "scitex-ui[cli]",
     "scitex-ui[mcp]",
-    # PS-221 closure: every public extra is a subset of `all`, so
-    # `pip install scitex-ui[all]` pulls everything public.
     "scitex-ui[dev]",
     "scitex-ui[docs]",
 ]
@@ -97,6 +95,34 @@ ui = "scitex_ui._linter_plugin:get_plugin"
 Homepage = "https://github.com/ywatanabe1989/scitex-ui"
 Repository = "https://github.com/ywatanabe1989/scitex-ui"
 Documentation = "https://scitex-ui.readthedocs.io"
+
+# Frontend source under static/ MUST ship in BOTH the sdist and the wheel.
+# hatchling honors .gitignore, and the shared gitignore template's `**/*old*`
+# rule (meant to drop `.old/` trash dirs) is a *substring* match — it
+# accidentally hits real source files whose name merely contains "old", e.g.
+# `_BinaryPlaceh(old)er.ts`. git tracks the file, but hatchling omits it from
+# built artifacts, while an editable/source install still sees it. That skew is
+# exactly what made the hub's baked scitex-ui wheel partial and broke its
+# boot-time Vite build (missing _BinaryPlaceholder.ts).
+#
+# `artifacts` MUST live at the shared [tool.hatch.build] level, NOT just the
+# wheel target: the release CI runs `python -m build`, which builds the sdist
+# first and then the wheel FROM that sdist — so a wheel-only `artifacts` was too
+# late (the file was already gone at the sdist stage; 0.6.2 shipped broken for
+# this reason). Shared artifacts force-include these paths in EVERY target
+# (sdist + wheel), holding regardless of which future filename trips an ignore.
+[tool.hatch.build]
+artifacts = [
+    "src/scitex_ui/static/**/*.ts",
+    "src/scitex_ui/static/**/*.tsx",
+    "src/scitex_ui/static/**/*.css",
+    "src/scitex_ui/static/**/*.html",
+    "src/scitex_ui/static/**/*.js",
+    # Brand/UI artwork. The shared gitignore's blanket `**/*.svg` rule targets
+    # generated figures but also matches packaged assets — the shipped favicon
+    # was silently dropped from the 0.7.0 wheel until this line was added.
+    "src/scitex_ui/static/**/*.svg",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/scitex_ui"]

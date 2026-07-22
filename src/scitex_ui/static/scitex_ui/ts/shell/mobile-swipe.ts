@@ -411,7 +411,7 @@ function disableMobile(): void {
 
 // --- Init ---
 
-function init(): void {
+export function init(): void {
   const container = document.getElementById("workspace-three-col");
   if (!container) return;
 

@@ -444,6 +444,22 @@ body.stx-shell-ai-open #workspace-three-col #main-content {
   min-height: 0;
 }
 
+/* --- Declared-unused panes ---
+   Set by standalone_shell.html when an app declares a pane "unused" via
+   shell_context(panes={...}). The app's content reclaims the width.
+
+   DECLARED, never inferred: a pane whose content arrives after mount is empty
+   at render time too, so collapsing on emptiness would hide a working surface
+   (scitex-writer's file tree is exactly that case). Only an app knows which of
+   its panes it actually uses.
+
+   display:none rather than width:0 — a zero-width pane keeps its resizer
+   handle draggable, so a user could drag open a pane the app declared it does
+   not use, and find it empty and broken. */
+.workspace-three-col > .ws-pane-unused {
+  display: none;
+}
+
 /* --- Responsive: mobile layout handled by mobile.css ---
    Panes are repositioned as absolute stacked layers with swipe navigation.
    See: css/shell/mobile.css */

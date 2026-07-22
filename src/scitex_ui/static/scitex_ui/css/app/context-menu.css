@@ -26,6 +26,10 @@
   border: none;
   border-radius: 6px;
   color: var(--text-secondary, #c9d1d9);
+  /* Items are <button>, which does NOT inherit the page font by default and
+     base ships no global button reset — without this the menu text falls back
+     to the UA button font for every adopter. */
+  font-family: inherit;
   font-size: 13px;
   cursor: pointer;
   text-align: left;
@@ -44,6 +48,17 @@
   background: rgba(248, 81, 73, 0.1);
 }
 
+.stx-app-context-menu__item:disabled {
+  color: var(--text-secondary, #c9d1d9);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.stx-app-context-menu__item:disabled:hover {
+  background: transparent;
+  color: var(--text-secondary, #c9d1d9);
+}
+
 .stx-app-context-menu__item i {
   width: 16px;
   text-align: center;
@@ -55,4 +70,23 @@
   height: 1px;
   background: var(--border-default, #30363d);
   margin: 4px 8px;
+}
+
+/* Right-aligned keyboard-shortcut hint inside an item */
+.stx-app-context-menu__shortcut {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-secondary, #c9d1d9);
+  opacity: 0.7;
+}
+
+/* Uppercase section label between item groups */
+.stx-app-context-menu__label {
+  padding: 4px 12px 2px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary, #c9d1d9);
+  opacity: 0.7;
 }
