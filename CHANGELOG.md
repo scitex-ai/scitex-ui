@@ -7,6 +7,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-07-22
+
+- **`context-menu` grows `__shortcut`, `__label` and `:disabled` item styling** (component `0.1.0 → 0.2.0`). The harvest analysis found figrecipe's context-menu and base's are the same component under different names — except figrecipe's carried three affordances base lacked: a right-aligned keyboard-shortcut hint, an uppercase section label, and disabled-item styling. Until base had them, adopting the shared component meant losing affordances; now base is a strict superset and adoption is a pure deletion on the app side.
+
+- **Test fixture: component versions may now evolve.** The shared `check_metadata` fixture asserted `version == "0.1.0"` literally — green only because no component had ever been bumped, and failing the moment the first one was (context-menu, this release). A guard that forbids all evolution is a freeze, not a check; it now asserts `X.Y.Z` shape instead of a pinned value.
+
 - **Fix: standalone shell now links `css/shell/mobile.css` — standalone GUIs rendered completely blank on phones.** `standalone_shell.html` linked every desktop layout stylesheet (`workspace-three-col.css` and friends) but never `mobile.css`, whose `@media (max-width: 768px)` rules are the only thing that collapses the fixed-width side panes (`flex-shrink: 0`; 250px AI + 240px worktree) and gives `.ws-module-pane` full width. Without them the `overflow: hidden` flex row pushed the app content pane entirely off-screen, so **every** standalone-shell consumer showed a blank page on ≤768px viewports. Verified in production at scitex.ai `/apps/storage/` (2026-07-22): mobile and desktop received byte-identical HTML, every linked asset returned 200, and `/static/scitex_ui/css/shell/mobile.css` itself served 200 — shipped, collected, reachable, and referenced by nothing. Consumers that bundle the shell CSS themselves (the hub via `shell-css-imports.ts`) were unaffected; only the standalone template path was broken. Regression-guarded by rendering the shell and asserting the reference, plus a packaged-asset check mirroring the favicon guard.
 
 ## [0.10.0] - 2026-07-21
