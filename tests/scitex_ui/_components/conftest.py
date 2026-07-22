@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -30,7 +31,11 @@ def _check_metadata(cls):
     Returns the class on success so callers can `assert check_metadata(Cls)`.
     """
     assert cls.name
-    assert cls.version == "0.1.0"
+    # Shape, not value: pinning a literal version here froze every component
+    # at 0.1.0 — the first real bump (context-menu 0.2.0) failed this line.
+    assert re.fullmatch(r"\d+\.\d+\.\d+", cls.version), (
+        f"{cls.name} version {cls.version!r} is not X.Y.Z"
+    )
     assert cls.description
     assert cls.ts_entry or cls.css_file, f"{cls.name} declares no asset at all"
 
