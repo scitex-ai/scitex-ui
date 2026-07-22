@@ -26,6 +26,10 @@
   border: none;
   border-radius: 6px;
   color: var(--text-secondary, #c9d1d9);
+  /* Items are <button>, which does NOT inherit the page font by default and
+     base ships no global button reset — without this the menu text falls back
+     to the UA button font for every adopter. */
+  font-family: inherit;
   font-size: 13px;
   cursor: pointer;
   text-align: left;

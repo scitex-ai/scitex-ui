@@ -5,7 +5,9 @@
  */
 
 @import "./app/alert-banner.css";
+@import "./app/badge.css";
 @import "./app/collapsible-panel.css";
+@import "./app/combobox.css";
 @import "./app/confirm-modal.css";
 @import "./app/context-menu.css";
 @import "./app/data-table.css";
@@ -29,8 +31,8 @@
 @import "./app/tooltip.css";
 @import "./primitives/colors.css";
 @import "./primitives/spacing.css";
-@import "./primitives/typography.css";
 @import "./primitives/typography-vars.css";
+@import "./primitives/typography.css";
 @import "./primitives/variables.css";
 @import "./primitives/z-index.css";
 @import "./shell/11-shortcuts-modal.css";
