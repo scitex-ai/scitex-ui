@@ -54,7 +54,7 @@
 @import "./shell/workspace.css";
 @import "./primitives/colors.css";
 @import "./primitives/spacing.css";
-@import "./primitives/typography.css";
 @import "./primitives/typography-vars.css";
+@import "./primitives/typography.css";
 @import "./primitives/variables.css";
 @import "./primitives/z-index.css";

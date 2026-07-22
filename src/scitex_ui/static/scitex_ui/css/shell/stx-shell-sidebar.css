@@ -309,6 +309,23 @@
   --app-accent-color: var(--app-accent-figrecipe);
   --app-accent-tint: var(--app-accent-figrecipe-tint);
 }
+[data-app-accent="notebook"] {
+  --app-accent-color: var(--app-accent-notebook);
+  --app-accent-tint: var(--app-accent-notebook-tint);
+}
+[data-app-accent="storage"] {
+  --app-accent-color: var(--app-accent-storage);
+  --app-accent-tint: var(--app-accent-storage-tint);
+}
+[data-app-accent="todo"],
+[data-app-accent="cards"] {
+  --app-accent-color: var(--app-accent-todo);
+  --app-accent-tint: var(--app-accent-todo-tint);
+}
+[data-app-accent="comms"] {
+  --app-accent-color: var(--app-accent-comms);
+  --app-accent-tint: var(--app-accent-comms-tint);
+}
 
 /* No fallback needed — accent is always on #main-content::before */
 

@@ -671,3 +671,14 @@ slurm_logs
 !docs/*.png
 !docs/sphinx/requirements.txt
 !examples/**/*.txt
+# Packaged UI artwork is SOURCE, not output. The blanket media rules above
+# (**/*.svg, **/*.png, ...) exist for generated figures, but everything under
+# static/ ships in the wheel and must stay tracked — an ignored asset is
+# silently absent from the build, which is how the 0.7.0 favicon first shipped
+# missing (same class as the **/*old* rule that broke 0.6.1/0.6.2).
+!src/scitex_ui/static/scitex_ui/img/**
+/.worktrees/
+# Agent/session runtime logs land here in a working checkout. Untracked but not
+# ignored meant PS-102 flagged the repo as dirty and a stray `git add -A` could
+# have committed a session log. Runtime artifact — regenerable, never shipped.
+/logs/
