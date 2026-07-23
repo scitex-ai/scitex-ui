@@ -1,13 +1,23 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme-default="{{ shell_theme_default|default:'dark' }}">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- Title convention: "SciTeX <Tool>" (SciTeX Writer, SciTeX Scholar, ...).
+             scitex_ui.branding.shell_context() builds app_label in that form. -->
         <title>{{ app_label|default:"SciTeX App" }}</title>
+        <!-- Tab branding. Shared with GUIs that do NOT extend this shell, so the
+             favicon markup lives in one partial rather than only here. -->
+        {% include "scitex_ui/_branding_head.html" %}
+        <!-- Must stay above the stylesheets: resolves the stored theme before the
+             first paint. Inline by design — an external script would cost a
+             render-blocking request on every page. -->
+        {% include "scitex_ui/_theme_boot.html" %}
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-        <!-- scitex-ui workspace shell CSS (canonical source) -->
+        <!-- scitex-ui workspace shell CSS (canonical source).
+             theme.css carries the font tokens the base body typography needs. -->
         <link rel="stylesheet" href="{% static 'scitex_ui/css/shell/theme.css' %}" />
         <link rel="stylesheet"
               href="{% static 'scitex_ui/css/shell/app-shell.css' %}" />
@@ -35,9 +45,15 @@
               href="{% static 'scitex_ui/css/shell/workspace-viewer-preview.css' %}" />
         <link rel="stylesheet"
               href="{% static 'scitex_ui/css/shell/media-viewer.css' %}" />
+        <link rel="stylesheet"
+              href="{% static 'scitex_ui/css/shell/mobile.css' %}" />
         {% block extra_css %}{% endblock %}
     </head>
-    <body class="dark-theme workspace-page footer-collapsed no-transition">
+    <!-- No hardcoded theme class here: the theme boot partial applies the RESOLVED
+         theme (data-theme + .dark-theme/.light-theme) to <html> pre-paint and
+         mirrors the class onto <body> for consumer CSS that selects
+         body.dark-theme. -->
+    <body class="workspace-page footer-collapsed no-transition">
         <!--
           Standalone shell: vanilla TS layout matching scitex-cloud's global_base.html.
           Structure: Console/Chat | Files | Viewer | App Content
@@ -46,7 +62,11 @@
         -->
         <div id="workspace-three-col" class="workspace-three-col">
             <!-- ── Console/Chat Pane ──────────────────── -->
-            <div class="ws-ai-pane" id="ws-ai-pane">
+            <!-- panes.ai == "unused" hides this. DECLARED by the app, never
+                 inferred from emptiness: a pane populated after mount is empty
+                 here too, so guessing would hide a working surface. -->
+            <div class="ws-ai-pane{% if panes.ai == 'unused' %} ws-pane-unused{% endif %}"
+                 id="ws-ai-pane">
                 <div id="stx-shell-ai-panel"
                      class="stx-shell-sidebar stx-shell-ai-panel"
                      aria-hidden="false">
@@ -293,7 +313,11 @@
                 </div>
             </div>
             <!-- ── File Tree Pane ─────────────────────── -->
-            <div class="ws-worktree-pane" id="ws-worktree-pane">
+            <!-- panes.files == "unused" hides this. scitex-writer declares
+                 "client-populated" here: their tree has no server-rendered
+                 children and is filled from data-working-dir after mount. -->
+            <div class="ws-worktree-pane{% if panes.files == 'unused' %} ws-pane-unused{% endif %}"
+                 id="ws-worktree-pane">
                 <div class="stx-shell-sidebar" id="ws-worktree-sidebar">
                     <div id="ws-worktree-resizer"
                          class="panel-resizer stx-shell-resizer-right"
@@ -373,7 +397,9 @@
                 </div>
             </div>
             <!-- ── Viewer Pane ────────────────────────── -->
-            <div class="ws-viewer-pane" id="ws-viewer-pane">
+            <!-- panes.viewer == "unused" hides this. -->
+            <div class="ws-viewer-pane{% if panes.viewer == 'unused' %} ws-pane-unused{% endif %}"
+                 id="ws-viewer-pane">
                 <div class="stx-shell-sidebar collapsed"
                      id="ws-viewer-sidebar"
                      data-ai-hint="General Editor Pane: shared file viewer across all modules (Writer, Scholar, Console, etc.). Supports text (.py .js .ts .html .css .json .md .yaml .sh .tex .bib .txt), images (.png .jpg .gif .webp .svg), PDF (.pdf), tables (.csv .tsv), diagrams (.mmd .mermaid), audio (.mp3 .wav .ogg .flac), video (.mp4 .webm .avi .mov). Open files via ui_action(steps=[{action:'open-file', path:'relative/path'}]). The currently open file path is tracked in data-ai-viewer-active on this element."
@@ -426,7 +452,11 @@
                 </div>
             </div>
             <!-- ── App Content (React or other app mounts here) ── -->
-            <main id="main-content" class="ws-module-pane">
+            <!-- app_accent drives the shell's accent line; the value needs a
+                 matching selector row in css/shell/stx-shell-sidebar.css. -->
+            <main id="main-content"
+                  class="ws-module-pane"
+                  {% if app_accent %}data-app-accent="{{ app_accent }}"{% endif %}>
                 {% block app_content %}
                     <div id="root"
                          data-working-dir="{{ working_dir|default:'' }}"

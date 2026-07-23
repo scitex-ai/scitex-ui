@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tests for ElementInspectorMiddleware and its gate."""
 
+import asyncio
+
 import django
 from django.conf import settings
 
@@ -14,6 +16,8 @@ if not settings.configured:
     )
     django.setup()
 
+from asgiref.sync import iscoroutinefunction  # noqa: E402
+from django.core.exceptions import SynchronousOnlyOperation  # noqa: E402
 from django.http import HttpResponse  # noqa: E402
 from django.test import override_settings  # noqa: E402
 
@@ -37,6 +41,34 @@ class _Req:
 def _apply(response, request=None):
     mw = ElementInspectorMiddleware(lambda req: response)
     return mw(request if request is not None else _Req())
+
+
+def _async_get_response(response):
+    async def get_response(request):
+        return response
+
+    return get_response
+
+
+class _AsyncUnsafeUser:
+    """Stand-in for a Django ASGI lazy user.
+
+    Reading ``is_staff`` on the event loop raises SynchronousOnlyOperation —
+    exactly as evaluating ``request.user`` (a DB-backed lazy object) does
+    under ASGI — but resolves normally in a worker thread (no running loop).
+    """
+
+    is_authenticated = True
+
+    @property
+    def is_staff(self):
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return True
+        raise SynchronousOnlyOperation(
+            "You cannot call this from an async context - use a thread"
+        )
 
 
 # --- gate --------------------------------------------------------------
@@ -185,3 +217,75 @@ def test_noop_when_no_body_tag():
         body = _apply(resp).content.decode()
     # Assert
     assert body == "no body tag here"
+
+
+# --- async / hybrid (ASGI) ---------------------------------------------
+
+def test_async_capable_flag_is_true():
+    # Arrange
+    cls = ElementInspectorMiddleware
+    # Act
+    flag = cls.async_capable
+    # Assert
+    assert flag is True
+
+
+def test_sync_capable_flag_is_true():
+    # Arrange
+    cls = ElementInspectorMiddleware
+    # Act
+    flag = cls.sync_capable
+    # Assert
+    assert flag is True
+
+
+def test_sync_get_response_not_marked_coroutine():
+    # Arrange
+    mw = ElementInspectorMiddleware(lambda req: HttpResponse(""))
+    # Act
+    marked = iscoroutinefunction(mw)
+    # Assert
+    assert marked is False
+
+
+def test_async_get_response_marks_coroutine():
+    # Arrange
+    mw = ElementInspectorMiddleware(_async_get_response(HttpResponse("")))
+    # Act
+    marked = iscoroutinefunction(mw)
+    # Assert
+    assert marked is True
+
+
+def test_async_call_returns_coroutine_without_mode_switch():
+    # Arrange
+    mw = ElementInspectorMiddleware(_async_get_response(HttpResponse("")))
+    # Act
+    result = mw(_Req())
+    is_coroutine = asyncio.iscoroutine(result)
+    result.close()
+    # Assert
+    assert is_coroutine is True
+
+
+def test_async_await_injects_when_enabled():
+    # Arrange
+    resp = HttpResponse("<html><body>hi</body></html>", content_type="text/html")
+    mw = ElementInspectorMiddleware(_async_get_response(resp))
+    # Act
+    with override_settings(DEBUG=True):
+        body = asyncio.run(mw(_Req())).content.decode()
+    # Assert
+    assert _JS in body
+
+
+def test_async_staff_gate_injects_without_raising():
+    # Arrange
+    resp = HttpResponse("<html><body>hi</body></html>", content_type="text/html")
+    mw = ElementInspectorMiddleware(_async_get_response(resp))
+    req = _Req(_AsyncUnsafeUser())
+    # Act
+    with override_settings(DEBUG=False):
+        body = asyncio.run(mw(req)).content.decode()
+    # Assert
+    assert _JS in body
