@@ -1,0 +1,80 @@
+name: typecheck
+
+# ============================================================================
+# TypeScript typecheck gate.
+#
+# WHY THIS REPO NEEDS ONE: package.json `main`/`types`/`exports` point at raw
+# .ts SOURCE, so every consumer's compiler applies to OUR code and our
+# effective strictness is set by whichever consumer is strictest. Without this
+# job the first consumer to compile under strict settings discovers our type
+# errors for us — which is exactly how figrecipe found 56 of them in
+# scitex-ui's source (2026-07-22).
+#
+# THIS GATE MUST BE ABLE TO FAIL. No `continue-on-error`, no `|| true`, no
+# "report only new violations" flag. Verified before landing: injecting one
+# bad annotation makes `npm run typecheck` exit 2; removing it returns exit 0.
+# If you ever need to exempt something, exempt it in tsconfig.json one entry at
+# a time with a written reason — never by softening this job.
+#
+# LIVES HERE, NOT IN ci.yml, ON PURPOSE: ci.yml is the org-rendered canonical
+# caller whose job bodies live once in scitex-ai/.github, and no reusable
+# `typecheck.yml` exists there yet. Keeping the body out of ci.yml means
+# `scitex-dev ecosystem ci-template apply` cannot clobber it. Migrating this
+# into an org-side reusable workflow (so ci.yml gains a thin `uses:` and this
+# file goes away) is tracked separately.
+#
+# Runner policy: SELF-HOSTED ONLY (PS-169) — same labels as the org bodies.
+# ============================================================================
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: typecheck-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  typecheck:
+    name: typecheck
+    runs-on: [self-hosted, Linux, X64, spartan-cpu]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      # A typecheck that loaded zero files also exits 0. Assert the file count
+      # first so a broken `include` glob fails loudly instead of passing
+      # vacuously — an earlier hand-run of tsc here reported "0 errors" while
+      # tsc had never actually executed.
+      - name: Assert the typecheck actually covers our source
+        run: |
+          set -euo pipefail
+          on_disk=$(find src/scitex_ui/static/scitex_ui/ts \
+                         src/scitex_ui/static/scitex_ui/react \
+                         \( -name '*.ts' -o -name '*.tsx' \) | wc -l)
+          # tsc exits non-zero when it finds type errors; --listFiles still
+          # prints the full set, and reporting THOSE errors is the next step's
+          # job. Capture separately so a real type error cannot masquerade as a
+          # coverage failure.
+          npx tsc -p tsconfig.json --listFiles --noEmit >listed.txt 2>/dev/null || true
+          loaded=$(grep -c "$PWD/src/scitex_ui/static" listed.txt || true)
+          rm -f listed.txt
+          echo "source files on disk: $on_disk / loaded by tsc: $loaded"
+          if [ "$on_disk" -eq 0 ] || [ "$loaded" -ne "$on_disk" ]; then
+            echo "::error::tsconfig include globs cover $loaded of $on_disk source files."
+            echo "Fix the \`include\` globs in tsconfig.json so every shipped .ts/.tsx is checked."
+            exit 1
+          fi
+
+      - name: Typecheck
+        run: npm run typecheck

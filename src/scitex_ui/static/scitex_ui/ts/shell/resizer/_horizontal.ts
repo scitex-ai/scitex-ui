@@ -92,7 +92,9 @@ export class HorizontalResizer extends BaseResizer {
 
     let current: Element | null = paneContainer;
     while (current) {
-      const sibling =
+      // Annotated because `current` is reassigned from `sibling` below: without
+      // it the two infer through each other and tsc falls back to implicit any.
+      const sibling: Element | null =
         direction === "previous"
           ? current.previousElementSibling
           : current.nextElementSibling;
