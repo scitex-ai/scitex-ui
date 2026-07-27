@@ -6,12 +6,36 @@
 import { useState, useCallback } from "react";
 import type { Dataset } from "../types";
 import type { DataAction } from "./useDataReducer";
-import type { SelectionRange } from "../utils/selectionHelpers";
+import type {
+  NormalizedBounds,
+  SelectionRange,
+} from "../utils/selectionHelpers";
 import { normalizeRange } from "../utils/selectionHelpers";
 
 // ----------------------------------------------------------------
 // Types
 // ----------------------------------------------------------------
+
+/**
+ * Bounds that Tab / Enter wrap-around navigation stays inside: the selected
+ * range when a real multi-cell range is selected, otherwise the whole grid.
+ *
+ * Read the corners through `normalizeRange` — `SelectionRange` stores its
+ * corners as `start`/`end` `CellPosition`s, so flat `startRow`/`endCol`-style
+ * reads yield `undefined` and every derived bound becomes `NaN`.
+ */
+function navigationBounds(
+  selection: SelectionRange | null,
+  maxRow: number,
+  maxCol: number,
+): NormalizedBounds {
+  const isMultiCell =
+    selection !== null &&
+    (selection.start.row !== selection.end.row ||
+      selection.start.col !== selection.end.col);
+  if (!isMultiCell) return { minRow: 0, maxRow, minCol: 0, maxCol };
+  return normalizeRange(selection);
+}
 
 export interface EditingState {
   row: number;
@@ -116,22 +140,12 @@ export function useEditing(
             commitEdit();
             if (!editing.isHeader) {
               // Selection-aware: wrap within bounds
-              const hasRange =
-                selection &&
-                (selection.start.row !== selection.end.row ||
-                  selection.start.col !== selection.end.col);
-              const mnR = hasRange
-                ? Math.min(selection!.startRow, selection!.endRow)
-                : 0;
-              const mxR = hasRange
-                ? Math.max(selection!.startRow, selection!.endRow)
-                : maxRow;
-              const mnC = hasRange
-                ? Math.min(selection!.startCol, selection!.endCol)
-                : 0;
-              const mxC = hasRange
-                ? Math.max(selection!.startCol, selection!.endCol)
-                : maxCol;
+              const {
+                minRow: mnR,
+                maxRow: mxR,
+                minCol: mnC,
+                maxCol: mxC,
+              } = navigationBounds(selection, maxRow, maxCol);
               if (row < mxR) moveCurrentCell(row + 1, col);
               else moveCurrentCell(mnR, col < mxC ? col + 1 : mnC);
             }
@@ -142,22 +156,12 @@ export function useEditing(
             commitEdit();
             if (!editing.isHeader) {
               // Selection-aware: wrap within bounds
-              const hasRange =
-                selection &&
-                (selection.start.row !== selection.end.row ||
-                  selection.start.col !== selection.end.col);
-              const mnR = hasRange
-                ? Math.min(selection!.startRow, selection!.endRow)
-                : 0;
-              const mxR = hasRange
-                ? Math.max(selection!.startRow, selection!.endRow)
-                : maxRow;
-              const mnC = hasRange
-                ? Math.min(selection!.startCol, selection!.endCol)
-                : 0;
-              const mxC = hasRange
-                ? Math.max(selection!.startCol, selection!.endCol)
-                : maxCol;
+              const {
+                minRow: mnR,
+                maxRow: mxR,
+                minCol: mnC,
+                maxCol: mxC,
+              } = navigationBounds(selection, maxRow, maxCol);
               if (!e.shiftKey) {
                 if (col < mxC) moveCurrentCell(row, col + 1);
                 else moveCurrentCell(row < mxR ? row + 1 : mnR, mnC);
@@ -198,22 +202,12 @@ export function useEditing(
         case "Tab": {
           e.preventDefault();
           // Selection-aware: stay within selection bounds if range selected
-          const hasRange =
-            selection &&
-            (selection.start.row !== selection.end.row ||
-              selection.start.col !== selection.end.col);
-          const minR = hasRange
-            ? Math.min(selection!.startRow, selection!.endRow)
-            : 0;
-          const maxR = hasRange
-            ? Math.max(selection!.startRow, selection!.endRow)
-            : maxRow;
-          const minC = hasRange
-            ? Math.min(selection!.startCol, selection!.endCol)
-            : 0;
-          const maxC = hasRange
-            ? Math.max(selection!.startCol, selection!.endCol)
-            : maxCol;
+          const {
+            minRow: minR,
+            maxRow: maxR,
+            minCol: minC,
+            maxCol: maxC,
+          } = navigationBounds(selection, maxRow, maxCol);
           if (!e.shiftKey) {
             if (col < maxC) moveCurrentCell(row, col + 1);
             else moveCurrentCell(row < maxR ? row + 1 : minR, minC);
@@ -230,22 +224,12 @@ export function useEditing(
             startEditing(row, col, String(val ?? ""));
           } else {
             // Shift+Enter: move up; Enter in readOnly: move down
-            const hasRng =
-              selection &&
-              (selection.start.row !== selection.end.row ||
-                selection.start.col !== selection.end.col);
-            const mnR = hasRng
-              ? Math.min(selection!.startRow, selection!.endRow)
-              : 0;
-            const mxR = hasRng
-              ? Math.max(selection!.startRow, selection!.endRow)
-              : maxRow;
-            const mnC = hasRng
-              ? Math.min(selection!.startCol, selection!.endCol)
-              : 0;
-            const mxC = hasRng
-              ? Math.max(selection!.startCol, selection!.endCol)
-              : maxCol;
+            const {
+              minRow: mnR,
+              maxRow: mxR,
+              minCol: mnC,
+              maxCol: mxC,
+            } = navigationBounds(selection, maxRow, maxCol);
             if (e.shiftKey) {
               if (row > mnR) moveCurrentCell(row - 1, col);
               else moveCurrentCell(mxR, col < mxC ? col + 1 : mnC);

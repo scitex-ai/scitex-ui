@@ -36,6 +36,9 @@
     "README.md",
     "LICENSE"
   ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
   "publishConfig": {
     "access": "public"
   },

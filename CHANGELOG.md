@@ -7,6 +7,16 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- **This package now typechecks the TypeScript it ships — until now nothing did, and consumers were our typechecker.** `package.json` `main`/`types`/`exports` point at raw `.ts` SOURCE, so every consumer's compiler applies to our code and our effective strictness was set by whichever consumer was strictest. figrecipe found this the expensive way: after migrating to the pip channel, 56 of their 61 remaining type errors were inside scitex-ui. There was no `tsconfig.json` anywhere in the repo and no CI step that could have caught any of it — a check that does not exist reports nothing and reads as fine.
+
+  Adds `tsconfig.json` (strict, `noEmit`), an `npm run typecheck` script, and a `typecheck` CI job. **39 errors → 0.** Proven to be a real gate before landing, not a decorative one: injecting a single bad annotation makes it exit 2, removing it returns exit 0. The job also asserts that the number of source files tsc loaded equals the number on disk (247), because a typecheck whose `include` globs match nothing also exits 0 — an earlier hand-run here reported "0 errors" while tsc had never executed.
+
+- **Fixed: multi-cell selections broke Tab/Enter navigation in the React data table.** `useEditing.ts` read selection corners as `selection.startRow` / `.endRow` / `.startCol` / `.endCol`, but `SelectionRange` stores them as `start` / `end` `CellPosition` objects. Those four properties do not exist at runtime, so every bound was `Math.min(undefined, undefined)` → `NaN` and `moveCurrentCell` was called with `NaN` at all four wrap-around sites. Only fired when a genuine multi-cell range was selected, because the `hasRange` test beside it read the corners *correctly*. The correct helper — `normalizeRange` — was already imported and already used a few lines below for `Delete`/`Backspace`; the four broken sites now share one `navigationBounds` helper instead of re-deriving the bounds four times. Found by the new typecheck on its first run.
+
+- **Fixed: `TreeInitCallbacks.getTreeData` was typed `() => unknown[]`** while its producer returns `TreeItem[]` and all five sibling handlers declare `() => TreeItem[]`. The single `unknown[]` outlier made the tree data untyped for every consumer of that interface.
+
+- **Type annotations for host-provided globals.** `window._appNav` (the unified navigation engine, implemented by scitex-cloud `static/shared/ts/app-navigation-history.ts`) is consumed by `workspace-shell.ts` but defined nowhere here, so it typed as an error rather than as an optional host capability. Now declared in `ts/host-provided-globals.d.ts`, which is the one place for "globals the host application provides that we consume but do not own".
+
 ## [0.11.1] - 2026-07-22
 
 - **Fixed: `badge.css` and `combobox.css` shipped without being imported by any CSS entry point.** Neither `all.css` nor `app.css` imported them, so an app adopting `.stx-app-badge` exactly as documented got the class name and no styling — the stylesheet sat inside the wheel and reached no page. Found by figrecipe while scoping their adoption, not by this package's own checks.
