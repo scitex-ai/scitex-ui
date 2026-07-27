@@ -467,6 +467,12 @@
         <!-- scitex-ui vanilla shell initialization -->
         <script src="{% static 'scitex_ui/js/shell/standalone-shell-init.js' %}"
                 defer></script>
+        <!-- Mobile pane-collapse gestures (<=768px): two-finger swipe and
+             header double-click / drag on #workspace-three-col, which this
+             template renders above. Self-guards: no-op when that container is
+             absent or the viewport is wide. See ADR 0002. -->
+        <script src="{% static 'scitex_ui/js/shell/mobile-swipe.js' %}"
+                defer></script>
         {% block extra_js %}{% endblock %}
         <!-- Element inspector (Alt+I) — only emitted for DEBUG/staff -->
         {% include "scitex_ui/_element_inspector.html" %}
