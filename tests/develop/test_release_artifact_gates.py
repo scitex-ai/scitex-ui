@@ -45,7 +45,8 @@ def _make_wheel(path: Path, members: dict[str, str]) -> Path:
     ],
 )
 def test_version_of_reads_version_from_artifact_filename(filename, expected):
-    # Arrange / Act
+    # Arrange
+    # Act
     actual = version_of(filename)
 
     # Assert
@@ -56,8 +57,9 @@ def test_version_of_rejects_a_file_that_is_neither_wheel_nor_sdist():
     # Arrange
     stray = "release-notes.md"
 
-    # Act / Assert — skipping unknown files would let a stray artifact ride
-    # along unverified, so the gate must refuse rather than ignore.
+    # Act
+    # Assert — skipping unknown files would let a stray artifact ride along
+    # unverified, so the gate must refuse rather than ignore.
     with pytest.raises(ReleaseArtifactError, match="neither a wheel nor an sdist"):
         version_of(stray)
 
@@ -78,7 +80,8 @@ def test_dist_built_from_a_pre_bump_commit_fails_the_tag_check(tmp_path):
     # Arrange — the exact 2026-07-28 incident: tag v0.12.1, wheel 0.11.1.
     (tmp_path / "scitex_ui-0.11.1-py3-none-any.whl").write_bytes(b"")
 
-    # Act / Assert
+    # Act
+    # Assert
     with pytest.raises(ReleaseArtifactError, match="declares 0.11.1"):
         assert_dist_matches_tag(tmp_path, "v0.12.1")
 
@@ -87,7 +90,8 @@ def test_empty_dist_fails_rather_than_passing_vacuously(tmp_path):
     # Arrange — an empty directory satisfies "no mismatches" trivially, which
     # is how a build-produced-nothing failure reaches the upload step.
 
-    # Act / Assert
+    # Act
+    # Assert
     with pytest.raises(ReleaseArtifactError, match="no artifacts"):
         assert_dist_matches_tag(tmp_path, "v0.12.1")
 
@@ -130,7 +134,8 @@ def test_importable_wheel_missing_its_static_assets_still_fails(tmp_path):
         {"scitex_ui/__init__.py": ""},
     )
 
-    # Act / Assert
+    # Act
+    # Assert
     with pytest.raises(ReleaseArtifactError, match="missing 1 required asset"):
         assert_wheel_contains(
             wheel, ["scitex_ui/static/scitex_ui/js/app/context-menu.js"]
