@@ -108,11 +108,10 @@ class TestMarkupContractPreserved:
 
     def test_paperclip_stays_a_text_prefix_by_default(self):
         # Arrange
-        # Assert on the CONSTANT, not on any occurrence of the emoji: it also
-        # appears in two docstrings, so a substring search passed even after the
-        # prefix was emptied. Caught by mutation probe E, which stayed green
-        # when it should have gone red — a guard that reads documentation is
-        # measuring what we wrote about the code, not the code.
+        # Match the CONSTANT, not any occurrence of the emoji: it also appears
+        # in two docstrings, so a substring search stayed green even after the
+        # prefix was emptied. Mutation probe E caught that — a guard reading
+        # documentation measures what we wrote about the code, not the code.
         ts = self._ts()
         # Act
         declared = re.search(r'PAPERCLIP_PREFIX\s*=\s*"📎 "', ts) is not None
