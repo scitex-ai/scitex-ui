@@ -76,6 +76,7 @@ def test_worktrees_dir_is_never_tracked_at_all():
     # Arrange — the guard above allows a declared submodule anywhere; this one
     # is specific: .worktrees/ holds local scratch checkouts and nothing in it
     # should ever be in the index, declared or not.
+    # Act
     tracked = subprocess.run(
         ["git", "-C", str(REPO_ROOT), "ls-files", "--", ".worktrees"],
         capture_output=True,
@@ -83,7 +84,7 @@ def test_worktrees_dir_is_never_tracked_at_all():
         check=True,
     ).stdout.split()
 
-    # Act / Assert
+    # Assert
     assert not tracked, (
         f".worktrees/ has {len(tracked)} tracked path(s): {', '.join(tracked)}. "
         "These are local working directories, not source."
