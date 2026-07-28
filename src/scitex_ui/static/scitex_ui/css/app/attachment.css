@@ -27,6 +27,13 @@
  * Unscoped by design: scitex-cards' originals are `.msg .att-img`, scoped to
  * their message container. A base primitive must not require a particular
  * ancestor — the consumer decides where it lives.
+ *
+ * They CHECKED that scoping rather than recalling it, and confirmed it does no
+ * work: every other `.msg`-scoped rule in their sheet targets a disjoint class
+ * (.bubble, .meta), and nothing else matches .att-img/.att-file, so there was
+ * no specificity contest for the scope to win. It was descriptive — written
+ * INTO a chat sheet — which is precisely the ancestor assumption a base
+ * primitive must not inherit.
  * ============================================================================= */
 
 .stx-app-attachment {
