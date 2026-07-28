@@ -12,7 +12,7 @@
  *
  * Token mapping — theirs -> ours:
  *   --line     -> --border-default   (borders)
- *   --panel-2  -> --bg-secondary     (file-chip background)
+ *   --panel-2  -> --bg-surface       (file-chip background)
  *   --text     -> --text-primary     (file-chip text)
  *   --accent   -> --app-accent-color (file-chip hover border)
  *
@@ -60,7 +60,10 @@
 .stx-app-attachment--file {
   display: inline-block;
   padding: 6px 10px;
-  background: var(--bg-secondary, #161b22);
+  /* --bg-surface, not --bg-secondary: the latter lives in primitives/colors.css
+     while this file's header promises theme.css alone. Mixing the two layers is
+     what made the context menu render dark-on-dark for scitex-cards. */
+  background: var(--bg-surface, #161b22);
   border: 1px solid var(--border-default, #30363d);
   border-radius: 8px;
   color: var(--text-primary, #f0f6fc);
