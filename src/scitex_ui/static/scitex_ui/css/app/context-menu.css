@@ -7,7 +7,12 @@
 
 .stx-app-context-menu {
   position: fixed;
-  z-index: 1000;
+  /* Tokenised rather than raised. Measured 2026-07-28: figrecipe collides here
+     (three of their overlays also sit at 1000 and they do not portal the menu),
+     while scitex-cards' chat stacks at 20/15 and needs nothing. One app each
+     way, so raising the default would fix figrecipe's layering at everyone
+     else's cost — set --stx-context-menu-z instead of overriding the selector. */
+  z-index: var(--stx-context-menu-z, 1000);
   background: var(--bg-secondary, #161b22);
   border: 1px solid var(--border-default, #30363d);
   border-radius: 8px;
