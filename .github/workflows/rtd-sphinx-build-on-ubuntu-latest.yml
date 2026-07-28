@@ -12,7 +12,14 @@ jobs:
     # suppress the tag-push and release workflows when the auto-commit
     # is the most recent commit on develop at release time.
     if: "!contains(github.event.head_commit.message, 'docs(sphinx_html): refresh from CI build')"
-    runs-on: ubuntu-latest
+    # Was `ubuntu-latest`, i.e. a GitHub-hosted runner we pay for, against the
+    # standing rule that CI runs on Spartan compute nodes. The audit caught it
+    # as PS-224 runner-destination-unregistered, and its reasoning is the same
+    # green-by-absence shape this repo keeps hitting: GitHub does not reject an
+    # unmatchable job, it queues it forever — so a job pointed at a destination
+    # nothing serves never fails, it just never runs. Same label set as the
+    # typecheck and pytest-matrix jobs, which is the registered destination.
+    runs-on: [self-hosted, Linux, X64, spartan-cpu]
     permissions:
       contents: write
     steps:
