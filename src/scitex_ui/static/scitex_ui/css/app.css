@@ -4,6 +4,9 @@
  * Do not edit manually. Regenerate with: npx tsx css/_build-index.ts
  */
 
+@import "./primitives/colors.css";
+@import "./primitives/spacing.css";
+@import "./primitives/typography-vars.css";
 @import "./app/alert-banner.css";
 @import "./app/attachment.css";
 @import "./app/badge.css";
@@ -23,6 +26,7 @@
 @import "./app/file-browser/states.css";
 @import "./app/file-browser/themes.css";
 @import "./app/file-tabs.css";
+@import "./app/form-controls.css";
 @import "./app/media-viewer.css";
 @import "./app/miller-columns.css";
 @import "./app/package-docs-sidebar.css";

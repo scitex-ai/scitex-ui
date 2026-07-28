@@ -27,8 +27,29 @@ function findCssFiles(dir: string, base: string = dir): string[] {
   return files.sort();
 }
 
-function buildIndex(name: string, subdirs: string[]): void {
-  const files: string[] = [];
+/**
+ * Token-only primitives, prepended to app.css.
+ *
+ * app.css used to import nothing from primitives/, so every `--status-*`,
+ * `--bg-secondary`, `--border-color` and `--success-color` referenced by an
+ * app component resolved to NOTHING for anyone loading app.css alone. That is
+ * why components ended up carrying literal hex fallbacks and why consumers
+ * hard-code colours instead of inheriting the palette — the shared tokens
+ * existed but were unreachable from the layer that needed them.
+ *
+ * Only the pure-`:root` files are listed. `primitives/typography.css` is
+ * deliberately EXCLUDED: it carries 63 rule blocks including `body` and
+ * `h1`-`h6`, so importing it here would restyle every consuming page rather
+ * than define tokens.
+ */
+const APP_TOKEN_PRIMITIVES = [
+  "./primitives/colors.css",
+  "./primitives/spacing.css",
+  "./primitives/typography-vars.css",
+];
+
+function buildIndex(name: string, subdirs: string[], prepend: string[] = []): void {
+  const files: string[] = [...prepend];
   for (const subdir of subdirs) {
     const dir = join(CSS_DIR, subdir);
     try {
@@ -50,7 +71,7 @@ function buildIndex(name: string, subdirs: string[]): void {
 }
 
 buildIndex("shell", ["shell", "primitives"]);
-buildIndex("app", ["app"]);
+buildIndex("app", ["app"], APP_TOKEN_PRIMITIVES);
 
 // all.css = shell + app + utils
 const allFiles = findCssFiles(CSS_DIR, CSS_DIR).filter(
