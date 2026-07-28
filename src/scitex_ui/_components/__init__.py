@@ -3,6 +3,7 @@
 
 from ._alert_banner import AlertBanner  # noqa: F401
 from ._app_shell import AppShell  # noqa: F401
+from ._attachment import Attachment  # noqa: F401
 from ._badge import Badge  # noqa: F401
 from ._collapsible_panel import CollapsiblePanel  # noqa: F401
 from ._combobox import Combobox  # noqa: F401
@@ -17,6 +18,7 @@ from ._media_viewer import MediaViewer  # noqa: F401
 from ._miller_columns import MillerColumns  # noqa: F401
 from ._monaco_editor import MonacoEditor  # noqa: F401
 from ._package_docs_sidebar import PackageDocsSidebar  # noqa: F401
+from ._receipt import Receipt  # noqa: F401
 from ._recent_pane import RecentPane  # noqa: F401
 from ._reply_quote import ReplyQuote  # noqa: F401
 from ._resizer import Resizer  # noqa: F401
