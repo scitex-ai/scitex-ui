@@ -15,6 +15,7 @@ from ._dropdown import Dropdown  # noqa: F401
 from ._element_inspector import ElementInspector  # noqa: F401
 from ._empty import EmptyState  # noqa: F401
 from ._file_browser import FileBrowser  # noqa: F401
+from ._form_controls import FormControls  # noqa: F401
 from ._file_tabs import FileTabs  # noqa: F401
 from ._media_viewer import MediaViewer  # noqa: F401
 from ._miller_columns import MillerColumns  # noqa: F401
