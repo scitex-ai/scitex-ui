@@ -106,8 +106,12 @@ jobs:
       # Build INSIDE the SIF (no setup-python on the bare Spartan node).
       # build-in-sif.sh installs the `build` frontend into a writable --target
       # inside the SIF, then `python -m build` → dist/. fail-loud on empty dist.
-      - name: Build wheel + sdist in the CI SIF (apptainer exec)
-        run: bash .github/ci/exec-in-sif.sh build-in-sif.sh 3.12
+      # build-in-sif.sh ends with the release gate: the built artifacts must
+      # declare the tagged version AND carry the js/app bundles consumers load
+      # with a <script> tag. The tag is passed explicitly so a workflow_dispatch
+      # re-publish (where GITHUB_REF is a branch, not a tag) is gated too.
+      - name: Build wheel + sdist in the CI SIF, then gate against the tag
+        run: bash .github/ci/exec-in-sif.sh build-in-sif.sh 3.12 ${{ steps.ver.outputs.version }}
       # upload-artifact is a JS action — runs fine on the self-hosted runner.
       - uses: actions/upload-artifact@v4
         with:
