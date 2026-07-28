@@ -9,3 +9,6 @@ export type {
   PackageInfo,
   PackageDocsSidebarConfig,
 } from "./package-docs-sidebar";
+
+export { ReplyQuote, renderReplyQuote } from "./reply-quote";
+export type { ReplyQuoteConfig } from "./reply-quote";
