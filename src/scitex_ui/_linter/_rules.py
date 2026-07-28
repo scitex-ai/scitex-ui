@@ -166,12 +166,37 @@ def build_rules() -> Mapping[str, Rule]:
         requires="scitex-ui",
     )
 
+    UI106 = Rule(
+        id="STX-UI106",
+        severity="warning",
+        category=CATEGORY,
+        message=(
+            "long native `<select>` with no way to narrow it — a picker "
+            "past a dozen options is unscannable, and the native widget "
+            "offers only type-to-jump on the FIRST character"
+        ),
+        suggestion=(
+            "Layer scitex-ui's fuzzy Combobox over it as a progressive "
+            "enhancement — the <select> stays as the fallback:\n"
+            '  <script type="module" '
+            'src="{% static \'scitex_ui/js/app/combobox.js\' %}"></script>\n'
+            "  if (window.STX && window.STX.Combobox) {\n"
+            "    document.querySelectorAll('select.my-filter')\n"
+            "      .forEach((el) => new window.STX.Combobox({ from: el }));\n"
+            "  }\n"
+            "Fuzzy is subsequence matching, so `sui` finds `scitex-ui`. "
+            "Needs scitex-ui >= 0.12.1."
+        ),
+        requires="scitex-ui",
+    )
+
     return {
         UI101.id: UI101,
         UI102.id: UI102,
         UI103.id: UI103,
         UI104.id: UI104,
         UI105.id: UI105,
+        UI106.id: UI106,
     }
 
 

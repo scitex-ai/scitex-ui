@@ -39,6 +39,26 @@ _SELECT_RE = re.compile(
 )
 _DATA_APP_THEMED_RE = re.compile(r"data-app-themed\s*=", re.IGNORECASE)
 
+# UI-106 — a <select>…</select> block, so its <option>s can be counted.
+_SELECT_BLOCK_RE = re.compile(
+    r"<select\b(?P<attrs>[^>]*)>(?P<body>.*?)</select\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_OPTION_RE = re.compile(r"<option\b", re.IGNORECASE)
+
+# Option count above which a native <select> stops being scannable. Matches
+# Dropdown's DEFAULT_FILTER_THRESHOLD so the lint and the component agree on
+# what "long" means; a rule that disagreed with the component it recommends
+# would be advice nobody could satisfy.
+_LONG_SELECT_OPTIONS = 8
+
+# A <select> already enhanced by, or explicitly opted out of, the Combobox.
+# Opt-out is honoured because some long selects are genuinely fine — an
+# ordered list the user scrolls by position rather than searches by name.
+_COMBOBOX_OPT_OUT_RE = re.compile(
+    r"data-(stx-combobox|no-combobox)\s*=", re.IGNORECASE
+)
+
 # UI-102 — raw hex / rgb() / rgba() literal anywhere in a CSS file
 # (outside an `--scrollbar-*` declaration that itself references var()).
 # We treat any literal that's not inside a `var(...)` argument list as raw.
@@ -229,6 +249,31 @@ def _scan_tsx_html(path: Path, lines: Sequence[str], rules) -> Iterator[UIViolat
         col = match.start() - (last_nl + 1)
         yield UIViolation(
             rule=rules["STX-UI101"],
+            path=str(path),
+            line=lineno,
+            col=col,
+            source_line=(
+                lines[lineno - 1].rstrip("\n") if 1 <= lineno <= len(lines) else ""
+            ),
+        )
+
+    # UI-106 — a native <select> long enough that scanning it fails. Counted
+    # from the literal <option> tags in the markup, so a list populated at
+    # runtime by JS is INVISIBLE here. That is a real blind spot and the
+    # reason this is a warning rather than an error: absence of a finding is
+    # not evidence the picker is short.
+    for match in _SELECT_BLOCK_RE.finditer(joined):
+        attrs = match.group("attrs") or ""
+        if _COMBOBOX_OPT_OUT_RE.search(attrs):
+            continue
+        if len(_OPTION_RE.findall(match.group("body") or "")) <= _LONG_SELECT_OPTIONS:
+            continue
+        pre = joined[: match.start()]
+        lineno = pre.count("\n") + 1
+        last_nl = pre.rfind("\n")
+        col = match.start() - (last_nl + 1)
+        yield UIViolation(
+            rule=rules["STX-UI106"],
             path=str(path),
             line=lineno,
             col=col,
