@@ -13,6 +13,7 @@
 @import "./app/context-menu.css";
 @import "./app/data-table.css";
 @import "./app/dropdown.css";
+@import "./app/empty.css";
 @import "./app/file-browser.css";
 @import "./app/file-browser/base.css";
 @import "./app/file-browser/children.css";

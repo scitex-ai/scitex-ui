@@ -10,6 +10,9 @@ export type {
   FileAttachmentConfig,
 } from "./attachment";
 
+export { renderEmptyState } from "./empty";
+export type { EmptyStateConfig } from "./empty";
+
 export { FileBrowser } from "./file-browser";
 export type { FileNode, FileBrowserConfig } from "./file-browser";
 
