@@ -17,6 +17,7 @@ from ._media_viewer import MediaViewer  # noqa: F401
 from ._miller_columns import MillerColumns  # noqa: F401
 from ._monaco_editor import MonacoEditor  # noqa: F401
 from ._package_docs_sidebar import PackageDocsSidebar  # noqa: F401
+from ._receipt import Receipt  # noqa: F401
 from ._recent_pane import RecentPane  # noqa: F401
 from ._reply_quote import ReplyQuote  # noqa: F401
 from ._resizer import Resizer  # noqa: F401
