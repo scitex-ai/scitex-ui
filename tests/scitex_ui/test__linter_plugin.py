@@ -18,13 +18,20 @@ def test_get_plugin_returns_dict_with_expected_keys():
     assert keys == {"rules", "call_rules", "axes_hints", "checkers"}
 
 
-def test_get_plugin_ships_five_rules():
+def test_get_plugin_ships_six_rules():
     # Arrange
     plugin = get_plugin()
     # Act
     ids = {rule.id for rule in plugin["rules"]}
     # Assert
-    assert ids == {"STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105"}
+    assert ids == {
+        "STX-UI101",
+        "STX-UI102",
+        "STX-UI103",
+        "STX-UI104",
+        "STX-UI105",
+        "STX-UI106",
+    }
 
 
 def test_get_plugin_checkers_is_empty_list():

@@ -1,4 +1,4 @@
-"""Tests for the file-tree walker emitting UI-101..105 UIViolations.
+"""Tests for the file-tree walker emitting UI-101..106 UIViolations.
 
 No mocks — fixture files written via tmp_path so each test exercises the
 real regex + walker code paths.
@@ -7,6 +7,8 @@ real regex + walker code paths.
 from __future__ import annotations
 
 from pathlib import Path
+
+import pytest
 
 from scitex_ui._linter._checker import scan_path
 
@@ -288,3 +290,65 @@ def test_violation_carries_source_line_containing_offender(tmp_path: Path) -> No
     violations = scan_path(css)
     # Assert
     assert "#abcdef" in violations[0].source_line
+
+
+# --------------------------------------------------------------------------- #
+# UI-106 — a long native <select> with no way to narrow it                     #
+#                                                                              #
+# The operator sent a screenshot of a 14-item project picker with no filter    #
+# and asked whether "always put a fuzzy filter on a list like this" could be   #
+# ENFORCED rather than merely stated. Most of it cannot — whether a given list #
+# needs a filter is a UX call. This slice can, because it is a countable       #
+# property of the markup.                                                      #
+#                                                                              #
+# The threshold matches Dropdown's DEFAULT_FILTER_THRESHOLD on purpose: a lint #
+# disagreeing with the component it recommends is advice nobody can satisfy.   #
+# --------------------------------------------------------------------------- #
+
+
+def _options(count: int) -> str:
+    return "".join(f'<option value="{i}">item {i}</option>' for i in range(count))
+
+
+def _scan_markup(tmp_path: Path, markup: str) -> list[str]:
+    page = tmp_path / "page.html"
+    page.write_text(markup)
+    return [v.rule.id for v in scan_path(page)]
+
+
+@pytest.mark.parametrize("count", [9, 14, 40])
+def test_ui106_flags_select_longer_than_the_threshold(
+    tmp_path: Path, count: int
+) -> None:
+    # Arrange
+    markup = f"<select id='f-agent'>{_options(count)}</select>"
+    # Act
+    fired = _scan_markup(tmp_path, markup)
+    # Assert
+    assert "STX-UI106" in fired, (
+        f"a {count}-option native select was not flagged; past ~8 entries the "
+        "native widget offers only first-character type-to-jump"
+    )
+
+
+@pytest.mark.parametrize("count", [0, 3, 8])
+def test_ui106_leaves_short_select_alone(tmp_path: Path, count: int) -> None:
+    # Arrange — a deliberately short action menu must not be nagged, or the
+    # rule gets muted repo-wide and stops protecting the long ones.
+    markup = f"<select>{_options(count)}</select>"
+    # Act
+    fired = _scan_markup(tmp_path, markup)
+    # Assert
+    assert "STX-UI106" not in fired, f"{count} options should not fire UI106"
+
+
+@pytest.mark.parametrize("attr", ["data-no-combobox='1'", "data-stx-combobox='1'"])
+def test_ui106_honours_explicit_opt_out(tmp_path: Path, attr: str) -> None:
+    # Arrange — some long selects are genuinely fine (an ordered list scrolled
+    # by position rather than searched by name), and one already enhanced must
+    # not be told to enhance itself.
+    markup = f"<select {attr}>{_options(20)}</select>"
+    # Act
+    fired = _scan_markup(tmp_path, markup)
+    # Assert
+    assert "STX-UI106" not in fired, f"{attr} must suppress the rule"

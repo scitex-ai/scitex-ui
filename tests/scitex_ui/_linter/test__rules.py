@@ -1,4 +1,4 @@
-"""Tests for the UI-101..105 Rule corpus."""
+"""Tests for the UI-101..106 Rule corpus."""
 
 from __future__ import annotations
 
@@ -7,13 +7,20 @@ import pytest
 from scitex_ui._linter._rules import CATEGORY, build_rules
 
 
-def test_build_rules_returns_five_rules():
+def test_build_rules_returns_six_rules():
     # Arrange
     rules = build_rules()
     # Act
     ids = set(rules.keys())
     # Assert
-    assert ids == {"STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105"}
+    assert ids == {
+        "STX-UI101",
+        "STX-UI102",
+        "STX-UI103",
+        "STX-UI104",
+        "STX-UI105",
+        "STX-UI106",
+    }
 
 
 def test_all_rules_share_ui_category():
@@ -37,6 +44,7 @@ def test_all_rules_share_ui_category():
         # this parameter flips to "error" with the version bump.
         ("STX-UI104", "warning"),
         ("STX-UI105", "warning"),
+        ("STX-UI106", "warning"),
     ],
 )
 def test_rule_severity_matches_current_release(rule_id, expected_severity):
@@ -70,7 +78,8 @@ def test_ui104_message_documents_severity_flip_version_number():
 
 
 @pytest.mark.parametrize(
-    "rule_id", ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105"]
+    "rule_id",
+    ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105", "STX-UI106"],
 )
 def test_all_rules_carry_requires_scitex_ui_marker(rule_id):
     # Arrange — mirrors scitex-io's plugin convention so the linter knows
@@ -83,7 +92,8 @@ def test_all_rules_carry_requires_scitex_ui_marker(rule_id):
 
 
 @pytest.mark.parametrize(
-    "rule_id", ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105"]
+    "rule_id",
+    ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105", "STX-UI106"],
 )
 def test_each_rule_suggestion_is_non_trivial_length(rule_id):
     # Arrange — every rule must teach the fix, not just the violation.
@@ -95,7 +105,8 @@ def test_each_rule_suggestion_is_non_trivial_length(rule_id):
 
 
 @pytest.mark.parametrize(
-    "rule_id", ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105"]
+    "rule_id",
+    ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105", "STX-UI106"],
 )
 def test_each_rule_suggestion_mentions_component_or_token(rule_id):
     # Arrange — the suggestion must point at a concrete fix surface.
@@ -109,3 +120,14 @@ def test_each_rule_suggestion_mentions_component_or_token(rule_id):
         or "scitex-ui" in lowered
         or "dropdown" in lowered
     )
+
+
+def test_ui106_suggestion_names_the_feature_detected_global():
+    # Arrange — consumers feature-detect `window.STX.Combobox` before layering
+    # the enhancement, so a suggestion that only says "use the combobox" leaves
+    # the reader unable to write the guard.
+    rules = build_rules()
+    # Act
+    suggestion = rules["STX-UI106"].suggestion or ""
+    # Assert
+    assert "window.STX.Combobox" in suggestion
