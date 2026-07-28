@@ -10,6 +10,7 @@ from ._combobox import Combobox  # noqa: F401
 from ._confirm_modal import ConfirmModal  # noqa: F401
 from ._context_menu import ContextMenu  # noqa: F401
 from ._data_table import DataTable  # noqa: F401
+from ._drawer import Drawer  # noqa: F401
 from ._dropdown import Dropdown  # noqa: F401
 from ._element_inspector import ElementInspector  # noqa: F401
 from ._empty import EmptyState  # noqa: F401
