@@ -5,6 +5,7 @@
  */
 
 @import "./app/alert-banner.css";
+@import "./app/attachment.css";
 @import "./app/badge.css";
 @import "./app/collapsible-panel.css";
 @import "./app/combobox.css";
