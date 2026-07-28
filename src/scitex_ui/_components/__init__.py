@@ -28,5 +28,6 @@ from ._settings_card import SettingsCard  # noqa: F401
 from ._sidebar_layout import SidebarLayout  # noqa: F401
 from ._status_bar import StatusBar  # noqa: F401
 from ._theme_provider import ThemeProvider  # noqa: F401
+from ._toast import Toast  # noqa: F401
 from ._toggle_switch import ToggleSwitch  # noqa: F401
 from ._tooltip import Tooltip  # noqa: F401

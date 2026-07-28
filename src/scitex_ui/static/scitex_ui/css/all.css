@@ -31,6 +31,7 @@
 @import "./app/selector-nav.css";
 @import "./app/settings-card.css";
 @import "./app/sidebar-layout.css";
+@import "./app/toast.css";
 @import "./app/toggle-switch.css";
 @import "./app/tooltip.css";
 @import "./primitives/colors.css";
