@@ -10,6 +10,15 @@ export type {
   PackageDocsSidebarConfig,
 } from "./package-docs-sidebar";
 
+export { ContextMenu, initContextMenu } from "./context-menu";
+export type {
+  ContextMenuConfig,
+  ContextMenuEntry,
+  ContextMenuItem,
+  ContextMenuDivider,
+  ContextMenuLabel,
+} from "./context-menu";
+
 export { Receipt, renderReceipt, RECEIPT_STATES } from "./receipt";
 export type {
   ReceiptConfig,
