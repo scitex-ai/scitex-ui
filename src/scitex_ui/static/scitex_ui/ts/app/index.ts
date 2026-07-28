@@ -18,3 +18,6 @@ export type {
   ContextMenuDivider,
   ContextMenuLabel,
 } from "./context-menu";
+
+export { ReplyQuote, renderReplyQuote } from "./reply-quote";
+export type { ReplyQuoteConfig } from "./reply-quote";
