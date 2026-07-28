@@ -56,6 +56,11 @@ mcp = [
     "fastmcp>=2.0.0",
 ]
 dev = [
+    # tests/develop/test_packaging.py builds a wheel to inspect its CONTENTS.
+    # hatchling is listed explicitly so that build can run --no-isolation and
+    # stay offline; without it the build downloads a backend and can hang.
+    "build>=1.0",
+    "hatchling>=1.20",
     "click>=8.0.0",  # tests/scitex_ui/test__cli.py
     "fastmcp>=2.0.0",
     "pytest-cov>=4.0.0",
