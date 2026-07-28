@@ -10,5 +10,14 @@ export type {
   PackageDocsSidebarConfig,
 } from "./package-docs-sidebar";
 
+export { ContextMenu, initContextMenu } from "./context-menu";
+export type {
+  ContextMenuConfig,
+  ContextMenuEntry,
+  ContextMenuItem,
+  ContextMenuDivider,
+  ContextMenuLabel,
+} from "./context-menu";
+
 export { ReplyQuote, renderReplyQuote } from "./reply-quote";
 export type { ReplyQuoteConfig } from "./reply-quote";
