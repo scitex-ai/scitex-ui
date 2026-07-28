@@ -53,3 +53,38 @@
   margin: 4px 8px;
   background: var(--border-subtle, rgba(0, 0, 0, 0.06));
 }
+
+/* Fuzzy filter — appears automatically once the list exceeds
+   `filterThreshold` (default 8). A long unfiltered picker is a UX defect, and
+   an opt-in flag guarantees some callers forget it, so the default is on for
+   long lists rather than off everywhere. */
+.stx-app-dropdown__filter {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 10px;
+
+  color: var(--text-primary, #333);
+  background: var(--bg-surface, #f8f7f5);
+  border: none;
+  border-bottom: 1px solid var(--border-muted, #c0c0c0);
+
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.stx-app-dropdown__filter:focus {
+  outline: none;
+  /* An inset ring rather than an outline: the input is flush against the
+     menu's rounded edge, and an outline would be clipped by overflow. */
+  box-shadow: inset 0 -2px 0 var(--status-info, #6b7280);
+}
+
+.stx-app-dropdown__empty {
+  padding: 10px 12px;
+  color: var(--text-muted, #777);
+  font-size: 0.85rem;
+  /* Not a menuitem: it is a message, and making it look selectable invites a
+     click that does nothing. */
+  cursor: default;
+}

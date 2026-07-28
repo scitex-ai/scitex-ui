@@ -32,6 +32,7 @@
  */
 
 import { BaseComponent } from "../../_base/BaseComponent";
+import { fuzzyMatch } from "../../_base/fuzzy";
 import type { ComboboxConfig, ComboboxItem } from "./types";
 
 const CLS = "stx-app-combobox";
@@ -363,17 +364,11 @@ export class Combobox extends BaseComponent<ComboboxConfig> {
     this.filtered = out;
   }
 
-  /** fzf-style subsequence match: every character of the query must
-   *  appear in the haystack IN ORDER (not necessarily consecutively).
-   *  Case is normalised by the caller. */
+  /** fzf-style subsequence match. Delegates to the shared implementation in
+   *  `_base/fuzzy` so Combobox and Dropdown cannot drift apart — a list that
+   *  filters differently from the one next to it teaches users to distrust
+   *  both. Kept as a static method because it is part of the public surface. */
   static fuzzyMatch(query: string, hay: string): boolean {
-    if (!query) return true;
-    let i = 0;
-    for (const c of query) {
-      const found = hay.indexOf(c, i);
-      if (found < 0) return false;
-      i = found + 1;
-    }
-    return true;
+    return fuzzyMatch(query, hay);
   }
 }

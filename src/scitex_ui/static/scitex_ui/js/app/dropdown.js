@@ -1,13 +1,8 @@
-/* AUTO-GENERATED from ts/app/dropdown/index.ts via esbuild — do not edit by hand. Rebuild: npx esbuild ts/app/dropdown/index.ts --bundle --format=esm --outfile=js/app/dropdown.js */
-var __defProp = Object.defineProperty;
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-
-// ts/_base/BaseComponent.ts
+// src/scitex_ui/static/scitex_ui/ts/_base/BaseComponent.ts
 var BaseComponent = class {
+  container;
+  config;
   constructor(config) {
-    __publicField(this, "container");
-    __publicField(this, "config");
     this.config = config;
     const el = typeof config.container === "string" ? document.querySelector(config.container) : config.container;
     if (!el) {
@@ -29,15 +24,30 @@ var BaseComponent = class {
   }
 };
 
-// ts/app/dropdown/_Dropdown.ts
+// src/scitex_ui/static/scitex_ui/ts/_base/fuzzy.ts
+function fuzzyMatch(query, hay) {
+  if (!query) return true;
+  let i = 0;
+  for (const c of query) {
+    const found = hay.indexOf(c, i);
+    if (found < 0) return false;
+    i = found + 1;
+  }
+  return true;
+}
+
+// src/scitex_ui/static/scitex_ui/ts/app/dropdown/_Dropdown.ts
 var CLS = "stx-app-dropdown";
+var DEFAULT_FILTER_THRESHOLD = 8;
 var Dropdown = class extends BaseComponent {
+  triggerEl;
+  menuEl = null;
+  open = false;
+  query = "";
+  outsideClickHandler;
+  triggerClickHandler;
   constructor(config) {
     super(config);
-    __publicField(this, "triggerEl");
-    __publicField(this, "menuEl", null);
-    __publicField(this, "open", false);
-    __publicField(this, "outsideClickHandler");
     this.triggerEl = typeof config.trigger === "string" ? document.querySelector(config.trigger) : config.trigger;
     if (!this.triggerEl) {
       throw new Error(`Dropdown: trigger not found: ${config.trigger}`);
@@ -48,19 +58,39 @@ var Dropdown = class extends BaseComponent {
         this.close();
       }
     };
-    this.triggerEl.addEventListener("click", (e) => {
+    this.triggerClickHandler = (e) => {
       e.stopPropagation();
       this.toggle();
-    });
+    };
+    this.triggerEl.addEventListener("click", this.triggerClickHandler);
     document.addEventListener("click", this.outsideClickHandler);
+  }
+  /** Whether the filter input should be shown for the current item list. */
+  get filterEnabled() {
+    if (this.config.filter !== void 0) return this.config.filter;
+    const threshold = this.config.filterThreshold ?? DEFAULT_FILTER_THRESHOLD;
+    const selectable = this.config.items.filter((i) => !i.separator).length;
+    return selectable > threshold;
+  }
+  /** Items surviving the current query. Separators are dropped while
+   *  filtering — a divider between two groups is meaningless once the groups
+   *  it separated have been filtered away. */
+  visibleItems() {
+    if (!this.query) return this.config.items;
+    const q = this.query.toLowerCase();
+    return this.config.items.filter(
+      (item) => !item.separator && fuzzyMatch(q, item.label.toLowerCase())
+    );
   }
   /** Open the dropdown. */
   show() {
     if (this.open) return;
     this.open = true;
+    this.query = "";
     this.renderMenu();
     this.container.style.display = "block";
     this.positionMenu();
+    this.container.querySelector(`.${CLS}__filter`)?.focus();
   }
   /** Close the dropdown. */
   close() {
@@ -79,14 +109,26 @@ var Dropdown = class extends BaseComponent {
   }
   destroy() {
     document.removeEventListener("click", this.outsideClickHandler);
+    this.triggerEl.removeEventListener("click", this.triggerClickHandler);
     super.destroy();
   }
   renderMenu() {
     this.container.innerHTML = "";
     this.container.className = CLS;
+    if (this.filterEnabled) this.container.appendChild(this.buildFilter());
+    const items = this.visibleItems();
     const menu = document.createElement("ul");
     menu.className = `${CLS}__menu`;
-    for (const item of this.config.items) {
+    if (items.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = `${CLS}__empty`;
+      empty.textContent = this.config.emptyText ?? "No matches";
+      menu.appendChild(empty);
+      this.container.appendChild(menu);
+      this.menuEl = menu;
+      return;
+    }
+    for (const item of items) {
       if (item.separator) {
         const sep = document.createElement("li");
         sep.className = `${CLS}__separator`;
@@ -116,6 +158,46 @@ var Dropdown = class extends BaseComponent {
     }
     this.container.appendChild(menu);
     this.menuEl = menu;
+  }
+  buildFilter() {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = `${CLS}__filter`;
+    input.placeholder = this.config.filterPlaceholder ?? "Filter\u2026";
+    input.value = this.query;
+    input.setAttribute("aria-label", input.placeholder);
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("input", () => {
+      this.query = input.value;
+      const caret = input.selectionStart;
+      this.renderMenu();
+      const next = this.container.querySelector(
+        `.${CLS}__filter`
+      );
+      if (next) {
+        next.focus();
+        if (caret !== null) next.setSelectionRange(caret, caret);
+      }
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        this.close();
+        this.triggerEl.focus();
+        return;
+      }
+      if (e.key === "Enter") {
+        const remaining = this.visibleItems().filter((i) => !i.disabled);
+        if (remaining.length === 1) {
+          e.preventDefault();
+          const only = remaining[0];
+          this.close();
+          only.onClick?.();
+          this.config.onSelect?.(only);
+        }
+      }
+    });
+    return input;
   }
   positionMenu() {
     const rect = this.triggerEl.getBoundingClientRect();
