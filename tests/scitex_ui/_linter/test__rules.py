@@ -6,6 +6,13 @@ import pytest
 
 from scitex_ui._linter._rules import CATEGORY, build_rules
 
+# Derived, NOT hand-listed: a new rule is auto-enrolled in every invariant
+# below, so adding one can never silently exempt it from the bar its siblings
+# meet. The roster assertion in `test_build_rules_returns_six_rules` stays
+# hand-written on purpose — that one is the deliberate "you added a rule,
+# acknowledge it" gate, and deriving it too would make it vacuous.
+ALL_RULE_IDS = sorted(build_rules())
+
 
 def test_build_rules_returns_six_rules():
     # Arrange
@@ -32,21 +39,34 @@ def test_all_rules_share_ui_category():
     assert cats == {CATEGORY} == {"ui"}
 
 
-@pytest.mark.parametrize(
-    "rule_id,expected_severity",
-    [
-        ("STX-UI101", "warning"),
-        ("STX-UI102", "warning"),
-        ("STX-UI103", "warning"),
-        # UI-104 is intentionally WARN in the current scitex-ui release.
-        # The severity flip to ERROR is scheduled for scitex-ui 0.7.0;
-        # this test guards the current release surface — when 0.7.0 lands,
-        # this parameter flips to "error" with the version bump.
-        ("STX-UI104", "warning"),
-        ("STX-UI105", "warning"),
-        ("STX-UI106", "warning"),
-    ],
-)
+# Hand-written on purpose: severity is a per-rule policy decision, not an
+# invariant, so it cannot be derived. `test_severity_table_covers_every_rule`
+# below keeps the table honest — a new rule with no entry here fails loudly
+# instead of quietly going unchecked.
+_EXPECTED_SEVERITIES = [
+    ("STX-UI101", "warning"),
+    ("STX-UI102", "warning"),
+    ("STX-UI103", "warning"),
+    # UI-104 is intentionally WARN in the current scitex-ui release.
+    # The severity flip to ERROR is scheduled for scitex-ui 0.7.0;
+    # this test guards the current release surface — when 0.7.0 lands,
+    # this parameter flips to "error" with the version bump.
+    ("STX-UI104", "warning"),
+    ("STX-UI105", "warning"),
+    ("STX-UI106", "warning"),
+]
+
+
+def test_severity_table_covers_every_rule():
+    # Arrange — without this, adding a rule and forgetting a severity entry
+    # leaves it untested while the suite stays green.
+    # Act
+    tabled = {rule_id for rule_id, _ in _EXPECTED_SEVERITIES}
+    # Assert
+    assert tabled == set(ALL_RULE_IDS)
+
+
+@pytest.mark.parametrize("rule_id,expected_severity", _EXPECTED_SEVERITIES)
 def test_rule_severity_matches_current_release(rule_id, expected_severity):
     # Arrange
     rules = build_rules()
@@ -78,8 +98,7 @@ def test_ui104_message_documents_severity_flip_version_number():
 
 
 @pytest.mark.parametrize(
-    "rule_id",
-    ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105", "STX-UI106"],
+    "rule_id", ALL_RULE_IDS
 )
 def test_all_rules_carry_requires_scitex_ui_marker(rule_id):
     # Arrange — mirrors scitex-io's plugin convention so the linter knows
@@ -92,8 +111,7 @@ def test_all_rules_carry_requires_scitex_ui_marker(rule_id):
 
 
 @pytest.mark.parametrize(
-    "rule_id",
-    ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105", "STX-UI106"],
+    "rule_id", ALL_RULE_IDS
 )
 def test_each_rule_suggestion_is_non_trivial_length(rule_id):
     # Arrange — every rule must teach the fix, not just the violation.
@@ -105,8 +123,7 @@ def test_each_rule_suggestion_is_non_trivial_length(rule_id):
 
 
 @pytest.mark.parametrize(
-    "rule_id",
-    ["STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105", "STX-UI106"],
+    "rule_id", ALL_RULE_IDS
 )
 def test_each_rule_suggestion_mentions_component_or_token(rule_id):
     # Arrange — the suggestion must point at a concrete fix surface.
