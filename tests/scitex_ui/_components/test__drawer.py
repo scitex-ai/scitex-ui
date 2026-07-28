@@ -102,7 +102,7 @@ class TestClosedDrawerIsUnreachable:
 
 
 class TestKeyboardCompleteness:
-    def test_escape_closes(self):
+    def test_escape_key_closes_the_drawer(self):
         # Arrange
         ts = _ts()
 
