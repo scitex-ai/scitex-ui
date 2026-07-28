@@ -9,3 +9,12 @@ export type {
   PackageInfo,
   PackageDocsSidebarConfig,
 } from "./package-docs-sidebar";
+
+export { ContextMenu, initContextMenu } from "./context-menu";
+export type {
+  ContextMenuConfig,
+  ContextMenuEntry,
+  ContextMenuItem,
+  ContextMenuDivider,
+  ContextMenuLabel,
+} from "./context-menu";
