@@ -26,3 +26,6 @@ export type {
   ReceiptLabels,
   ReceiptState,
 } from "./receipt";
+
+export { ReplyQuote, renderReplyQuote } from "./reply-quote";
+export type { ReplyQuoteConfig } from "./reply-quote";
