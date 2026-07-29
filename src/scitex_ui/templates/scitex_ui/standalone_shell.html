@@ -10,6 +10,13 @@
         <!-- Tab branding. Shared with GUIs that do NOT extend this shell, so the
              favicon markup lives in one partial rather than only here. -->
         {% include "scitex_ui/_branding_head.html" %}
+        <!-- Where am I mounted? Read by ts/_base/mount.ts's mountPrefix(), which
+             throws rather than guessing a root mount. Emitted only when the view
+             merged scitex_ui.mount.mount_context(request, view_path=...) — an
+             app that has not adopted the contract gets no marker and the reader
+             says so, instead of silently assuming "/". Shared with GUIs that do
+             NOT extend this shell, like the branding partial above. -->
+        {% include "scitex_ui/_mount_marker.html" %}
         <!-- Must stay above the stylesheets: resolves the stored theme before the
              first paint. Inline by design — an external script would cost a
              render-blocking request on every page. -->
