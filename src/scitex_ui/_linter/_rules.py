@@ -200,4 +200,53 @@ def build_rules() -> Mapping[str, Rule]:
     }
 
 
-__all__ = ["Rule", "UIViolation", "CATEGORY", "build_rules"]
+#: What this linter CANNOT see. Emitted on EVERY run, clean or not.
+#:
+#: A check whose output is indistinguishable from a complete one is the
+#: defect this exists to prevent: "no violations found" reads as "nothing
+#: is wrong" when it may mean "nothing was looked at". scitex-dev made
+#: stating the gap in the EMITTED VERDICT a requirement rather than a
+#: preference (2026-07-29) — not the docstring, not the card, the output.
+#: Their own corpus does the same for unregistered rule categories.
+#:
+#: Every entry here is a property of the code in `_checker.py`, not a
+#: guess. Add one whenever a rule's reach narrows.
+COVERAGE_GAPS: tuple[tuple[str, str], ...] = (
+    (
+        "runtime-generated markup",
+        "this is a static text scanner: elements created or populated at "
+        "runtime by JS are never inspected. STX-UI106 in particular counts "
+        "<option> tags in source, so a <select> filled from fetch() looks "
+        "empty to it and will not be flagged however long it gets.",
+    ),
+    (
+        "built output",
+        "dist/ and build/ are skipped, so what a consumer actually ships is "
+        "not scanned — only the sources it was built from.",
+    ),
+    (
+        "HTML assembled in Python",
+        "only .css/.html/.htm/.ts/.tsx/.js/.jsx are read. Markup built by "
+        "string concatenation inside .py is invisible.",
+    ),
+)
+
+
+def coverage_notice() -> str:
+    """Render the always-emitted statement of what was NOT inspected."""
+    lines = [
+        "NOT EVERYTHING WAS INSPECTED — this verdict covers only what a "
+        "static scan of the source can see:",
+    ]
+    lines += [f"  - {name}: {detail}" for name, detail in COVERAGE_GAPS]
+    return "\n".join(lines)
+
+
+__all__ = [
+    "Rule",
+    "UIViolation",
+    "CATEGORY",
+    "build_rules",
+    "COVERAGE_GAPS",
+    "coverage_notice",
+]
