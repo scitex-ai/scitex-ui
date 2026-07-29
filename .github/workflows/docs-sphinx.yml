@@ -1,3 +1,28 @@
+# Renamed from `rtd-sphinx-build-on-ubuntu-latest.yml`, which named a runner
+# this job stopped using: `runs-on` is spartan-cpu (see the comment below).
+# A filename asserting `ubuntu-latest` while the job runs elsewhere is a claim
+# nothing checks — the same read-the-label-not-the-thing shape this repo keeps
+# hitting. The new name makes no runner claim at all, so it cannot go stale.
+#
+# THIS IS NOT THE ORG REUSABLE, and the difference is deliberate. `ci.yml` also
+# calls `scitex-ai/.github/.github/workflows/rtd-sphinx-build.yml` (job
+# `docs-sphinx`), so sphinx builds TWICE per PR. That is real duplication on
+# contended runners, but the two are not interchangeable:
+#
+#   org reusable   sphinx-build -b html          (warnings tolerated)
+#   this workflow  sphinx-build -W -b html       on PRs — warnings FAIL
+#                  + refreshes src/scitex_ui/_sphinx_html/ on develop push
+#
+# So deleting this one to remove the duplicate build would silently drop
+# warnings-as-errors AND the bundle refresh. If the duplication is worth
+# closing, the way is to move `-W` into the org reusable first and leave only
+# the bundle refresh here — not to delete this file. Recorded rather than done,
+# because raising strictness fleet-wide is the org workflow owner's call.
+#
+# Renaming is safe for branch protection: develop requires only
+# pytest-matrix x3 and typecheck (verified against the API, not assumed), and
+# this workflow's check name comes from `name:` + the job id, never the
+# filename.
 name: docs
 
 on:
