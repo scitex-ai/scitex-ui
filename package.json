@@ -1,5 +1,6 @@
 {
   "name": "@scitex/ui",
+  "private": true,
   "version": "0.1.0",
   "description": "Shared React UI components for the SciTeX ecosystem",
   "type": "module",
