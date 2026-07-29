@@ -1,4 +1,4 @@
-"""Tests for the UI-101..106 Rule corpus."""
+"""Tests for the UI-101..107 Rule corpus."""
 
 from __future__ import annotations
 
@@ -8,14 +8,17 @@ from scitex_ui._linter._rules import CATEGORY, build_rules
 
 # Derived, NOT hand-listed: a new rule is auto-enrolled in every invariant
 # below, so adding one can never silently exempt it from the bar its siblings
-# meet. The roster assertion in `test_build_rules_returns_six_rules` stays
-# hand-written on purpose — that one is the deliberate "you added a rule,
+# meet. The roster assertion in `test_build_rules_returns_the_declared_corpus`
+# stays hand-written on purpose — that one is the deliberate "you added a rule,
 # acknowledge it" gate, and deriving it too would make it vacuous.
 ALL_RULE_IDS = sorted(build_rules())
 
 
-def test_build_rules_returns_six_rules():
-    # Arrange
+def test_build_rules_returns_the_declared_corpus():
+    # Arrange — this gate did its job when UI-107 was added: it failed, and so
+    # did the severity table and the plugin roster, which is the acknowledgement
+    # it exists to force. Renamed off "six" because a name carrying the count
+    # goes stale at the first addition while the assertion below does not.
     rules = build_rules()
     # Act
     ids = set(rules.keys())
@@ -27,6 +30,7 @@ def test_build_rules_returns_six_rules():
         "STX-UI104",
         "STX-UI105",
         "STX-UI106",
+        "STX-UI107",
     }
 
 
@@ -54,6 +58,13 @@ _EXPECTED_SEVERITIES = [
     ("STX-UI104", "warning"),
     ("STX-UI105", "warning"),
     ("STX-UI106", "warning"),
+    # UI-107 is the corpus's FIRST error, and that is a measurement, not a
+    # mood: the population when it shipped was 12 root-anchored API literals
+    # across 3 consumer repos — small enough for those repos to clear. A rule
+    # whose first run is red gets disabled rather than obeyed, so "error"
+    # would have been the wrong call at, say, the 50 literals scitex-cloud
+    # carries (which are not violations anyway — the hub IS the mount root).
+    ("STX-UI107", "error"),
 ]
 
 

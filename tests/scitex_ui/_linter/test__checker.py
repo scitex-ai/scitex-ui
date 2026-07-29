@@ -352,3 +352,109 @@ def test_ui106_honours_explicit_opt_out(tmp_path: Path, attr: str) -> None:
     fired = _scan_markup(tmp_path, markup)
     # Assert
     assert "STX-UI106" not in fired, f"{attr} must suppress the rule"
+
+
+# --------------------------------------------------------------------------- #
+# UI-107 — root-anchored API path literal in client code                       #
+#                                                                             #
+# Every exemption below is here because the rule's FIRST measured run would   #
+# otherwise have been wrong: scitex-ui's own two grep hits were both comments, #
+# and one was the docstring for apiUrl — the very fix UI-107 recommends.      #
+# --------------------------------------------------------------------------- #
+
+
+def _ui107(tmp_path: Path, name: str, body: str) -> list[str]:
+    (tmp_path / name).write_text(body)
+    return [v.rule.id for v in scan_path(tmp_path)]
+
+
+def test_ui107_flags_a_root_anchored_api_literal(tmp_path: Path) -> None:
+    # Arrange — correct standalone, silently wrong once mounted under a prefix.
+    body = 'await fetch("/api/items");\n'
+    # Act
+    fired = _ui107(tmp_path, "client.ts", body)
+    # Assert
+    assert "STX-UI107" in fired
+
+
+def test_ui107_flags_a_template_literal_too(tmp_path: Path) -> None:
+    # Arrange — measured in scitex-writer: the real-world form is a backtick
+    # template literal, not a plain string, so a quote-only pattern would have
+    # missed the actual population.
+    body = "await fetch(`/api/pdf?doc=${encodeURIComponent(d)}`);\n"
+    # Act
+    fired = _ui107(tmp_path, "client.ts", body)
+    # Assert
+    assert "STX-UI107" in fired
+
+
+def test_ui107_flags_the_hub_prefix_written_by_hand(tmp_path: Path) -> None:
+    # Arrange — hardcoding the EMBEDDED prefix is the mirror-image bug: it
+    # works on the hub and breaks standalone.
+    body = 'await fetch("/apps/u/writer/api/items");\n'
+    # Act
+    fired = _ui107(tmp_path, "client.ts", body)
+    # Assert
+    assert "STX-UI107" in fired
+
+
+def test_ui107_does_not_flag_the_fix_it_recommends(tmp_path: Path) -> None:
+    # Arrange — THE exemption that decides whether anyone keeps this rule on.
+    # apiUrl("/api/items") IS the remedy and contains the flagged pattern; a
+    # rule that fires on its own remedy tells a fully-migrated app it still
+    # has violations.
+    body = 'import { apiUrl } from "@scitex/ui/ts/_base";\nawait fetch(apiUrl("/api/items"));\n'
+    # Act
+    fired = _ui107(tmp_path, "client.ts", body)
+    # Assert
+    assert "STX-UI107" not in fired
+
+
+def test_ui107_does_not_flag_a_line_comment(tmp_path: Path) -> None:
+    # Arrange — measured 2026-07-30: both of scitex-ui's own matches were
+    # comments. A grep-shaped rule indicts documentation.
+    body = '// await fetch("/api/items");  // the old way\nexport const x = 1;\n'
+    # Act
+    fired = _ui107(tmp_path, "client.ts", body)
+    # Assert
+    assert "STX-UI107" not in fired
+
+
+def test_ui107_does_not_flag_a_docstring_continuation_line(tmp_path: Path) -> None:
+    # Arrange — the exact shape of scitex-ui's own two hits: a `*`-prefixed
+    # JSDoc body line, one of which documents apiUrl itself.
+    body = '/**\n * `apiUrl("/api/items")` -> "/apps/u/writer/api/items"\n */\nexport const x = 1;\n'
+    # Act
+    fired = _ui107(tmp_path, "client.ts", body)
+    # Assert
+    assert "STX-UI107" not in fired
+
+
+def test_ui107_severity_is_error(tmp_path: Path) -> None:
+    # Arrange — error is only defensible because the measured population was
+    # 12 literals across 3 repos. A noisier rule would have to be a warning.
+    (tmp_path / "client.ts").write_text('fetch("/api/x");\n')
+    # Act
+    sev = [v.rule.severity for v in scan_path(tmp_path) if v.rule.id == "STX-UI107"]
+    # Assert
+    assert sev == ["error"]
+
+
+def test_ui107_reports_the_offending_line_number(tmp_path: Path) -> None:
+    # Arrange — the rule scans per-line precisely so the exemptions are
+    # meaningful; that must also give an exact location, not a file-level nag.
+    (tmp_path / "client.ts").write_text('const a = 1;\nconst b = 2;\nfetch("/api/x");\n')
+    # Act
+    lines = [v.line for v in scan_path(tmp_path) if v.rule.id == "STX-UI107"]
+    # Assert
+    assert lines == [3]
+
+
+def test_ui107_does_not_flag_a_relative_path(tmp_path: Path) -> None:
+    # Arrange — a relative path already survives being mounted anywhere, so
+    # flagging it would be advice with no defect behind it.
+    body = 'await fetch("api/items");\n'
+    # Act
+    fired = _ui107(tmp_path, "client.ts", body)
+    # Assert
+    assert "STX-UI107" not in fired

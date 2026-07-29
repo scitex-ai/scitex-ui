@@ -1,4 +1,4 @@
-"""File-tree walker that emits UI-101..105 violations.
+"""File-tree walker that emits UI-101..107 violations.
 
 Walks an input path (directory or single file), classifies each file by
 extension into ``css | tsx | html``, and dispatches to a per-extension
@@ -87,6 +87,22 @@ _SHELL_FINGERPRINTS = (
 # scitex-ui's own dev tree.
 _SHELL_PATH_RE = re.compile(r"scitex_ui[\\/]+css[\\/]+(shell|primitives)[\\/]+")
 
+# UI-107 — a root-anchored API path LITERAL in client code. Those are the
+# ones that break when the app is mounted under a prefix: correct standalone,
+# silently wrong embedded.
+#
+# Deliberately narrow. `/api/` and `/apps/` are the two roots the fleet
+# actually uses; a rule matching every leading-slash string would fire on
+# hrefs, image paths and CSS urls, and a rule that noisy gets disabled rather
+# than obeyed. Measured population when this shipped: 12 literals across 3
+# consumer repos, which is what makes `error` an honest severity.
+_ABSOLUTE_API_URL_RE = re.compile(r"""["'`](/api/|/apps/u/)""")
+
+# The FIX contains the pattern: apiUrl("/api/items") is the recommended form.
+# Without this exemption the rule would flag every correct call site and read
+# as "you have 12 violations" to an app that had already fixed all of them.
+_API_URL_CALL_RE = re.compile(r"\bapiUrl\s*\(")
+
 # UI-105 — scrollbar rule body containing a raw hex / rgb() literal.
 # We use a coarse single-line match: any `::-webkit-scrollbar` selector
 # (or `scrollbar-color:` declaration) followed by a raw color literal
@@ -145,6 +161,26 @@ def _iter_files(
             continue
         if p.suffix.lower() in _EXT_TO_KIND:
             yield p
+
+
+def _is_comment_line(line: str) -> bool:
+    """Whether ``line`` reads as a comment rather than as code.
+
+    Line-prefix based, which is a real limit and is declared in
+    :data:`~scitex_ui._linter._rules.COVERAGE_GAPS` rather than left for a
+    reader to discover. It exists because a grep-shaped rule otherwise matches
+    the documentation OF the pattern it forbids: measured 2026-07-30, both of
+    scitex-ui's own two matches were comments, and one was the docstring for
+    ``apiUrl`` — the very fix UI-107 recommends.
+
+    NOT usable for CSS, which is why ``_hex_or_rgb_positions`` keeps its own
+    near-duplicate test instead of calling this. ``#`` starts a comment in the
+    JS-ish world and a COLOUR LITERAL in CSS, so treating a ``#``-leading line
+    as a comment here would make UI-102 skip every raw hex it exists to find.
+    The duplication is deliberate; unifying these two would silently delete a
+    rule.
+    """
+    return not line.strip() or line.lstrip().startswith(("//", "/*", "*", "<!--", "#"))
 
 
 def _hex_or_rgb_positions(line: str) -> list[int]:
@@ -282,6 +318,28 @@ def _scan_tsx_html(path: Path, lines: Sequence[str], rules) -> Iterator[UIViolat
             ),
         )
 
+    # UI-107 — root-anchored API path literals. Per-LINE, not on the joined
+    # text, so the comment and apiUrl() exemptions below are meaningful and
+    # each violation carries an exact line number.
+    for lineno, line in enumerate(lines, start=1):
+        if _is_comment_line(line):
+            continue
+        # The recommended fix contains the flagged pattern. Skipping the whole
+        # line is coarse — a line mixing a correct call and a raw literal is
+        # let through — but the opposite error is worse: flagging every correct
+        # call site would tell a fully-migrated app it has violations, and a
+        # rule that fires on its own remedy is one nobody keeps enabled.
+        if _API_URL_CALL_RE.search(line):
+            continue
+        for match in _ABSOLUTE_API_URL_RE.finditer(line):
+            yield UIViolation(
+                rule=rules["STX-UI107"],
+                path=str(path),
+                line=lineno,
+                col=match.start(),
+                source_line=line.rstrip("\n"),
+            )
+
 
 def scan_path(
     target: Path | str,
@@ -289,7 +347,7 @@ def scan_path(
     treat_as_consumer: bool = True,
     skip_dirs: Sequence[str] = _DEFAULT_SKIP_DIRS,
 ) -> list[UIViolation]:
-    """Walk ``target`` and return all UI-101..105 violations found.
+    """Walk ``target`` and return all UI-101..107 violations found.
 
     Parameters
     ----------

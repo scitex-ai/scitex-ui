@@ -1,6 +1,6 @@
 """CLI subcommand: ``scitex-ui lint <path>``.
 
-Walks ``<path>`` (file or directory tree) and prints UI-101..105
+Walks ``<path>`` (file or directory tree) and prints UI-101..107
 violations in the standard ``path:line:col [RULE-ID] message`` format
 that `scitex-linter` and `flake8` use. Exit code 0 if no violations, 1
 otherwise — letting CI gate on the lint cleanly.
@@ -67,7 +67,7 @@ def _emit_coverage_json() -> None:
     help="Emit one JSON object per violation (one per line, JSONL).",
 )
 def lint(target: Path, treat_as_consumer: bool, as_json: bool) -> None:
-    """Scan TARGET for scitex-ui component-usage violations (UI-101..105).
+    """Scan TARGET for scitex-ui component-usage violations (UI-101..107).
 
     TARGET may be a directory or a single file. The walker recognises
     `.css`, `.html`, `.htm`, `.tsx`, `.jsx`, `.ts`, and `.js`; it
