@@ -17,25 +17,44 @@ remove. scitex-cards reached this independently and their chat.js says so:
 So this guards the ABSENCE of a fallback, which is the thing a future
 "helpful" edit is most likely to add. Source-level assertions, matching the
 repo idiom for TypeScript that ships without a JS test runner.
+
+It also guards the one thing a source-level test can check that a behavioural
+one cannot: that the marker NAME agrees across the three files that spell it —
+mount.ts, mount.py, and the template partial. Each is correct in isolation
+while disagreeing, which renders a marker nobody reads. The behaviour of the
+writer (derivation, the root-mount empty string, the shell actually emitting
+it) is covered in ``tests/scitex_ui/test_mount.py``.
 """
 
 import pathlib
 import re
 
 import scitex_ui
+from scitex_ui.mount import MOUNT_META_NAME
 
-_MOUNT_TS = (
-    pathlib.Path(scitex_ui.__file__).parent
-    / "static"
-    / "scitex_ui"
-    / "ts"
-    / "_base"
-    / "mount.ts"
-)
+_PACKAGE = pathlib.Path(scitex_ui.__file__).parent
+
+_MOUNT_TS = _PACKAGE / "static" / "scitex_ui" / "ts" / "_base" / "mount.ts"
+_MARKER_HTML = _PACKAGE / "templates" / "scitex_ui" / "_mount_marker.html"
+_SHELL_HTML = _PACKAGE / "templates" / "scitex_ui" / "standalone_shell.html"
 
 
 def _source() -> str:
     return _MOUNT_TS.read_text(encoding="utf-8")
+
+
+def _marker_markup() -> str:
+    """The partial's MARKUP, with its ``{% comment %}`` prose removed.
+
+    The comment block explains the design and therefore quotes the very
+    spellings these tests look for. Grepping the whole file would match the
+    explanation of the code instead of the code — a guard that passes on prose
+    is a guard that cannot fail.
+    """
+    text = _MARKER_HTML.read_text(encoding="utf-8")
+    _, _, markup = text.rpartition("{% endcomment %}")
+    assert markup.strip(), "the partial has no markup outside its comment block"
+    return markup
 
 
 def test_mount_module_ships() -> None:
@@ -120,3 +139,74 @@ def test_it_is_exported_from_the_base_barrel() -> None:
     exported = "mountPrefix" in barrel.read_text(encoding="utf-8")
     # Assert
     assert exported, "mountPrefix must be reachable from ts/_base/index.ts"
+
+
+# ─────────────────── the WRITER: a reader needs something to read ───────────
+#
+# mount.ts shipped in 0.12.0 with every test above passing and NO scitex-ui
+# template emitting a marker. `rg "stx-mount|data-api-base" src/` returned four
+# hits, all inside mount.ts itself. The reader was correct and reached nobody.
+
+
+def test_the_marker_partial_ships() -> None:
+    # Arrange
+    partial = _MARKER_HTML
+    # Act
+    found = partial.is_file()
+    # Assert
+    assert found, f"{partial} is the writer half of the contract"
+
+
+def test_the_shell_includes_the_marker_partial() -> None:
+    # Arrange — 4 of 6 GUIs extend this shell; it is the reach path.
+    shell = _SHELL_HTML.read_text(encoding="utf-8")
+    # Act
+    included = '{% include "scitex_ui/_mount_marker.html" %}' in shell
+    # Assert
+    assert included, "standalone_shell.html must include the mount marker"
+
+
+def test_the_reader_declares_the_same_marker_name_as_the_writer() -> None:
+    # Arrange — mount.ts declares it for the reader, scitex_ui.mount for the
+    # writer. Either drifting alone produces a marker that is emitted and never
+    # read, with nothing failing anywhere.
+    src = _source()
+    # Act
+    agrees = f'MOUNT_META_NAME = "{MOUNT_META_NAME}"' in src
+    # Assert
+    assert agrees, "mount.ts must declare the same name as scitex_ui.mount"
+
+
+def test_the_partial_emits_the_marker_name_both_sides_agree_on() -> None:
+    # Arrange — the third spelling of the same string, in the template that
+    # actually renders it.
+    markup = _marker_markup()
+    # Act
+    emits = f'name="{MOUNT_META_NAME}"' in markup
+    # Assert
+    assert emits, "the partial must emit the name the reader looks for"
+
+
+def test_the_partial_gates_on_the_declared_flag() -> None:
+    # Arrange — the marker must be emitted whenever a prefix was DECLARED,
+    # including the root mount whose prefix is the empty string.
+    markup = _marker_markup()
+    # Act
+    gates_on_flag = "{% if stx_mount_declared %}" in markup
+    # Assert
+    assert gates_on_flag, "the marker must be emitted whenever a prefix was declared"
+
+
+def test_the_partial_does_not_gate_on_the_prefix_value() -> None:
+    # Arrange — the "helpful" edit that breaks standalone. A root mount IS the
+    # empty string, so `{% if stx_mount_prefix %}` is false for it and the
+    # marker vanishes in exactly the mode where its absence is invisible,
+    # because hardcoded "/" happens to work there.
+    markup = _marker_markup()
+    # Act
+    gates_on_value = re.search(r"{%\s*if\s+stx_mount_prefix\s*%}", markup)
+    # Assert
+    assert gates_on_value is None, (
+        "gating on the prefix VALUE drops the marker for a root mount, which is "
+        "the one case where the bug is silent"
+    )
