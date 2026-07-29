@@ -190,6 +190,30 @@ def build_rules() -> Mapping[str, Rule]:
         requires="scitex-ui",
     )
 
+    UI107 = Rule(
+        id="STX-UI107",
+        severity="error",
+        category=CATEGORY,
+        message=(
+            "root-anchored API path literal in client code — correct "
+            "standalone, silently wrong once the app is mounted as a "
+            "scitex-hub built-in under /apps/u/<module>/"
+        ),
+        suggestion=(
+            "Join the path onto the mount prefix the server put in the page:\n"
+            '  import { apiUrl } from "@scitex/ui/ts/_base";\n'
+            '  await fetch(apiUrl("/api/items"));\n'
+            "and have the view declare the prefix:\n"
+            "  from scitex_ui.mount import mount_context\n"
+            "  render(request, tpl, {..., **mount_context(request)})\n"
+            "apiUrl() THROWS when the marker is absent rather than "
+            "defaulting to '/', because a default works standalone and "
+            "fails only embedded. Needs scitex-ui >= 0.13.0; see "
+            "`scitex-ui skills get 41_dual-mode-mounting`."
+        ),
+        requires="scitex-ui",
+    )
+
     return {
         UI101.id: UI101,
         UI102.id: UI102,
@@ -197,6 +221,7 @@ def build_rules() -> Mapping[str, Rule]:
         UI104.id: UI104,
         UI105.id: UI105,
         UI106.id: UI106,
+        UI107.id: UI107,
     }
 
 
@@ -228,6 +253,26 @@ COVERAGE_GAPS: tuple[tuple[str, str], ...] = (
         "HTML assembled in Python",
         "only .css/.html/.htm/.ts/.tsx/.js/.jsx are read. Markup built by "
         "string concatenation inside .py is invisible.",
+    ),
+    (
+        "URLs built at runtime",
+        "STX-UI107 matches a root-anchored path LITERAL. A URL assembled by "
+        'concatenation (`"/" + kind + "/items"`) or read from config is not '
+        "a literal and is not flagged, so a clean UI-107 run is not evidence "
+        "an app is mount-safe. This is the same blind spot as STX-UI106 and "
+        "the reason the mount reader THROWS at runtime: the static check "
+        "cannot be the only gate.",
+    ),
+    (
+        "comment/exemption detection is line-prefix based",
+        "STX-UI107 skips a line whose first non-space characters are //, /*, "
+        "* or <!--, and skips a line that also contains `apiUrl(` — because "
+        "the correct fix, apiUrl(\"/api/x\"), contains the literal being "
+        "flagged. Both tests are per-LINE, so a literal inside a block "
+        "comment whose body does not start with * , or an apiUrl() call "
+        "split across lines, will be judged wrongly. Measured 2026-07-30: "
+        "both of scitex-ui's own two matches were documentation, one of "
+        "them the docstring for apiUrl itself.",
     ),
 )
 

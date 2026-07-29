@@ -3,7 +3,7 @@ description: |
   [TOPIC] SciTeX-UI component-usage doctrine
   [DETAILS] Adoption rules every app-builder agent follows: use scitex-ui
   components, never hand-roll vanilla &lt;select&gt; / native scrollbars /
-  raw-hex CSS / shell-CSS edits. Maps directly onto the UI-101..105 lint
+  raw-hex CSS / shell-CSS edits. Maps directly onto the UI-101..107 lint
   rules shipped by `scitex-ui._linter_plugin`.
 tags: [scitex-ui-component-usage-doctrine, lint]
 ---
@@ -126,11 +126,44 @@ workspace-border tokens, then use them:
 .my-app ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
 ```
 
+### UI-106 — `long-native-select-no-filter` (WARN)
+
+A native `<select>` with more than 8 literal `<option>` tags and no
+Combobox enhancement. Past a dozen options a native picker is
+unscannable, and the widget offers only type-to-jump on the FIRST
+character.
+
+**Fix**: layer scitex-ui's fuzzy Combobox over it as a progressive
+enhancement — the `<select>` stays as the fallback. Opt out with
+`data-no-combobox` when a long list is genuinely fine (an ordered list
+scrolled by position rather than searched by name).
+
+**Blind spot, stated because absence of a finding is not evidence**: the
+option count comes from literal tags in the source, so a `<select>`
+filled from `fetch()` looks empty to the rule and will not be flagged
+however long it grows. That is why this is a warning.
+
+*(Undocumented here until 0.14.0 — the rule shipped in 0.12.0 and this
+page still said "the 5 rules above". A rule an adopter cannot read about
+is the same reach defect as one they cannot import.)*
+
+### UI-107 — `absolute-api-url-in-client-code` (ERROR)
+
+A root-anchored API path **literal** — `"/api/…"` or `"/apps/u/…"` — in
+`*.ts` / `*.tsx` / `*.js` / `*.jsx` / `*.html`. Correct standalone,
+silently wrong once the app is mounted as a scitex-hub built-in.
+
+The rule, its severity rationale, its two exemptions and its blind spot
+are documented with the contract they enforce, not here:
+**[41_dual-mode-mounting.md](41_dual-mode-mounting.md) § The lint rule.**
+Splitting a rule's *what* from its *why* across two pages is how one of
+them goes stale, and the mount contract is already that page's subject.
+
 ---
 
 ## How the linter is wired
 
-`scitex-ui` registers the 5 rules above with scitex-dev's linter via
+`scitex-ui` registers the 7 rules above with scitex-dev's linter via
 the canonical entry-point:
 
 ```toml

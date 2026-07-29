@@ -58,7 +58,7 @@ See [../../general/02_interface-python-api.md] for the dual-install rule.
 - [36_shell-modules-app-shell.md](36_shell-modules-app-shell.md) — AppShell, StatusBar, ThemeProvider, RepoMonitor, Shortcuts, Events, Vendor
 
 ### Doctrine + lint
-- [40_component-usage-doctrine.md](40_component-usage-doctrine.md) — UI-101..105 component-usage rules + `scitex-ui lint` walker
+- [40_component-usage-doctrine.md](40_component-usage-doctrine.md) — UI-101..107 component-usage rules + `scitex-ui lint` walker
 - [41_dual-mode-mounting.md](41_dual-mode-mounting.md) — run one app standalone AND as a scitex-hub built-in: the mount-prefix contract, and why both halves refuse to guess `/`
 
 ## Architecture

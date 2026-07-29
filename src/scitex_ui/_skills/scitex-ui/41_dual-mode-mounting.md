@@ -83,3 +83,32 @@ every other one, which is strictly worse than a raise.
 
 You get no marker, and any client code calling `mountPrefix()` throws immediately. That is intended: loud,
 instant, and identical in both modes. Existing apps that never call it are unaffected.
+
+## The lint rule — STX-UI107 (ERROR)
+
+`scitex-ui lint <path>` flags a root-anchored API path **literal** — `"/api/…"` or `"/apps/u/…"` — in
+`*.ts` / `*.tsx` / `*.js` / `*.jsx` / `*.html`. The fix is the `apiUrl()` + `mount_context()` pair above.
+
+**Why it is an ERROR when UI-101..106 are warnings.** The measured population at ship time was 12 literals
+across 3 consumer repos (figrecipe 7, scholar 3, writer 2) — clearable. A rule whose first run is red gets
+disabled rather than obeyed, so the count is what licenses the severity, not the seriousness of the bug.
+scitex-cloud's 50 literals are deliberately *not* violations: the hub **is** the mount root, not a leaf under
+a prefix, and a rule that fires on the host is one the host's owner turns off — taking the leaf coverage with
+it.
+
+**Two exemptions, both found by running the rule rather than reasoning about it.**
+
+1. A line containing `apiUrl(` is skipped, because the recommended fix *contains* the flagged pattern.
+   Without this, a fully-migrated app is told it still has violations — and a rule that fires on its own
+   remedy is one nobody keeps enabled.
+2. Comment lines are skipped. Both of scitex-ui's own raw matches were comments, and one was the docstring
+   for `apiUrl` itself, so a naive rule's first act is to indict the fix. UI-107 reports **0** for scitex-ui.
+
+Both are line-prefix heuristics, so a literal inside a block comment whose body does not start with `*`, or
+an `apiUrl()` call split across lines, is judged wrongly. Declared in the linter's `COVERAGE_GAPS`, which it
+prints on every run — clean or not.
+
+**Blind spot that matters more than the rule.** A URL built by concatenation is not a literal and is not
+caught, so a clean UI-107 run is **not** evidence an app is mount-safe. That is exactly why `mountPrefix()`
+throws at runtime: the static check cannot be the only gate, and treating it as one would rebuild the silent
+failure this whole contract removes.

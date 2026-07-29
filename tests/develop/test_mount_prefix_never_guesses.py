@@ -158,7 +158,9 @@ def test_the_marker_partial_ships() -> None:
 
 
 def test_the_shell_includes_the_marker_partial() -> None:
-    # Arrange — 4 of 6 GUIs extend this shell; it is the reach path.
+    # Arrange — four consuming repos extend this shell (cards, writer,
+    # figrecipe, cloud; six templates between them), so it is the reach path.
+    # scholar and hub own their own <head> and take the partial directly.
     shell = _SHELL_HTML.read_text(encoding="utf-8")
     # Act
     included = '{% include "scitex_ui/_mount_marker.html" %}' in shell
