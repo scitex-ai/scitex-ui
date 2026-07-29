@@ -17,6 +17,29 @@ from pathlib import Path
 import click
 
 from ._checker import scan_path
+from ._rules import COVERAGE_GAPS, coverage_notice
+
+
+def _emit_coverage_json() -> None:
+    """Emit the coverage statement as a JSONL record.
+
+    JSON consumers need the gap as much as humans do — arguably more,
+    since a machine reading an empty violation stream has nothing else
+    to tell it the scan was partial.
+    """
+    import json
+
+    click.echo(
+        json.dumps(
+            {
+                "kind": "coverage",
+                "not_inspected": [
+                    {"area": name, "detail": detail} for name, detail in COVERAGE_GAPS
+                ],
+            },
+            ensure_ascii=False,
+        )
+    )
 
 
 @click.command(name="lint")
@@ -60,12 +83,18 @@ def lint(target: Path, treat_as_consumer: bool, as_json: bool) -> None:
     """
     violations = scan_path(target, treat_as_consumer=treat_as_consumer)
     if not violations:
-        if not as_json:
+        if as_json:
+            _emit_coverage_json()
+        else:
             click.echo(f"OK: {target} — no UI-1xx violations found.")
+            # A clean run is exactly where a false sense of closure is
+            # cheapest to acquire, so the gaps are loudest here.
+            click.echo(f"\n{coverage_notice()}")
         sys.exit(0)
     if as_json:
         import json
 
+        _emit_coverage_json()
         for v in violations:
             click.echo(
                 json.dumps(
@@ -89,6 +118,7 @@ def lint(target: Path, treat_as_consumer: bool, as_json: bool) -> None:
             f"\n{len(violations)} violation(s) found. "
             "See _skills/scitex-ui/40_component-usage-doctrine.md for fixes."
         )
+        click.echo(f"\n{coverage_notice()}")
     sys.exit(1)
 
 
