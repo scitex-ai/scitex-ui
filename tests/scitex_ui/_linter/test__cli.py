@@ -82,6 +82,19 @@ def test_violation_run_also_states_that_the_scan_was_partial(tmp_path: Path) -> 
     assert _NOTICE in result.output
 
 
+def test_at_least_one_gap_is_declared() -> None:
+    # Arrange — the guard below parametrizes over COVERAGE_GAPS, so an EMPTY
+    # corpus collects zero cases and pytest reports it as skipped rather than
+    # failed. The check would then be gone while the suite still looked fine:
+    # not a check anyone disabled, but a check whose subject was deleted out
+    # from under it. Measured — emptying COVERAGE_GAPS gave "8 passed,
+    # 1 skipped", and the skip was that guard.
+    # Act
+    declared = len(COVERAGE_GAPS)
+    # Assert
+    assert declared > 0, "COVERAGE_GAPS is empty — the per-gap guard below is vacuous"
+
+
 @pytest.mark.parametrize("area", [area for area, _detail in COVERAGE_GAPS])
 def test_every_declared_gap_reaches_the_output(tmp_path: Path, area: str) -> None:
     # Arrange — guards the notice against drifting out of sync with the data:
