@@ -45,18 +45,28 @@ _NOT_MODULES = {"index.ts", "types.ts"}
 
 # Orphans that need their own decision, each with the reason it is deferred.
 # See ADR 0002 "Consequences".
-_ALLOWED_ORPHANS = {
-    "workspace-shell.ts": (
-        "page controller with no exports at all; fetches /workspace/content/"
-        "<module>/, a scitex-cloud URL. Either it belongs in the consumer or "
-        "it needs a shell page to live on."
-    ),
-    "standalone-terminal.ts": (
-        'its docstring claims it is "Used by standalone apps (figrecipe, etc.) '
-        'via the Django standalone_shell.html", which is false: that template '
-        "loads no such script."
-    ),
-}
+#: Empty, and that is the point: both entries were REMOVED in 0.14.2 rather
+#: than fixed, because measuring them answered the question the card called a
+#: design decision.
+#:
+#: workspace-shell.ts — scitex-cloud already owns
+#:   static/workspace_app/ts/workspace-shell.ts, serves /workspace/content/
+#:   from workspace_app/views.py, and ships module-tab-switcher.ts for the
+#:   .module-tab-btn this needed. Its copy is also FURTHER EVOLVED (198 lines
+#:   vs 139): it reads module names from a DOM attribute set by a registry
+#:   context processor where ours hardcoded KNOWN_MODULES. So ours was a stale
+#:   fork of a consumer-owned file, not a base component awaiting a home.
+#:
+#: standalone-terminal.ts — superseded by terminal/, and its successor says so:
+#:   terminal/_TerminalFactory.ts:4 reads "Merges standalone-terminal.ts (local
+#:   vendor, port+1 WebSocket) with …", and terminal/index.ts already exports
+#:   the same loadXtermModules / loadXtermCSS helpers. The merge had happened;
+#:   this was the leftover original.
+#:
+#: Deleted rather than archived to .old/: these files ship inside the wheel, so
+#: an in-tree archive would be published to every consumer. Git history is the
+#: archive here.
+_ALLOWED_ORPHANS: dict[str, str] = {}
 
 
 def _shell_modules() -> set[str]:
