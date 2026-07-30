@@ -48,6 +48,32 @@ jobs:
     permissions:
       contents: write
     steps:
+      # FORK GUARD — MUST BE THE FIRST STEP, AHEAD OF actions/checkout, which is
+      # what first puts fork-authored content on the node. Sphinx makes the
+      # exposure concrete: conf.py is arbitrary Python that the build EXECUTES,
+      # so a fork PR touching docs/ runs its own code here.
+      #
+      # This job also declares `permissions: contents: write` and passes a token
+      # to checkout, which is why it is worth guarding even though it gates
+      # nothing: the blast radius is larger than the pytest legs', not smaller.
+      #
+      # Declared LOCALLY, so the guard added to the five reusable workflows in
+      # scitex-ai/.github (#23) does not reach it. Refuses rather than
+      # re-routing to a hosted runner — operator mandate 2026-07-14 (PS-169)
+      # forbids those with no exceptions, and operator 2026-07-30 forbids
+      # university resources for external code. FAILS rather than skipping.
+      - name: Refuse to run fork-authored code on self-hosted infrastructure
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          set -euo pipefail
+          echo "::error title=Fork PR blocked::Fork-authored code is not run on the self-hosted Spartan pool."
+          echo "head repo: ${{ github.event.pull_request.head.repo.full_name }}  base repo: ${{ github.repository }}"
+          echo "To review this contribution, adopt its branch into ${{ github.repository }} and open a same-repo PR:"
+          echo "  gh pr checkout ${{ github.event.pull_request.number }} && git push origin HEAD:review/pr-${{ github.event.pull_request.number }}"
+          exit 1
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
