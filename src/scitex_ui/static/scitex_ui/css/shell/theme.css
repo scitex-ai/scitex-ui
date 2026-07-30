@@ -28,6 +28,12 @@
   --text-secondary: #4a4a4a;
   --text-muted: #777777;
   --text-inverse: #f8f7f5;
+  /* See primitives/colors.css for the measurement. Defined HERE TOO because
+     this file carries its own copy of the palette: a page linking only
+     shell/theme.css (which is what css/app/context-menu.css documents as its
+     dependency) never sees primitives/colors.css. Defining it in one place
+     only is the exact bug that made the context menu render dark-on-dark. */
+  --text-link: #2c5d8f;
 
   /* --- Background --- */
   --bg-page: #faf9f7;
@@ -136,6 +142,8 @@
   --text-secondary: #c9d1d9;
   --text-muted: #8b949e;
   --text-inverse: #161b22;
+  /* The existing fallback, so dark mode is unchanged. See colors.css. */
+  --text-link: #58a6ff;
 
   --bg-page: #0d1117;
   --bg-surface: #161b22;

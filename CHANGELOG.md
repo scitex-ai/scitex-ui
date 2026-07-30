@@ -7,6 +7,18 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-07-30
+
+- **`--text-link` was consumed by five app stylesheets and defined in no shipped stylesheet, so light mode failed WCAG AA by construction.** Every site read `var(--text-link, #58a6ff)` and rendered that one fallback in *both* palettes. Measured against the light palette's `--bg-surface` (`#f8f7f5`), `#58a6ff` is **2.36:1** — AA for normal text is 4.5:1 — and because the value lived at the call sites rather than in a palette, no theme could correct it. Verified the absence against three positive controls (`--text-secondary`, `--bg-surface`, `--workspace-border-subtle` all appear as real declarations in both palettes; this one appeared zero times), so the claim is measured rather than repeated from the card that raised it.
+
+  Now defined per palette: **dark `#58a6ff`**, which is exactly the fallback those five sites already rendered, so the default theme is a **provable visual no-op** — that equality is what let this ship without a screenshot of the dark surface; and **light `#2c5d8f`** at **6.39:1**, chosen over GitHub's `#0969da` (4.85:1) because it clears AA by a wider margin *and* sits in this palette's muted steel-blue language (cf. `--app-accent-console: #3e6080`) rather than importing a brighter blue into a deliberately warm, blue-averse palette.
+
+  Defined in **both** `primitives/colors.css` and `shell/theme.css`, because each carries its own copy of the palette and a page linking only `shell/theme.css` never sees the primitives layer. Defining a token in one place only is precisely the defect that made the context menu render dark-grey-on-dark in 0.12.1.
+
+  Guarded by `tests/develop/test_app_css_text_link_token.py`, whose two load-bearing assertions are not the obvious ones: the dark value must **equal** the historical fallback (pinning the no-op claim), and the two palettes must **not collapse to a single hex** — no one value clears AA on both surfaces, so the tidy-up that unifies them would silently restore the 2.36:1 failure. The file also carries a positive control asserting the known-bad pairing measures *below* AA, so the contrast arithmetic cannot pass vacuously. Mutation-probed: collapse-to-one-hex, dark-value drift, light-below-AA, and token-removed each turn the suite red, with the baseline green before and after.
+
+- **`--border-subtle` is deliberately still undefined**, and the reason is worth stating rather than leaving as an omission. Its fallbacks are inconsistent across call sites — `rgba(0,0,0,0.06)` ×7, `rgba(0,0,0,0.1)` ×4, `rgba(0,0,0,0.08)` ×1 — so there is no single current value a definition could preserve, and defining it necessarily changes appearance somewhere. Worse, every fallback is *black*: written for a light background, while the shell defaults to dark. That is a visual change requiring eyes, not a token fix, and it stays on the card with the measurement attached.
+
 ## [0.14.0] - 2026-07-30
 
 - **STX-UI107 — a root-anchored API path literal in client code is now a lint error.** 0.13.0 gave apps a supported way to learn their mount prefix; this makes the unsupported way findable. `"/api/items"` in a `.ts`/`.tsx`/`.js`/`.jsx`/`.html` file is correct standalone and silently wrong once the app is mounted under `/apps/u/<module>/`, and the remedy is `apiUrl("/api/items")` plus `mount_context(request)` in the view.
