@@ -73,6 +73,15 @@
   --text-muted: var(--_scitex-04); /* Medium gray for muted text */
   --text-inverse: var(--_white);
   --text-color: var(--text-primary); /* Alias for legacy compatibility */
+  /* Links. Consumed by 5 app stylesheets as `var(--text-link, #58a6ff)` and
+     defined in NO shipped stylesheet until now, so every site rendered that
+     one fallback in BOTH palettes. Measured contrast of #58a6ff on this
+     palette's --bg-surface (#f8f7f5) is 2.36:1 — WCAG AA for normal text is
+     4.5:1, so light mode was failing by construction and could not be fixed
+     by any theme. #2c5d8f measures 6.39:1 here and stays in the palette's
+     muted steel-blue language (cf. --app-accent-console #3e6080) rather than
+     importing a brighter blue. Pinned by test_app_css_text_link_token.py. */
+  --text-link: #2c5d8f;
 
   /* Background - warm, eye-friendly tones */
   --bg-page: var(--_warm-white); /* Warm off-white page background */
@@ -268,6 +277,11 @@
   --text-muted: #8b949e;
   --text-inverse: var(--_scitex-01);
   --text-color: var(--text-primary); /* Alias for legacy compatibility */
+  /* Exactly the fallback these sites already rendered, so DARK MODE — the
+     default theme — is visually unchanged by this commit. 6.85:1 on
+     --bg-surface #161b22. The no-op is the point: it makes the light-mode fix
+     verifiable without a screenshot of the dark surface. */
+  --text-link: #58a6ff;
 
   /* Background - flip to dark */
   --bg-page: #0d1117;
