@@ -7,6 +7,20 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-07-30
+
+- **Removed two top-level shell modules that reached nothing — and the card that carried them called this "a design decision, not a mechanical edit". Measuring answered both questions outright.**
+
+  `ts/shell/workspace-shell.ts` was a **stale fork of a file the consumer already owns**, not a base component awaiting a home. scitex-cloud ships `static/workspace_app/ts/workspace-shell.ts`, serves `/workspace/content/` from `workspace_app/views.py`, and provides the `.module-tab-btn` via `module-tab-switcher.ts`. Their copy is also further evolved — 198 lines to our 139, reading module names from a DOM attribute set by a registry context processor where ours hardcoded `KNOWN_MODULES = ["writer", "scholar", …]`. Keeping ours invited someone to fix the wrong copy.
+
+  `ts/shell/standalone-terminal.ts` was **superseded by `terminal/`, and its successor documents the supersession**: `terminal/_TerminalFactory.ts:4` reads "Merges standalone-terminal.ts (local vendor, port+1 WebSocket) with …", and `terminal/index.ts` already exports the same `loadXtermModules` / `loadXtermCSS`. The merge had happened; this was the leftover original, imported by nothing.
+
+  `_ALLOWED_ORPHANS` in `tests/develop/test_shell_ts_reachability.py` is now empty, with the evidence recorded where the entries were. That allowlist's own `test_allowlist_has_no_stale_entries` is what forced the question to be answered rather than left to rot — it names known orphans instead of hiding them, and fails once one is fixed *or removed*.
+
+  Deleted rather than archived to `.old/`, deliberately and against the usual rule: these files ship **inside the wheel**, so an in-tree archive would be published to every consumer. Git history is the archive here.
+
+  **Stated because it is the shape this repo keeps getting caught by**: emptying the allowlist turns `test_allowlist_has_no_stale_entries` into a SKIP (empty parametrize), and leaves the reachability check running over exactly one module. A skip is not a pass. The suite already carries `test_guard_covers_something` against precisely that, and it passes; beyond it, this change was mutation-probed by dropping a new unreachable module into `ts/shell/` and confirming the suite goes **red**, with the baseline green before and after. The guard still bites.
+
 ## [0.14.1] - 2026-07-30
 
 - **`--text-link` was consumed by five app stylesheets and defined in no shipped stylesheet, so light mode failed WCAG AA by construction.** Every site read `var(--text-link, #58a6ff)` and rendered that one fallback in *both* palettes. Measured against the light palette's `--bg-surface` (`#f8f7f5`), `#58a6ff` is **2.36:1** — AA for normal text is 4.5:1 — and because the value lived at the call sites rather than in a palette, no theme could correct it. Verified the absence against three positive controls (`--text-secondary`, `--bg-surface`, `--workspace-border-subtle` all appear as real declarations in both palettes; this one appeared zero times), so the claim is measured rather than repeated from the card that raised it.
