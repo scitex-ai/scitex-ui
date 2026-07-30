@@ -43,6 +43,36 @@ jobs:
     runs-on: [self-hosted, Linux, X64, spartan-cpu]
     timeout-minutes: 15
     steps:
+      # FORK GUARD — MUST BE THE FIRST STEP, AHEAD OF actions/checkout, which is
+      # what first puts fork-authored content on the node. `npm ci` runs this
+      # PR's own lifecycle scripts, so a fork's package.json executes here.
+      #
+      # The identical guard now sits on the five reusable workflows in
+      # scitex-ai/.github (#23), but a reusable workflow cannot guard a job
+      # DECLARED LOCALLY. This one and docs-sphinx are declared here, so they
+      # were outside that PR's reach entirely — found by auditing this repo's
+      # own workflows afterwards instead of assuming the shared fix covered
+      # them. typecheck is a REQUIRED status check on main and develop, which
+      # makes it the most reachable of the two.
+      #
+      # Refuses rather than re-routing to a hosted runner: operator mandate
+      # 2026-07-14 (PS-169) forbids GitHub-hosted runners with no exceptions,
+      # and operator 2026-07-30 forbids university resources for external
+      # code — nothing sits in the intersection. FAILS rather than skipping: a
+      # skipped job's check can be reported as successful to branch
+      # protection, which is a red that looks green.
+      - name: Refuse to run fork-authored code on self-hosted infrastructure
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          set -euo pipefail
+          echo "::error title=Fork PR blocked::Fork-authored code is not run on the self-hosted Spartan pool."
+          echo "head repo: ${{ github.event.pull_request.head.repo.full_name }}  base repo: ${{ github.repository }}"
+          echo "To review this contribution, adopt its branch into ${{ github.repository }} and open a same-repo PR:"
+          echo "  gh pr checkout ${{ github.event.pull_request.number }} && git push origin HEAD:review/pr-${{ github.event.pull_request.number }}"
+          exit 1
+
       - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
