@@ -22,7 +22,31 @@ permissions:
 
 jobs:
   call:
-    uses: scitex-ai/.github/.github/workflows/cla.yml@main
+    # PINNED BY SHA, NOT @main. `main` is a mutable org-level ref, so one commit
+    # to the reusable lands in every calling repo at once with no review in any
+    # of them — and it lands in a job an outsider can start (see the trigger
+    # list above) that holds write permissions and a PAT. Bump this deliberately.
+    uses: scitex-ai/.github/.github/workflows/cla.yml@1c5939858918fc83988955df15af3340da5c8fb1 # main @ 2026-07-31
     with:
+      # MUST be carried forward. The reusable defaults to "bot*,ywatanabe1989";
+      # dropping this silently starts demanding a CLA from LLEmacs, who is
+      # already allowlisted, and the breakage does not look related to this file.
       owner_allowlist: "bot*,ywatanabe1989,LLEmacs"
-    secrets: inherit
+    # ONE secret, mapped explicitly — NOT `secrets: inherit` (PS-224).
+    #
+    # `inherit` forwards every secret this repo holds into a job that
+    # `issue_comment` and `pull_request_target` let any GitHub account trigger.
+    # Measured 2026-08-03, this repo holds two:
+    #
+    #   GH_PERSONAL_ACCESS_TOKEN      CLA-signature storage      NEEDED
+    #   CLAUDE_CODE_CREDENTIALS_JSON  fleet Claude credential    NOT NEEDED
+    #
+    # So `inherit` was placing a fleet credential next to third-party CLA code
+    # for no benefit. The hazard is CREDENTIAL ADJACENCY, not which runner
+    # executes it — this fix is correct independently of any runner ruling.
+    #
+    # The callee declares `secrets: GH_PERSONAL_ACCESS_TOKEN: required: true`
+    # precisely so a caller can do this; `inherit` is not the supported path,
+    # it is the un-migrated one. Do not "simplify" this back.
+    secrets:
+      GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
