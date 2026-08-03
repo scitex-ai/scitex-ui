@@ -38,6 +38,32 @@ so it is not rediscovered as a clever shortcut.
 stripped, which is exactly the prefix we are trying to read. That one is easy to
 get backwards and, again, fails only when embedded.
 
+AND NEVER ADD ``SCRIPT_NAME`` BACK ON. ``request.path`` ALREADY CONTAINS IT --
+Django composes the two, at ``django/core/handlers/wsgi.py:67``::
+
+    self.path = "%s/%s" % (script_name.rstrip("/"), path_info.replace("/", "", 1))
+
+So ``request.META["SCRIPT_NAME"] + request.path`` does not harden anything; it
+DOUBLES the prefix under precisely the convention it looks like it is guarding
+against::
+
+    SCRIPT_NAME=/apps/u/writer, PATH_INFO=/editor/
+    request.path                ->  /apps/u/writer/editor/                  correct
+    SCRIPT_NAME + request.path  ->  /apps/u/writer/apps/u/writer/editor/    WRONG
+
+This is written down because it was proposed in review, in good faith, as a
+change that would be "identical today and immune under both conventions". It is
+identical only while ``SCRIPT_NAME`` is empty -- i.e. only in the case that never
+exercises it -- so testing it standalone proves nothing and the bug ships. Two
+readers reasoned their way to it independently, which is the signal that a
+comment is not enough: see ``test_script_name_is_not_added_back_on`` for the
+mechanical guard.
+
+The upshot is that ``request.path`` is correct under BOTH conventions by
+construction. A hub that mounts sub-apps by URL prefix and a hub that mounts them
+via ``SCRIPT_NAME`` produce the same ``request.path``, so this derivation does
+not depend on any dispatcher choosing not to rewrite it.
+
 Usage in a view::
 
     from scitex_ui.branding import shell_context

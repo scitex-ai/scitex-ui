@@ -8,6 +8,8 @@ tests pin the writer: the derivation, and — the part that actually failed last
 time — that the marker reaches the rendered ``standalone_shell.html``.
 """
 
+import io
+
 import django
 import pytest
 from django.conf import settings
@@ -93,6 +95,64 @@ def test_the_views_own_route_is_subtracted() -> None:
     request = _Req("/apps/u/writer/editor/")
     # Act
     prefix = mount_prefix(request, view_path="editor/")
+    # Assert
+    assert prefix == "/apps/u/writer"
+
+
+def _wsgi_request(script_name: str, path_info: str):
+    """A REAL ``WSGIRequest``, so Django composes ``.path`` rather than a stub.
+
+    The whole point of the two tests below is that ``request.path`` already
+    contains ``SCRIPT_NAME``. ``_Req`` cannot show that — it takes ``.path`` as
+    given, which is exactly the assumption under test. Only Django's own
+    composition (``core/handlers/wsgi.py:67``) can prove it.
+    """
+    from django.core.handlers.wsgi import WSGIRequest
+
+    return WSGIRequest(
+        {
+            "REQUEST_METHOD": "GET",
+            "SCRIPT_NAME": script_name,
+            "PATH_INFO": path_info,
+            "SERVER_NAME": "testserver",
+            "SERVER_PORT": "80",
+            "wsgi.input": io.BytesIO(b""),
+        }
+    )
+
+
+def test_django_composes_path_from_script_name_and_path_info() -> None:
+    # Arrange — the positive control for the guard below. If this ever fails,
+    # Django changed its composition and the guard's premise is gone; without
+    # it, a green guard would prove nothing.
+    request = _wsgi_request("/apps/u/writer", "/editor/")
+    # Act
+    path = request.path
+    # Assert
+    assert path == "/apps/u/writer/editor/"
+
+
+def test_script_name_is_not_added_back_on() -> None:
+    # Arrange — a SCRIPT_NAME-mounted sub-app, the convention this derivation
+    # must survive. Proposed in review as `META["SCRIPT_NAME"] + request.path`,
+    # which looks convention-immune and is identical ONLY while SCRIPT_NAME is
+    # empty — i.e. only in the standalone case that never exercises it. That
+    # form yields "/apps/u/writer/apps/u/writer", so this test is what turns
+    # the docstring warning into something that bites. See mount.py.
+    request = _wsgi_request("/apps/u/writer", "/editor/")
+    # Act
+    prefix = mount_prefix(request, view_path="editor/")
+    # Assert
+    assert prefix == "/apps/u/writer"
+
+
+def test_script_name_mounted_root_view_still_yields_the_mount() -> None:
+    # Arrange — same convention, view at the app root, so view_path is "".
+    # Doubling would be invisible here without this case: the mismatch raise
+    # never fires when there is no route to subtract.
+    request = _wsgi_request("/apps/u/writer", "/")
+    # Act
+    prefix = mount_prefix(request, view_path="")
     # Assert
     assert prefix == "/apps/u/writer"
 
