@@ -29,6 +29,22 @@ export interface HorizontalConfig {
   externalToggleBtnId?: string;
   accordion?: boolean;
   snapPoints?: number[];
+  /**
+   * Collapse this panel below the phone breakpoint, ignoring any size or
+   * collapse state stored from a desktop session. Set via
+   * `data-collapse-on-narrow` on the resizer element.
+   *
+   * OFF BY DEFAULT AND OPT-IN PER PANEL, deliberately. Measured on live prod
+   * 2026-08-04: scitex-hub's Writer shows NO editing surface at 390px because
+   * its Details aside is restored to a desktop width and occupies x=60..380 of
+   * a 380px workspace. But this same resizer also drives Scholar's library
+   * panes, whose mobile layout ALREADY works -- they are full-width
+   * scroll-snap swipe pages. Collapsing every panel would fix one app by
+   * breaking another, so the panel that needs it must ask.
+   */
+  collapseOnNarrow?: boolean;
+  /** Media query defining "narrow" for collapseOnNarrow (default: 768px). */
+  narrowQuery?: string;
 }
 
 /** Configuration for VerticalResizer */
@@ -62,6 +78,10 @@ export interface BaseOpts {
   externalToggleBtnId?: string;
   accordion?: boolean;
   snapPoints?: number[];
+  /** See HorizontalConfig.collapseOnNarrow — opt-in, off by default. */
+  collapseOnNarrow?: boolean;
+  /** Media query defining "narrow" for collapseOnNarrow (default: 768px). */
+  narrowQuery?: string;
 }
 
 /** Cascade propagation target tracked during a drag operation */

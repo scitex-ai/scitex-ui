@@ -37,6 +37,8 @@ export abstract class BaseResizer {
   protected isInApp: boolean;
   protected storageKey: string;
   protected accordion: boolean;
+  protected collapseOnNarrow: boolean;
+  protected narrowQuery: string;
   protected snapPointsExplicit: number[];
   private _onDragStart?: () => void;
   private _onDragEnd?: () => void;
@@ -68,6 +70,8 @@ export abstract class BaseResizer {
     this.isInApp = opts.isInApp;
     this.storageKey = opts.storageKey;
     this.accordion = opts.accordion ?? false;
+    this.collapseOnNarrow = opts.collapseOnNarrow ?? false;
+    this.narrowQuery = opts.narrowQuery ?? "(max-width: 768px)";
     this.snapPointsExplicit = opts.snapPoints ?? [];
     this._onDragStart = opts.onDragStart;
     this._onDragEnd = opts.onDragEnd;
@@ -256,9 +260,55 @@ export abstract class BaseResizer {
 
   // --- State management ---
 
+  /**
+   * Is the viewport narrow enough that a side panel would crowd out content?
+   *
+   * Fails CLOSED when matchMedia is unavailable (jsdom, old engines): a false
+   * negative preserves today's behaviour, while a false positive would
+   * collapse a panel on a desktop the user never asked to change.
+   */
+  private isNarrow(): boolean {
+    try {
+      if (typeof window === "undefined" || !window.matchMedia) return false;
+      return window.matchMedia(this.narrowQuery).matches;
+    } catch {
+      return false;
+    }
+  }
+
   private restoreState(): void {
     this.firstPanel.style.transition = "none";
     this.secondPanel.style.transition = "none";
+
+    // NARROW VIEWPORT BEATS STORED DESKTOP STATE.
+    // Measured on live prod 2026-08-04: scitex-hub's Writer had NO editing
+    // surface at 390px. Below, a stored size is restored whenever neither
+    // panel is marked collapsed, so a width chosen on a desktop was applied to
+    // a 380px workspace and the Details aside spanned x=60..380; with nothing
+    // stored, the expanded HTML default stood instead. Both paths handed a
+    // first-time phone visitor the panel and never the document.
+    //
+    // Opt-in per panel (data-collapse-on-narrow), NOT global: this same class
+    // drives Scholar's library panes, whose mobile layout already works as
+    // full-width scroll-snap swipe pages. Collapsing those would fix one app
+    // by breaking another.
+    //
+    // Deliberately NOT persisted: writing this back would leak the phone
+    // default onto the user's desktop on their next visit, silently changing a
+    // layout they chose.
+    if (this.collapseOnNarrow && this.isNarrow()) {
+      // Prefer the second (right/bottom) panel — the side panel in every
+      // current consumer, e.g. Writer's data-right=".writer-details" — and
+      // fall back to the first so a left-hand sidebar can opt in too.
+      if (this.secondCanCollapse) {
+        this.collapsePanel("second");
+        return;
+      }
+      if (this.firstCanCollapse) {
+        this.collapsePanel("first");
+        return;
+      }
+    }
 
     const firstCollapsed = restoreCollapsed(this.storageKey + "-first");
     const secondCollapsed = restoreCollapsed(this.storageKey + "-second");
