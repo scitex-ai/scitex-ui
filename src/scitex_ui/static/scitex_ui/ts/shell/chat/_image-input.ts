@@ -15,14 +15,44 @@ interface Attachment {
 const MAX_IMAGES = 4;
 const MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 
+/**
+ * A picker for pages that ship none.
+ *
+ * Kept out of the document flow rather than `display:none` — a hidden input is
+ * still clickable programmatically, and `.click()` on a `display:none` element
+ * is refused by some browsers.
+ */
+export function createHiddenFileInput(
+  extraAttributes: Record<string, string> = {},
+): HTMLInputElement {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.multiple = true;
+  input.style.cssText =
+    "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;";
+  for (const [name, value] of Object.entries(extraAttributes)) {
+    input.setAttribute(name, value);
+  }
+  document.body.appendChild(input);
+  return input;
+}
+
 export class ImageInputManager {
   private previewEl: HTMLElement;
   private fileInput: HTMLInputElement;
   private attachments: Attachment[] = [];
 
-  constructor(previewEl: HTMLElement, fileInput: HTMLInputElement) {
+  /**
+   * @param fileInput  The page's own picker. Omit it and one is synthesised —
+   *   a template that ships no `<input type="file">` should lose the paperclip
+   *   button, not the whole image feature. The caller cannot supply what its
+   *   template does not have, and requiring it pushed that decision to the
+   *   wrong layer.
+   */
+  constructor(previewEl: HTMLElement, fileInput?: HTMLInputElement | null) {
     this.previewEl = previewEl;
-    this.fileInput = fileInput;
+    this.fileInput = fileInput ?? createHiddenFileInput();
     this.fileInput.addEventListener("change", () => this.onFilesSelected());
   }
 
@@ -39,6 +69,17 @@ export class ImageInputManager {
         }
       }
     });
+  }
+
+  /**
+   * Take files from a picker this manager does not own.
+   *
+   * WebcamCapture synthesises its own `capture="environment"` input when the
+   * page ships none, and nothing would consume its `change` event otherwise —
+   * the manager only listens to the picker it was given.
+   */
+  addFiles(files: Iterable<File>): void {
+    for (const file of files) this.addFile(file);
   }
 
   /** Add image from a data URL (used by sketch canvas). */
