@@ -9,6 +9,22 @@
 import type { ImageInputManager } from "./_image-input";
 import { createHiddenFileInput } from "./_image-input";
 
+const JPEG_MIME = "image/jpeg";
+const JPEG_QUALITY = 0.9;
+
+/**
+ * A filename for a photo that never had one.
+ *
+ * Colons and dots are stripped from the ISO timestamp because a colon is not a
+ * legal filename character on Windows, and a stray dot would read as a second
+ * extension. The result sorts chronologically as text, which is the property
+ * that makes several photos in one message tellable apart later.
+ */
+export function webcamFilename(now: Date = new Date()): string {
+  const stamp = now.toISOString().replace(/\.\d+Z$/, "").replace(/[:]/g, "-");
+  return `webcam-${stamp}.jpg`;
+}
+
 export class WebcamCapture {
   private overlay: HTMLElement | null = null;
   private video: HTMLVideoElement | null = null;
@@ -138,9 +154,35 @@ export class WebcamCapture {
     canvas.height = this.video.videoHeight || 480;
     const ctx = canvas.getContext("2d")!;
     ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-    this.imageInput.addImageFromDataUrl(dataUrl, "image/jpeg");
-    this.close();
+
+    // toBlob rather than toDataURL: a data URL is base64, so it carries ~33%
+    // more bytes than the image it encodes, and it has nowhere to put a
+    // filename. Every photo then reaches the server as an anonymous blob,
+    // indistinguishable from every other photo in the same message.
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          const file = new File([blob], webcamFilename(), {
+            type: JPEG_MIME,
+          });
+          this.imageInput.addFiles([file]);
+        } else {
+          // toBlob yields null if the canvas cannot be encoded. Keep the photo
+          // by the older route rather than closing over a silent loss — the
+          // user pressed Capture and is owed an attachment either way.
+          this.imageInput.addImageFromDataUrl(
+            canvas.toDataURL(JPEG_MIME, JPEG_QUALITY),
+            JPEG_MIME,
+          );
+        }
+        // Closing here, not before: the modal now outlives the encode by the
+        // few milliseconds it takes, so the preview cannot vanish while the
+        // photo is still being produced.
+        this.close();
+      },
+      JPEG_MIME,
+      JPEG_QUALITY,
+    );
   }
 
   private async switchCamera(): Promise<void> {
