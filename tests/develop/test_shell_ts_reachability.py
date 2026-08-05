@@ -3,10 +3,15 @@
 
 `ts/shell/mobile-swipe.ts` and `ts/shell/sidebar-drawer-gesture.ts` shipped for
 months while being reachable from nothing: absent from the `ts/shell/index.ts`
-barrel, imported by no module here, imported by no consumer, referenced by no
-template, and with no compiled counterpart under `js/`. They had been written,
-debugged and given `export function init()` — but a caller was never added, so
-no browser ever ran them. See ADR 0002.
+barrel, imported by no module here, referenced by no template, and with no
+compiled counterpart under `js/`. They had been written, debugged and given
+`export function init()` — but a caller was never added, so no browser ever ran
+them. See ADR 0002.
+
+("imported by no consumer" used to appear in that list. It was removed on
+2026-08-05 because this test never checked it and cannot — see the scope
+warning below. Claiming it here is what made the allow-list read as a
+deletion license.)
 
 That is the same defect class as the unregistered components 0.9.0 fixed, the
 unimported stylesheets `test_css_bundle_index.py` guards, and the orphaned
@@ -24,6 +29,37 @@ A module is REACHABLE when either:
 Known orphans are listed in `_ALLOWED_ORPHANS` with the reason. They are named
 rather than hidden: `test_allowlist_has_no_stale_entries` fails once one is
 fixed or removed, so the allowlist cannot quietly outlive the problem.
+
+SCOPE — WHAT "ORPHAN" MEANS HERE, AND WHAT IT DOES NOT
+======================================================
+Orphan means UNREACHABLE WITHIN THIS REPOSITORY. Both mechanisms above —
+the barrel and the template-loaded bundle — are local. This test does not
+look at any consumer, and it cannot: a component library's consumers live in
+other repositories by definition, so the one search that would establish
+"nobody imports this" is the one search this file never runs.
+
+**DO NOT TREAT AN ENTRY IN `_ALLOWED_ORPHANS` AS A LICENCE TO DELETE.**
+
+Measured 2026-08-05, the reason this warning exists: commit 15f37d2 (#119)
+removed `standalone-terminal.ts` and `workspace-shell.ts`, both allow-listed
+here, on the reasoning that their replacements already existed. The reasoning
+was right about this repo and wrong about the world — figrecipe was importing
+one of them, and the removal broke their ENTIRE frontend build. Their shipped
+GUI kept working only because it had been compiled before the change. Nothing
+failed on our side; the guard was green throughout, because green was all it
+ever claimed.
+
+Before removing an exported module, run the check this file cannot:
+  - grep the fleet for the export name, or
+  - ask the known consumers (figrecipe, scitex-writer, scitex-cards,
+    scitex-cloud, scitex-storage)
+A published-package dependency would turn such a removal into a version bump;
+consumers that symlink into this working checkout get it with no signal at all.
+
+This is the same defect class the module list above describes, pointed
+outward: there, an artifact shipped that reached nobody. Here, a deletion
+reached somebody nobody looked for. Both are "I checked the layer I could
+see", and they are the same query run in opposite directions.
 """
 
 from __future__ import annotations
