@@ -1,8 +1,9 @@
 # Renamed from `rtd-sphinx-build-on-ubuntu-latest.yml`, which named a runner
-# this job stopped using: `runs-on` is spartan-cpu (see the comment below).
-# A filename asserting `ubuntu-latest` while the job runs elsewhere is a claim
-# nothing checks — the same read-the-label-not-the-thing shape this repo keeps
-# hitting. The new name makes no runner claim at all, so it cannot go stale.
+# this job stopped using. A filename asserting `ubuntu-latest` while the job
+# runs elsewhere is a claim nothing checks — the same read-the-label-not-the-
+# thing shape this repo keeps hitting. The new name makes no runner claim at
+# all, so it cannot go stale; the runner is now the CI_RUNS_ON variable, which
+# is why the old name would have gone stale a second time.
 #
 # THIS IS NOT THE ORG REUSABLE, and the difference is deliberate. `ci.yml` also
 # calls `scitex-ai/.github/.github/workflows/rtd-sphinx-build.yml` (job
@@ -37,14 +38,15 @@ jobs:
     # suppress the tag-push and release workflows when the auto-commit
     # is the most recent commit on develop at release time.
     if: "!contains(github.event.head_commit.message, 'docs(sphinx_html): refresh from CI build')"
-    # Was `ubuntu-latest`, i.e. a GitHub-hosted runner we pay for, against the
-    # standing rule that CI runs on Spartan compute nodes. The audit caught it
-    # as PS-224 runner-destination-unregistered, and its reasoning is the same
-    # green-by-absence shape this repo keeps hitting: GitHub does not reject an
-    # unmatchable job, it queues it forever — so a job pointed at a destination
-    # nothing serves never fails, it just never runs. Same label set as the
-    # typecheck and pytest-matrix jobs, which is the registered destination.
-    runs-on: [self-hosted, Linux, X64, spartan-cpu]
+    # Follows CI_RUNS_ON like every other PR leg. It was `ubuntu-latest`, then
+    # hardcoded `spartan-cpu`; both were destinations written into this file,
+    # and the PS-224 lesson that produced the second one applies to the whole
+    # class: GitHub does not reject an unmatchable job, it queues it forever,
+    # so a job pointed at a destination nothing serves never fails — it just
+    # never runs. A variable does not make that impossible, so whoever sets
+    # CI_RUNS_ON owns checking the label has live runners. That check now
+    # happens ONCE, for the repo, instead of once per file someone remembers.
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
     permissions:
       contents: write
     steps:
