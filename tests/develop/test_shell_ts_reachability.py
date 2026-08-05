@@ -40,14 +40,23 @@ other repositories by definition, so the one search that would establish
 
 **DO NOT TREAT AN ENTRY IN `_ALLOWED_ORPHANS` AS A LICENCE TO DELETE.**
 
-Measured 2026-08-05, the reason this warning exists: commit 15f37d2 (#119)
-removed `standalone-terminal.ts` and `workspace-shell.ts`, both allow-listed
-here, on the reasoning that their replacements already existed. The reasoning
-was right about this repo and wrong about the world — figrecipe was importing
-one of them, and the removal broke their ENTIRE frontend build. Their shipped
-GUI kept working only because it had been compiled before the change. Nothing
-failed on our side; the guard was green throughout, because green was all it
-ever claimed.
+The warning exists because of a 2026-08-05 near-miss whose value is in how it
+resolved, not in the damage — there was none. A consumer (figrecipe) reported
+a broken frontend build and attributed it to this repo removing modules. Two
+of the modules named here HAD been removed by 15f37d2 (#119), both allow-listed
+in this file, so the story fit and was briefly accepted on both sides.
+
+It was wrong. Measured afterwards: figrecipe imports NEITHER removed module —
+zero occurrences of `standalone-terminal` or `workspace-shell` in their repo,
+against a positive control that returns hits. Their build broke for an
+unrelated reason of their own, and their initial report rested on a probe that
+listed files while hiding directories.
+
+The lesson survives the retraction, which is why this warning stays: for the
+half-hour that story was believed, NOTHING IN THIS FILE COULD HAVE SETTLED IT
+EITHER WAY. The guard was green throughout — correctly, since green was all it
+ever claimed. A removal here can be safe or catastrophic for a consumer and
+this test returns the same answer to both.
 
 Before removing an exported module, run the check this file cannot:
   - grep the fleet for the export name, or
@@ -57,9 +66,10 @@ A published-package dependency would turn such a removal into a version bump;
 consumers that symlink into this working checkout get it with no signal at all.
 
 This is the same defect class the module list above describes, pointed
-outward: there, an artifact shipped that reached nobody. Here, a deletion
-reached somebody nobody looked for. Both are "I checked the layer I could
-see", and they are the same query run in opposite directions.
+outward: there, an artifact shipped that reached nobody; here, a deletion
+COULD reach somebody nobody looked for. Both are "I checked the layer I could
+see", and they are the same query run in opposite directions — the reach audit
+and the deletion audit differ only in which way you point it.
 """
 
 from __future__ import annotations
