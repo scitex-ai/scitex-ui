@@ -123,16 +123,38 @@ export class WebcamCapture {
       currentTrack.getSettings().facingMode || "environment";
     const newFacing = currentFacing === "environment" ? "user" : "environment";
 
+    // Flipping is destructive: the old stream must be released before the new
+    // one is acquired, because a device with a single camera cannot serve both
+    // at once. So a failed acquire leaves us with nothing, and "ignore the
+    // error" would strand the modal on a dead preview — stream null, srcObject
+    // holding stopped tracks, and the `!this.stream` guard above turning every
+    // later Flip into a no-op. On a one-camera desktop that is every Flip.
     this.stopStream();
+    if (await this.acquire(newFacing)) return;
+
+    // The new facing is unavailable — the common, boring case. Put back what
+    // the user had rather than leaving the session dead.
+    if (await this.acquire(currentFacing)) return;
+
+    // Both directions failed: the camera is genuinely gone (unplugged, or
+    // claimed by another application). Close instead of presenting a black
+    // rectangle that only Cancel can dismiss.
+    this.close();
+  }
+
+  /** Acquire `facingMode` and attach it. Returns false if unavailable. */
+  private async acquire(facingMode: string): Promise<boolean> {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: newFacing, width: { ideal: 1280 } },
+        video: { facingMode, width: { ideal: 1280 } },
         audio: false,
       });
-      this.video.srcObject = this.stream;
     } catch {
-      /* only one camera — ignore */
+      this.stream = null;
+      return false;
     }
+    if (this.video) this.video.srcObject = this.stream;
+    return true;
   }
 
   private stopStream(): void {
