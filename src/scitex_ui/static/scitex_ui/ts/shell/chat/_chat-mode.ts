@@ -145,7 +145,11 @@ export class ChatMode {
     this.history = loadHistory();
 
     /* Image, webcam, sketch support */
-    if (refs.imagePreviewEl && refs.imageFileInput) {
+    // Gated on the PREVIEW element only. A template that ships no
+    // `<input type="file">` used to lose the camera, the sketch pad and paste
+    // as well — three features that do not need a picker, switched off by the
+    // absence of one. Both collaborators synthesise their own now.
+    if (refs.imagePreviewEl) {
       this.imageInput = new ImageInputManager(
         refs.imagePreviewEl,
         refs.imageFileInput,

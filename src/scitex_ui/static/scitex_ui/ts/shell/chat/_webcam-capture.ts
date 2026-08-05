@@ -7,6 +7,7 @@
  */
 
 import type { ImageInputManager } from "./_image-input";
+import { createHiddenFileInput } from "./_image-input";
 
 export class WebcamCapture {
   private overlay: HTMLElement | null = null;
@@ -15,9 +16,35 @@ export class WebcamCapture {
   private imageInput: ImageInputManager;
   private fileInput: HTMLInputElement;
 
-  constructor(imageInput: ImageInputManager, fileInput: HTMLInputElement) {
+  /**
+   * @param fileInput  Used when getUserMedia is refused. Omit it and one is
+   *   synthesised carrying `capture="environment"`.
+   *
+   *   That attribute is the whole point of the fallback: on a phone it opens
+   *   the CAMERA, which is what the user asked for by pressing a camera
+   *   button. Without it they get a file browser — technically a fallback,
+   *   but not to the thing they wanted. A caller-supplied input is used
+   *   as-is and never mutated: it is usually the page's general "attach a
+   *   file" picker, and forcing `capture` onto it would take away the
+   *   ability to choose an existing photo.
+   */
+  constructor(
+    imageInput: ImageInputManager,
+    fileInput?: HTMLInputElement | null,
+  ) {
     this.imageInput = imageInput;
-    this.fileInput = fileInput;
+    if (fileInput) {
+      // The manager already listens to the page's own picker; binding here too
+      // would add every chosen photo twice.
+      this.fileInput = fileInput;
+    } else {
+      this.fileInput = createHiddenFileInput({ capture: "environment" });
+      this.fileInput.addEventListener("change", () => {
+        const files = this.fileInput.files;
+        if (files) this.imageInput.addFiles(Array.from(files));
+        this.fileInput.value = "";
+      });
+    }
   }
 
   async open(): Promise<void> {
