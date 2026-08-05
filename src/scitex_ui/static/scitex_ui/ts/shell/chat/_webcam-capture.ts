@@ -4,10 +4,15 @@
  * Ported from scitex-cloud's webcam-capture.ts.
  * Opens modal overlay with getUserMedia, capture button, camera flip.
  * Falls back to file picker if camera denied.
+ *
+ * Capture STAGES a photo and leaves the modal open, so several can be taken
+ * before Send. Each one lands in the composer immediately, visible behind this
+ * overlay and removable by the × on its own thumbnail — which is why closing
+ * needs only one button rather than a Cancel/Done pair.
  */
 
 import type { ImageInputManager } from "./_image-input";
-import { createHiddenFileInput } from "./_image-input";
+import { createHiddenFileInput, MAX_IMAGES } from "./_image-input";
 
 const JPEG_MIME = "image/jpeg";
 const JPEG_QUALITY = 0.9;
@@ -31,6 +36,11 @@ export class WebcamCapture {
   private stream: MediaStream | null = null;
   private imageInput: ImageInputManager;
   private fileInput: HTMLInputElement;
+  private doneBtn: HTMLButtonElement | null = null;
+  private captureBtn: HTMLButtonElement | null = null;
+  private hint: HTMLElement | null = null;
+  /** Photos staged by THIS session — drives the label, not the global count. */
+  private takenHere = 0;
 
   /**
    * @param fileInput  Used when getUserMedia is refused. Omit it and one is
@@ -86,6 +96,13 @@ export class WebcamCapture {
     this.overlay?.remove();
     this.overlay = null;
     this.video = null;
+    // Drop the per-session state with the DOM that displayed it. Leaving
+    // takenHere set would make the next open() start at "Done (3)" and count
+    // photos the user took last time.
+    this.doneBtn = null;
+    this.captureBtn = null;
+    this.hint = null;
+    this.takenHere = 0;
   }
 
   private buildUI(): HTMLElement {
@@ -111,17 +128,26 @@ export class WebcamCapture {
     const actions = document.createElement("div");
     actions.style.cssText = "display:flex;gap:12px;";
 
-    const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "Cancel";
-    cancelBtn.style.cssText =
+    // ONE close button, not a Cancel/Done pair. Each capture stages its photo
+    // immediately into the composer, where it is visible behind this modal and
+    // removable by the × on its own thumbnail — so there is nothing for a
+    // "Cancel" to undo that the user cannot already undo. Two buttons that
+    // both merely close would be two names for one action. The label carries
+    // the state instead.
+    this.doneBtn = document.createElement("button");
+    this.doneBtn.style.cssText =
       "padding:8px 16px;border-radius:4px;border:1px solid var(--border-default,#30363d);background:none;color:var(--fg-default,#c9d1d9);cursor:pointer;";
-    cancelBtn.addEventListener("click", () => this.close());
+    this.doneBtn.addEventListener("click", () => this.close());
 
-    const captureBtn = document.createElement("button");
-    captureBtn.innerHTML = '<i class="fas fa-circle"></i> Capture';
-    captureBtn.style.cssText =
+    this.captureBtn = document.createElement("button");
+    this.captureBtn.innerHTML = '<i class="fas fa-circle"></i> Capture';
+    this.captureBtn.style.cssText =
       "padding:8px 16px;border-radius:4px;border:none;background:#ef4444;color:#fff;cursor:pointer;font-size:16px;";
-    captureBtn.addEventListener("click", () => this.capture());
+    this.captureBtn.addEventListener("click", () => this.capture());
+
+    this.hint = document.createElement("div");
+    this.hint.style.cssText =
+      "min-height:1.2em;font-size:13px;color:var(--fg-muted,#8b949e);";
 
     const flipBtn = document.createElement("button");
     flipBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Flip';
@@ -129,8 +155,9 @@ export class WebcamCapture {
       "padding:8px 16px;border-radius:4px;border:1px solid var(--border-default,#30363d);background:none;color:var(--fg-default,#c9d1d9);cursor:pointer;";
     flipBtn.addEventListener("click", () => this.switchCamera());
 
-    actions.append(cancelBtn, captureBtn, flipBtn);
-    panel.appendChild(actions);
+    actions.append(this.doneBtn, this.captureBtn, flipBtn);
+    panel.append(actions, this.hint);
+    this.refreshControls();
 
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) this.close();
@@ -147,8 +174,42 @@ export class WebcamCapture {
     return overlay;
   }
 
+  /**
+   * Label and enablement follow the two facts that change: how many photos
+   * this session has taken, and whether the composer has room for another.
+   *
+   * The cap needs saying out loud. `addFile` rejects at MAX_IMAGES without a
+   * sound, so before this the Capture button simply stopped working — which
+   * reads as a broken button, not a full basket. Now the button goes away and
+   * the reason is written next to it.
+   */
+  private refreshControls(): void {
+    const room = this.imageInput.remainingSlots();
+
+    if (this.doneBtn) {
+      // "Cancel" while nothing has been staged: closing really is an abort.
+      // "Done (N)" once something has: closing is finishing a collection.
+      this.doneBtn.textContent =
+        this.takenHere === 0 ? "Cancel" : `Done (${this.takenHere})`;
+    }
+    if (this.captureBtn) {
+      this.captureBtn.disabled = room <= 0;
+      this.captureBtn.style.opacity = room <= 0 ? "0.5" : "1";
+      this.captureBtn.style.cursor = room <= 0 ? "not-allowed" : "pointer";
+    }
+    if (this.hint) {
+      this.hint.textContent =
+        room <= 0
+          ? `Attachment limit reached (${MAX_IMAGES}). Remove one to take another.`
+          : `${room} of ${MAX_IMAGES} slots free — capture as many as you need, then press Done.`;
+    }
+  }
+
   private capture(): void {
     if (!this.video) return;
+    // Guard as well as disable: Enter can still reach a styled-disabled button
+    // in some browsers, and the cap must hold regardless of the UI.
+    if (this.imageInput.remainingSlots() <= 0) return;
     const canvas = document.createElement("canvas");
     canvas.width = this.video.videoWidth || 640;
     canvas.height = this.video.videoHeight || 480;
@@ -165,20 +226,24 @@ export class WebcamCapture {
           const file = new File([blob], webcamFilename(), {
             type: JPEG_MIME,
           });
-          this.imageInput.addFiles([file]);
+          // Count what was ACCEPTED, not what was offered. A photo rejected at
+          // the cap must not inflate "Done (N)" — the label would then promise
+          // attachments the composer does not hold.
+          this.takenHere += this.imageInput.addFiles([file]);
         } else {
           // toBlob yields null if the canvas cannot be encoded. Keep the photo
           // by the older route rather than closing over a silent loss — the
           // user pressed Capture and is owed an attachment either way.
+          const before = this.imageInput.remainingSlots();
           this.imageInput.addImageFromDataUrl(
             canvas.toDataURL(JPEG_MIME, JPEG_QUALITY),
             JPEG_MIME,
           );
+          // addImageFromDataUrl reports nothing, so infer acceptance from the
+          // slot count rather than assuming it worked.
+          if (this.imageInput.remainingSlots() < before) this.takenHere += 1;
         }
-        // Closing here, not before: the modal now outlives the encode by the
-        // few milliseconds it takes, so the preview cannot vanish while the
-        // photo is still being produced.
-        this.close();
+        this.refreshControls();
       },
       JPEG_MIME,
       JPEG_QUALITY,

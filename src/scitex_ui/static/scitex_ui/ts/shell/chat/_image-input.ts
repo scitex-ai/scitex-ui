@@ -12,7 +12,7 @@ interface Attachment {
   thumbEl: HTMLElement;
 }
 
-const MAX_IMAGES = 4;
+export const MAX_IMAGES = 4;
 const MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
 
 /**
@@ -42,6 +42,8 @@ export class ImageInputManager {
   private previewEl: HTMLElement;
   private fileInput: HTMLInputElement;
   private attachments: Attachment[] = [];
+  /** Accepted files whose reader has not finished — slots already spoken for. */
+  private pending = 0;
 
   /**
    * @param fileInput  The page's own picker. Omit it and one is synthesised —
@@ -78,13 +80,28 @@ export class ImageInputManager {
    * page ships none, and nothing would consume its `change` event otherwise —
    * the manager only listens to the picker it was given.
    */
-  addFiles(files: Iterable<File>): void {
-    for (const file of files) this.addFile(file);
+  addFiles(files: Iterable<File>): number {
+    let accepted = 0;
+    for (const file of files) if (this.addFile(file)) accepted += 1;
+    return accepted;
+  }
+
+  /**
+   * Slots left before MAX_IMAGES, counting files still being read.
+   *
+   * Callers that can add repeatedly (the webcam, staging several photos before
+   * Send) need this to say so BEFORE the user presses a button that would
+   * silently do nothing — `addFile` rejects at the cap without a sound.
+   */
+  remainingSlots(): number {
+    return Math.max(0, MAX_IMAGES - this.attachments.length - this.pending);
   }
 
   /** Add image from a data URL (used by sketch canvas). */
   addImageFromDataUrl(dataUrl: string, mime: string): void {
-    if (this.attachments.length >= MAX_IMAGES) return;
+    // remainingSlots(), not attachments.length: a file accepted a moment ago
+    // may still be in its reader, and its slot is already spoken for.
+    if (this.remainingSlots() <= 0) return;
     const byteStr = atob(dataUrl.split(",")[1]);
     const ab = new ArrayBuffer(byteStr.length);
     const ia = new Uint8Array(ab);
@@ -130,16 +147,33 @@ export class ImageInputManager {
     this.fileInput.value = "";
   }
 
-  private addFile(file: File): void {
-    if (this.attachments.length >= MAX_IMAGES) return;
-    if (file.size > MAX_SIZE_BYTES) return;
-    if (!file.type.startsWith("image/")) return;
+  /**
+   * @returns whether the file was accepted. Acceptance is decided
+   *   synchronously; the thumbnail appears later, once the reader finishes.
+   */
+  private addFile(file: File): boolean {
+    if (this.remainingSlots() <= 0) return false;
+    if (file.size > MAX_SIZE_BYTES) return false;
+    if (!file.type.startsWith("image/")) return false;
+
+    // Reserve the slot NOW. `attachments` is not appended until the reader
+    // fires, so counting only that lets several files pass the same check and
+    // overshoot MAX_IMAGES. Unreachable while capture closed its modal after
+    // one photo; reachable the moment anything can add files in a burst.
+    this.pending += 1;
     const reader = new FileReader();
     reader.onload = () => {
+      this.pending -= 1;
       const dataUrl = reader.result as string;
       this.addAttachment(file, dataUrl, file.type);
     };
+    reader.onerror = () => {
+      // Release the reservation, or a failed read silently costs a slot for
+      // the rest of the session.
+      this.pending -= 1;
+    };
     reader.readAsDataURL(file);
+    return true;
   }
 
   private addAttachment(file: File, dataUrl: string, mime: string): void {
