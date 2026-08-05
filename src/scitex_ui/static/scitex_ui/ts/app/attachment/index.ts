@@ -13,3 +13,6 @@
 
 export { renderImageAttachment, renderFileAttachment } from "./_attachment";
 export type { ImageAttachmentConfig, FileAttachmentConfig } from "./types";
+
+export { attachmentKind } from "./_kind";
+export type { AttachmentKind } from "./_kind";
