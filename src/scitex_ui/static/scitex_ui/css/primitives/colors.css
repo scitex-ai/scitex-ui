@@ -247,6 +247,19 @@
   --color-btn-border: var(--border-default);
   --color-btn-hover-bg: var(--bg-muted);
 
+  /* Primer names our own components consume that the block above omitted.
+   * Each was read as var(--x, <primer dark hex>) and defined nowhere, so both
+   * palettes rendered that one dark hex — measured against this surface
+   * (#f8f7f5) they are 2.36:1, 3.13:1 and 3.15:1, i.e. below AA by
+   * construction and unfixable by any theme. Light therefore takes a palette
+   * value that clears AA; dark pins the historical hex exactly, so the default
+   * theme is unchanged. */
+  --color-attention-fg: var(--status-warning-text); /* #633c01, 9.01:1 */
+  --color-done-fg: #7744aa; /* 6.15:1; the palette carries no purple of its own */
+  --color-canvas-overlay: var(--bg-surface); /* a surface, not text */
+  --color-success-emphasis: var(--status-success-text); /* #2d6a4f, 5.97:1 */
+  --color-success-subtle: rgba(90, 154, 126, 0.2); /* --_success at the fallback's own alpha */
+
   /* Compatibility aliases for tool templates */
   --bg-primary: var(--bg-page);
   --bg-secondary: var(--bg-surface);
@@ -450,6 +463,16 @@
   --color-btn-text: var(--text-primary);
   --color-btn-border: var(--border-default);
   --color-btn-hover-bg: var(--bg-muted);
+
+  /* Primer names the light block above explains. Every value here is EXACTLY
+   * the literal its call sites already rendered, so introducing the tokens is
+   * a no-op on this, the default theme — that equality is the evidence, and
+   * tests/develop/test_app_css_primer_color_holes.py asserts it. */
+  --color-attention-fg: #d29922;
+  --color-done-fg: #a371f7;
+  --color-canvas-overlay: #2d333b;
+  --color-success-emphasis: #2ea043;
+  --color-success-subtle: rgba(46, 160, 67, 0.2);
 
   /* Compatibility aliases for tool templates */
   --bg-primary: var(--workspace-bg-primary);
