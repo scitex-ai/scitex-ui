@@ -247,6 +247,30 @@
   --color-btn-border: var(--border-default);
   --color-btn-hover-bg: var(--bg-muted);
 
+  /* Primer names our own components consume that the block above omitted.
+   * Each was read as var(--x, <primer dark hex>) and defined nowhere, so both
+   * palettes rendered that one dark hex — measured against this surface
+   * (#f8f7f5) they are 2.36:1, 3.13:1 and 3.15:1, i.e. below AA by
+   * construction and unfixable by any theme. Light therefore takes a palette
+   * value that clears AA; dark pins the historical hex exactly, so the default
+   * theme is unchanged. */
+  --color-attention-fg: var(--status-warning-text); /* #633c01, 9.01:1 */
+  --color-done-fg: #7744aa; /* 6.15:1; the palette carries no purple of its own */
+  --color-canvas-overlay: var(--bg-surface); /* a surface, not text */
+  --color-success-emphasis: var(--status-success-text); /* #2d6a4f, 5.97:1 */
+  --color-success-subtle: rgba(90, 154, 126, 0.2); /* --_success at the fallback's own alpha */
+
+  /* Five more names our stylesheets read and nothing defined. Not one family —
+   * what groups them is that every call site agreed on ONE fallback, so the
+   * agreed literal can be pinned on the palette it suits and only the other
+   * palette moves. Rationale and measurements:
+   * tests/develop/test_app_css_single_fallback_tokens.py. */
+  --danger-color: var(--status-error-text); /* #994444, 6.01:1 */
+  --accent: #6d4cad; /* 5.97:1 — the historical literal, pinned HERE not dark */
+  --workspace-text-muted: var(--workspace-text-secondary); /* #57606a, 5.97:1 */
+  --border-primary: var(--border-default); /* a border, no contrast claim */
+  --bg-hover: rgba(0, 0, 0, 0.05); /* the dark wash, inverted for a light surface */
+
   /* Compatibility aliases for tool templates */
   --bg-primary: var(--bg-page);
   --bg-secondary: var(--bg-surface);
@@ -450,6 +474,28 @@
   --color-btn-text: var(--text-primary);
   --color-btn-border: var(--border-default);
   --color-btn-hover-bg: var(--bg-muted);
+
+  /* Primer names the light block above explains. Every value here is EXACTLY
+   * the literal its call sites already rendered, so introducing the tokens is
+   * a no-op on this, the default theme — that equality is the evidence, and
+   * tests/develop/test_app_css_primer_color_holes.py asserts it. */
+  --color-attention-fg: #d29922;
+  --color-done-fg: #a371f7;
+  --color-canvas-overlay: #2d333b;
+  --color-success-emphasis: #2ea043;
+  --color-success-subtle: rgba(46, 160, 67, 0.2);
+
+  /* Dark half of the five. Four pin the exact literal their sites already
+   * rendered, so on this, the default theme, they are a provable no-op.
+   * --accent is the EXCEPTION and changes deliberately: #6d4cad measures
+   * 2.71:1 here and two of its three sites are `color:`, so the status quo
+   * fails AA on the DEFAULT theme — pinning it would codify that. #a371f7 is
+   * 5.16:1 and is already this palette's purple (--color-done-fg). */
+  --danger-color: #f85149; /* 5.16:1 */
+  --accent: #a371f7; /* 5.16:1 — CHANGED from #6d4cad (2.71:1) */
+  --workspace-text-muted: #888888; /* 4.88:1 */
+  --border-primary: #30363d;
+  --bg-hover: rgba(255, 255, 255, 0.08);
 
   /* Compatibility aliases for tool templates */
   --bg-primary: var(--workspace-bg-primary);
