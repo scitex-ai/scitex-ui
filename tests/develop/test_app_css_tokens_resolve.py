@@ -25,6 +25,8 @@ positives in app.css alone and would be turned off within a week.
 import pathlib
 import re
 
+import pytest
+
 import scitex_ui
 
 _CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
@@ -99,6 +101,40 @@ def test_shell_bundle_inert_token_list_does_not_grow():
         f"{len(new)} NEW inert token reference(s) in all.css: "
         f"{', '.join(new)}. Define them, or give them a fallback if they are "
         "meant to be consumer-supplied override hooks."
+    )
+
+
+@pytest.mark.parametrize("token", sorted(_KNOWN_BROKEN_IN_ALL))
+def test_ceiling_entry_is_still_broken(token):
+    """Every name in the ceiling must still BE broken — the reverse check.
+
+    ``test_shell_bundle_inert_token_list_does_not_grow`` above only asserts the
+    set does not GROW. Nothing asserted the other direction, so once one of
+    these tokens was fixed the ceiling would keep naming it and stay green.
+
+    That matters because this list is the FORCING FUNCTION for
+    scitex-ui-app-css-tokens-defined-nowhere: fixing a token is supposed to
+    REQUIRE deleting its entry here, which is what makes the remaining work
+    visible. A ceiling that silently keeps a fixed entry drops the forcing
+    function and decays into a record of history.
+
+    The sibling guard in test_shell_ts_reachability.py has had exactly this
+    reverse check on ``_ALLOWED_ORPHANS`` since 0.14.2, where it did its job —
+    emptying that allowlist is what forced the orphan question to be answered
+    rather than left to rot. Same shape, same risk; this file was missing it.
+    """
+    # Arrange
+    css = _expand(_CSS / "all.css")
+
+    # Act
+    broken = _used_without_fallback(css) - _defined(css) - _CONSUMER_SUPPLIED
+
+    # Assert
+    assert token in broken, (
+        f"{token} is listed in _KNOWN_BROKEN_IN_ALL but is no longer inert in "
+        "all.css — it now resolves, or its call sites are gone. Delete the "
+        "entry. Leaving it makes the ceiling describe the past and quietly "
+        "removes the pressure to fix what genuinely remains."
     )
 
 
