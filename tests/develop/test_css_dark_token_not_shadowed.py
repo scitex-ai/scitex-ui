@@ -99,6 +99,12 @@ def _theme_declarations(path: pathlib.Path) -> list[tuple[str, str]]:
     if not path.exists():
         return []
     body = _strip_comments(path.read_text(encoding="utf-8", errors="ignore"))
+    # Drop @import statements before splitting into blocks. The block regex
+    # captures everything up to a `{` as the selector, so an @import sitting
+    # above a rule gets glued onto that rule's selector and the axis match then
+    # fails — the file's declarations vanish rather than being misfiled, which
+    # is the failure mode that reads as "nothing to report".
+    body = re.sub(r"@import[^;]*;", "", body)
     found: list[tuple[str, str]] = []
     for selector, block in re.findall(r"([^{}]+)\{([^{}]*)\}", body):
         collapsed = " ".join(selector.split())
@@ -123,11 +129,94 @@ def _shadowed(declarations: list[tuple[str, str]]) -> set[str]:
     return {t for t in had_dark if last[t] == "light"}
 
 
+def _imports_of(path: pathlib.Path) -> list[str]:
+    """The `@import` targets of one stylesheet, in source order."""
+    if not path.exists():
+        return []
+    return [
+        m.group(1)
+        for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        if line.strip().startswith("@import")
+        for m in [re.search(r'"(.+?)"', line)]
+        if m
+    ]
+
+
+def _declarations_deep(
+    path: pathlib.Path, seen: set[pathlib.Path]
+) -> list[tuple[str, str]]:
+    """Declarations of a file and everything it imports, in CASCADE order.
+
+    Imports first, then the file's own rules — because CSS inserts an imported
+    sheet at the point of its `@import`, and `@import` must precede every other
+    rule. So a parent's own declarations always come after its children's, and
+    that ordering is the whole subject of this file: which declaration is LAST.
+
+    This walk used to stop after one level, which was indistinguishable from
+    correct while nothing in the tree nested. Splitting a palette file into
+    per-theme parts is exactly the change that makes the difference visible, and
+    the failure it would cause is the quiet kind: the dark declarations move one
+    hop away, this reader stops seeing them, `_shadowed` finds nothing to flag
+    because it has nothing to compare, and the suite goes green on an empty set.
+    """
+    resolved = path.resolve()
+    if resolved in seen or not path.exists():
+        return []
+    seen.add(resolved)
+    ordered: list[tuple[str, str]] = []
+    for rel in _imports_of(path):
+        ordered.extend(_declarations_deep((path.parent / rel).resolve(), seen))
+    ordered.extend(_theme_declarations(path))
+    return ordered
+
+
 def _bundle_declarations(bundle: str) -> list[tuple[str, str]]:
+    seen: set[pathlib.Path] = set()
     ordered: list[tuple[str, str]] = []
     for rel in _bundle_order(bundle):
-        ordered.extend(_theme_declarations(_CSS / rel.lstrip("./")))
+        ordered.extend(_declarations_deep(_CSS / rel.lstrip("./"), seen))
     return ordered
+
+
+def test_reader_descends_two_levels_and_keeps_cascade_order(tmp_path) -> None:
+    """Control: the recursion must be LIVE, and must order children before parents.
+
+    Nothing in this tree nests today, so making the reader recursive left all
+    three bundles byte-identical — the same result dead code would give. Worse,
+    a reader that silently stopped short would make `_shadowed` compare an empty
+    set and this whole file would pass while protecting nothing. So the descent
+    is asserted on a fixture, and so is the ORDER, since order is the invariant.
+    """
+    # Arrange — parent declares light AFTER importing a child that declares dark
+    (tmp_path / "child.css").write_text('[data-theme="dark"] { --probe: #000; }')
+    parent = tmp_path / "parent.css"
+    parent.write_text('@import "./child.css";\n:root { --probe: #fff; }')
+
+    # Act
+    shadowed = _shadowed(_declarations_deep(parent, set()))
+
+    # Assert
+    assert shadowed == {"--probe"}, (
+        "the reader must see the child's dark declaration AND place it before "
+        f"the parent's light one; got {shadowed}"
+    )
+
+
+def test_reader_survives_an_import_cycle(tmp_path) -> None:
+    """A cycle must truncate rather than recurse until the stack runs out."""
+    # Arrange
+    (tmp_path / "a.css").write_text(
+        '@import "./b.css";\n[data-theme="dark"] { --cyc: #000; }'
+    )
+    (tmp_path / "b.css").write_text('@import "./a.css";\n:root { --cyc: #fff; }')
+
+    # Act
+    declarations = _declarations_deep(tmp_path / "a.css", set())
+
+    # Assert
+    assert declarations == [("light", "--cyc"), ("dark", "--cyc")], (
+        f"cycle should yield each file once, children first; got {declarations}"
+    )
 
 
 @pytest.mark.parametrize("bundle", _BUNDLES)
