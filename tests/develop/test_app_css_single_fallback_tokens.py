@@ -42,6 +42,8 @@ import pytest
 
 import scitex_ui
 
+from . import _css_palette
+
 _CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
 _COLORS = _CSS / "primitives" / "colors.css"
 
@@ -72,49 +74,19 @@ _ACCENT_DARK_REPLACEMENT = "#a371f7"
 _TEXT_TOKENS = ("--danger-color", "--accent", "--workspace-text-muted")
 
 
-def _channel(value: int) -> float:
-    c = value / 255
-    return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
-
-
-def _luminance(hex_colour: str) -> float:
-    h = hex_colour.lstrip("#")
-    if len(h) == 3:
-        h = "".join(ch * 2 for ch in h)
-    r, g, b = (int(h[i : i + 2], 16) for i in (0, 2, 4))
-    return 0.2126 * _channel(r) + 0.7152 * _channel(g) + 0.0722 * _channel(b)
-
-
-def _contrast(fg: str, bg: str) -> float:
-    a, b = _luminance(fg), _luminance(bg)
-    hi, lo = max(a, b), min(a, b)
-    return (hi + 0.05) / (lo + 0.05)
+#: Palette reading and contrast arithmetic moved to `_css_palette` — three
+#: files carried byte-identical copies of the maths below, and `_palette_blocks`
+#: read colors.css as a flat file, which stops being true when it becomes a
+#: barrel over per-palette parts. The names are re-bound rather than rewritten
+#: at every call site, so not one assertion in this file changed.
+_contrast = _css_palette.contrast
+_declared = _css_palette.declared
+_resolve = _css_palette.resolve
 
 
 def _palette_blocks() -> tuple[str, str]:
-    """Split colors.css into (light, dark). Both carry a full palette."""
-    text = _COLORS.read_text(encoding="utf-8")
-    light, _, dark = text.partition('[data-theme="dark"]')
-    return light, dark
-
-
-def _declared(block: str, token: str) -> str | None:
-    """The token's DECLARATION in this block, never a var() consumption."""
-    m = re.search(rf"^\s*{re.escape(token)}\s*:\s*([^;]+);", block, re.M)
-    return m.group(1).strip() if m else None
-
-
-def _resolve(block: str, value: str, depth: int = 6) -> str:
-    """Follow one-level var() aliases so assertions measure what RENDERS."""
-    for _ in range(depth):
-        m = re.fullmatch(r"var\(\s*(--[\w-]+)\s*\)", value.strip())
-        if not m:
-            return value.strip()
-        nxt = _declared(block, m.group(1))
-        if nxt is None:
-            return value.strip()
-        value = nxt
-    return value.strip()
+    """The (light, dark) halves of colors.css, `@import`s resolved first."""
+    return _css_palette.palette_blocks(_COLORS)
 
 
 @pytest.mark.parametrize("token", sorted(_PINNED_DARK))

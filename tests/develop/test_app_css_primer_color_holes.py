@@ -47,6 +47,8 @@ import pytest
 
 import scitex_ui
 
+from . import _css_palette
+
 _CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
 _COLORS = "primitives/colors.css"
 
@@ -73,26 +75,21 @@ _DARK_SURFACE = "#161b22"
 _AA_NORMAL_TEXT = 4.5
 
 
-def _channel(value: int) -> float:
-    c = value / 255.0
-    return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
-
-
-def _luminance(hex_colour: str) -> float:
-    h = hex_colour.lstrip("#")
-    r, g, b = (int(h[i : i + 2], 16) for i in (0, 2, 4))
-    return 0.2126 * _channel(r) + 0.7152 * _channel(g) + 0.0722 * _channel(b)
-
-
-def _contrast(foreground: str, background: str) -> float:
-    a, b = _luminance(foreground), _luminance(background)
-    lighter, darker = max(a, b), min(a, b)
-    return (lighter + 0.05) / (darker + 0.05)
+#: The WCAG arithmetic was byte-identical in three files; it now lives once.
+#: `_declared` and `_resolve` below are DELIBERATELY not shared — this file
+#: takes the LAST declaration and matches unanchored, the sibling file takes the
+#: FIRST and anchors to line start. Those are different rules, each probed
+#: against its own tests, and collapsing them here would silently re-decide one.
+_contrast = _css_palette.contrast
 
 
 def _palette_blocks() -> tuple[str, str]:
-    """The light and dark halves of colors.css, split at the dark selector."""
-    text = (_CSS / _COLORS).read_text(encoding="utf-8")
+    """The light and dark halves of colors.css, split at the dark selector.
+
+    Reads through `@import`, so this keeps working when colors.css becomes a
+    barrel over per-palette parts instead of one flat file.
+    """
+    text = _css_palette.inline_imports(_CSS / _COLORS)
     marker = '[data-theme="dark"]'
     assert marker in text, f"{_COLORS} no longer has a {marker} block"
     light, dark = text.split(marker, 1)
