@@ -35,16 +35,15 @@ forgetting why it differs passes quietly), and the contrast floor for every
 token used as text.
 """
 
-import pathlib
 import re
 
 import pytest
 
-import scitex_ui
+from tests._checkout import css_dir
 
 from . import _css_palette
 
-_CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
+_CSS = css_dir()
 _COLORS = _CSS / "primitives" / "colors.css"
 
 #: --bg-surface as each palette actually resolves it (--_white / --_scitex-01).

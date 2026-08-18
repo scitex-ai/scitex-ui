@@ -22,16 +22,15 @@ likely to break:
    reintroduce the 2.36:1 failure. Here it fails instead.
 """
 
-import pathlib
 import re
 
 import pytest
 
-import scitex_ui
+from tests._checkout import css_dir
 
 from . import _css_palette
 
-_CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
+_CSS = css_dir()
 
 #: Every stylesheet carrying a copy of the palette. Both must define the token:
 #: a page linking only shell/theme.css never sees primitives/colors.css, and

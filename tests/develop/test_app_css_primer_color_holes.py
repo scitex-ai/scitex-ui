@@ -40,16 +40,15 @@ and ``all.css``. Introducing a lone Primer family into theme.css would be a new
 structural decision, not the filling of a hole.
 """
 
-import pathlib
 import re
 
 import pytest
 
-import scitex_ui
+from tests._checkout import css_dir
 
 from . import _css_palette
 
-_CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
+_CSS = css_dir()
 _COLORS = "primitives/colors.css"
 
 #: token -> the literal every one of its call sites already rendered.

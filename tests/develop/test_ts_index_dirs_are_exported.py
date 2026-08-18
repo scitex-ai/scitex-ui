@@ -41,15 +41,14 @@ Only that a directory claiming to be a module boundary can be addressed as one.
 from __future__ import annotations
 
 import json
-import pathlib
 
 import pytest
 
-import scitex_ui
+from tests._checkout import package_dir, static_dir
 
-_PKG_ROOT = pathlib.Path(scitex_ui.__file__).parent.parent.parent
+_PKG_ROOT = package_dir().parent.parent
 _PACKAGE_JSON = _PKG_ROOT / "package.json"
-_TS_ROOT = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "ts"
+_TS_ROOT = static_dir() / "ts"
 
 
 def _index_directories() -> list[str]:

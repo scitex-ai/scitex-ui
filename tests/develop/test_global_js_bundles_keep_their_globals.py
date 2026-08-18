@@ -19,12 +19,11 @@ it only because scitex-cards happened to mention they detect
 `window.STX.Combobox`. That is too thin a thread to rely on twice.
 """
 
-import pathlib
 import re
 
-import scitex_ui
+from tests._checkout import static_dir
 
-_JS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "js" / "app"
+_JS = static_dir() / "js" / "app"
 
 # bundle filename -> the global it must attach. Add an entry whenever a new
 # hand-written IIFE bundle gains consumers that feature-detect it.

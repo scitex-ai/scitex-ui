@@ -39,14 +39,13 @@ not absence.
 from __future__ import annotations
 
 import json
-import pathlib
 import re
 
 import pytest
 
-import scitex_ui
+from tests._checkout import package_dir
 
-_PKG_ROOT = pathlib.Path(scitex_ui.__file__).parent.parent.parent
+_PKG_ROOT = package_dir().parent.parent
 _PACKAGE_JSON = _PKG_ROOT / "package.json"
 _PYPROJECT = _PKG_ROOT / "pyproject.toml"
 
