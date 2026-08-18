@@ -112,13 +112,13 @@
   var vResNextStartH = 0;
   function findPaneWrapper(el) {
     return el.closest(
-      ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane, .ws-module-pane"
+      ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-module-pane"
     );
   }
   function findAdjacentPanes(resizer) {
     const pane = findPaneWrapper(resizer);
     if (!pane) return null;
-    const isPaneClass = (el) => el.classList.contains("ws-ai-pane") || el.classList.contains("ws-worktree-pane") || el.classList.contains("ws-viewer-pane") || el.classList.contains("ws-apps-pane") || el.classList.contains("ws-module-pane");
+    const isPaneClass = (el) => el.classList.contains("ws-ai-pane") || el.classList.contains("ws-worktree-pane") || el.classList.contains("ws-viewer-pane") || el.classList.contains("ws-module-pane");
     let prevPane = pane.previousElementSibling;
     while (prevPane && !isPaneClass(prevPane)) {
       prevPane = prevPane.previousElementSibling;
@@ -222,7 +222,7 @@
     console.log("[MobileGesture] Enabling vertical layout gestures");
     const container = document.getElementById("workspace-three-col");
     if (!container) return;
-    const paneSelectors = ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane, .ws-module-pane";
+    const paneSelectors = ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-module-pane";
     container.querySelectorAll(paneSelectors).forEach((pane) => {
       pane.style.removeProperty("flex");
       pane.style.removeProperty("height");
@@ -286,7 +286,7 @@
       onVerticalResizeMove
     );
     document.removeEventListener("touchend", onVerticalResizeEnd);
-    const paneSelectors = ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane, .ws-module-pane";
+    const paneSelectors = ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-module-pane";
     container.querySelectorAll(paneSelectors).forEach((pane) => {
       pane.style.removeProperty("flex");
       pane.style.removeProperty("height");

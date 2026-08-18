@@ -140,8 +140,7 @@
   /* Hide ALL sidebar panes by default */
   .workspace-three-col > .ws-ai-pane,
   .workspace-three-col > .ws-worktree-pane,
-  .workspace-three-col > .ws-viewer-pane,
-  .workspace-three-col > .ws-apps-pane {
+  .workspace-three-col > .ws-viewer-pane {
     display: none !important;
   }
 

@@ -27,7 +27,7 @@ const MIN_MODULE_SIZE = 40;
 function getMaxAllowedSize(panel: HTMLElement, axis: AxisConfig): number {
   const paneEl =
     panel.closest(
-      ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane",
+      ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane",
     ) || panel.parentElement;
   if (!paneEl) return Infinity;
 
@@ -62,7 +62,7 @@ function findAdjacentPanel(
   if (!targetPanel) return null;
 
   const paneContainer = targetPanel.closest(
-    ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane, .ws-module-pane",
+    ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-module-pane",
   );
   if (!paneContainer) return null;
 
@@ -176,7 +176,7 @@ export function initResizer(storagePrefix: string, config: PanelConfig): void {
     if (detected.orientation === "vertical") {
       // On mobile, resize the pane wrapper (parent of sidebar), not the sidebar
       const paneWrapper = targetPanel.closest(
-        ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane",
+        ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane",
       ) as HTMLElement;
       effectiveTarget = paneWrapper || targetPanel;
     } else {
