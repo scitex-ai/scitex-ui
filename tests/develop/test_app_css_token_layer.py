@@ -40,8 +40,9 @@ import re
 import pytest
 
 import scitex_ui
+from tests._checkout import css_dir
 
-_CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
+_CSS = css_dir()
 _THEME = _CSS / "shell" / "theme.css"
 _APP = _CSS / "app"
 

@@ -34,11 +34,12 @@ import re
 import pytest
 
 import scitex_ui
+from tests._checkout import static_dir, templates_dir
 
-_STATIC = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui"
+_STATIC = static_dir()
 _SHELL_TS = _STATIC / "ts" / "shell"
 _JS_SHELL = _STATIC / "js" / "shell"
-_TEMPLATES = pathlib.Path(scitex_ui.__file__).parent / "templates"
+_TEMPLATES = templates_dir()
 
 # Structural, not orphans: the barrel itself and its type-only companion.
 _NOT_MODULES = {"index.ts", "types.ts"}

@@ -11,10 +11,11 @@ verify the remaining contract by hand.
 from pathlib import Path
 
 import scitex_ui
+from tests._checkout import package_dir
 from scitex_ui._components._monaco_editor import MonacoEditor
 from scitex_ui._registry import get_component
 
-PKG_DIR = Path(scitex_ui.__file__).parent
+PKG_DIR = package_dir()
 
 
 class TestMonacoEditor:

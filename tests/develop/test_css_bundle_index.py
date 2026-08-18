@@ -26,8 +26,9 @@ import re
 import pytest
 
 import scitex_ui
+from tests._checkout import css_dir
 
-_CSS_DIR = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
+_CSS_DIR = css_dir()
 _GENERATED = ("all.css", "shell.css", "app.css")
 
 # name -> subdirectories scanned, matching buildIndex(...) calls in _build-index.ts

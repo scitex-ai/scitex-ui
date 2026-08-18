@@ -9,9 +9,10 @@ import re
 import pytest
 
 import scitex_ui
+from tests._checkout import package_dir
 from scitex_ui._components._toast import Toast
 
-_STATIC = pathlib.Path(scitex_ui.__file__).parent / "static"
+_STATIC = package_dir() / "static"
 _TONES = ("info", "success", "error")
 
 

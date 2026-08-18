@@ -30,9 +30,10 @@ import pathlib
 import re
 
 import scitex_ui
+from tests._checkout import package_dir
 from scitex_ui.mount import MOUNT_META_NAME
 
-_PACKAGE = pathlib.Path(scitex_ui.__file__).parent
+_PACKAGE = package_dir()
 
 _MOUNT_TS = _PACKAGE / "static" / "scitex_ui" / "ts" / "_base" / "mount.ts"
 _MARKER_HTML = _PACKAGE / "templates" / "scitex_ui" / "_mount_marker.html"

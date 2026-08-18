@@ -33,8 +33,9 @@ import pathlib
 import pytest
 
 import scitex_ui
+from tests._checkout import static_dir
 
-_STATIC = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui"
+_STATIC = static_dir()
 _JS_APP = _STATIC / "js" / "app"
 
 # Components whose ts_entry lives under ts/app/ but which are consumed only
