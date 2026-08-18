@@ -81,7 +81,7 @@ export function initToggleClickHandler(
       // On mobile vertical layout, also clear pane wrapper's inline styles
       // so CSS :has(.collapsed) rule can take effect
       const paneWrapper = targetPanel.closest(
-        ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane",
+        ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane",
       ) as HTMLElement | null;
       if (paneWrapper) {
         paneWrapper.style.flex = "";
@@ -120,7 +120,7 @@ export function initToggleClickHandler(
     // On expand, also clear pane wrapper inline styles to restore CSS flex defaults
     if (!isCollapsed) {
       const paneWrapper = targetPanel.closest(
-        ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane",
+        ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane",
       ) as HTMLElement | null;
       if (paneWrapper) {
         paneWrapper.style.flex = "";

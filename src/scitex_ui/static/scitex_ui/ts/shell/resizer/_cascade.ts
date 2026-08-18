@@ -13,7 +13,7 @@ const MIN_MODULE_WIDTH = 40;
 export function getMaxAllowedWidth(panel: HTMLElement): number {
   const paneEl =
     panel.closest(
-      ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane",
+      ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane",
     ) || panel.parentElement;
   if (!paneEl) return Infinity;
 
@@ -53,7 +53,7 @@ export function findAdjacentPanel(
   direction: "left" | "right",
 ): { panel: HTMLElement; storageKey: string; thresholdPx: number } | null {
   const paneContainer = currentPanel.closest(
-    ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane, .ws-module-pane",
+    ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-module-pane",
   );
   if (!paneContainer) return null;
 
