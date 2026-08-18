@@ -7,6 +7,18 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- **Every CLI command now constructs its help via `CliHelp` — and one command's help had been pointing at a command that does not exist.** All 13 sites this package registers (`_cli.py` 8, `_skills.py` 4, `_linter/_cli.py` 1) move from free-form docstrings to structured specs, clearing the 13 §4b findings that had appeared on every green audit run since 2026-07-29.
+
+  **`_cli.py:90` told users to run `scitex-ui mcp-group start`.** `mcp-group` is the PYTHON VARIABLE NAME; the command is registered as `mcp` (`main.add_command(mcp_group, "mcp")`), and the neighbouring `doctor` example got it right. So it was not ignorance — it was one hand-typed invocation path drifting while its sibling did not. `CliHelp` makes that class unrepresentable: `Example.cmd` **must** contain `{prog}`, which the renderer substitutes, so the path is derived rather than authored. The constructor rejected the migration until it was.
+
+  **Two ecosystem rules pull in opposite directions here, and `_cli_help.py` is the only place that reconciles them.** §4b wants `SpecCommand` imported from scitex-dev; PS-213 (console-script-deps-must-be-core) forbids the console-script entry point importing anything that is not a core dependency — and scitex-dev is the optional `[cli]` extra. Importing it at module scope in `_cli.py` would make a bare `pip install scitex-ui` followed by `scitex-ui --help` raise `ModuleNotFoundError`. The classes are therefore resolved **lazily at decoration time** via `importlib.util.find_spec`, falling back to plain click when the extra is absent. Both rules hold rather than either being exempted: no optional dep is imported unguarded, and the audit — which only runs where scitex-dev exists — sees real `SpecCommand` objects. Same shape as `_linter/_rules.py`, which resolves scitex-dev's `Rule` this way after a module-scope import silently deactivated the entire UI rule corpus (0.14.3).
+
+  **The coverage guard is DERIVED from the live command tree, not a list.** §4b is WARN-tier and exits 0, so nothing in CI fails when a new command ships with a free-form docstring — which is exactly why a test is needed and exactly why it must not hardcode today's thirteen. A list would silently exempt the fourteenth command, and the fourteenth is the one nobody remembers to add. Mutation-probed: stripping `mcp doctor`'s spec turns it red, and restoring it green.
+
+  Two commands are exempt with the reason recorded and re-derived every run: `completion` and `install-tab-completion` are attached by scitex-dev's `attach_shell_completion`, and both are **hidden deprecated aliases** — measured alongside `install-shell-completion` and `print-shell-completion`, which are visible and *do* carry specs. So the exemption covers legacy surface rather than a gap in the convention, and `test_exempt_commands_are_still_foreign` fails if either ever becomes ours.
+
+  The suite cannot pass by being skipped: with scitex-dev absent every command legitimately lacks a spec, so `test_structured_help_path_is_live_here` asserts which environment the run is in before the coverage assertion means anything. `see_also` entries — the one remaining hand-typed command paths — were validated against the live tree; all resolve.
+
 ## [0.15.0] - 2026-08-11
 
 - **35 TypeScript directories shipped an `index.ts` and could not be imported by their own name.** Subpath *patterns* do not perform directory-index resolution, so `"./ts/*"` mapped `@scitex/ui/ts/shell/terminal` onto the *directory* and importing it raised `ERR_UNSUPPORTED_DIR_IMPORT`. Only an explicit entry naming `index.ts` makes a bare specifier work.

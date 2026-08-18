@@ -24,6 +24,18 @@ import pytest
 CROSS_PACKAGE_IMPORTS = [
     "scitex_dev._cli._completion",
     "scitex_dev.cli",
+    # ADDED BY HAND, and the generator is the reason. `_cli_help.py` imports
+    # this at four sites, PS-140 flags it as `missing from gate`, and the
+    # prescribed remedy does not supply it:
+    #     scitex-dev ecosystem install-cross-package-gate scitex-ui --force
+    #     -> exit 0, no stdout, no stderr, file byte-identical
+    # Same result with the checkout first on sys.path. Two explanations ruled
+    # out by measurement rather than argument: nested imports ARE handled (all
+    # three entries above are themselves function-scope), and forcing the
+    # checkout onto sys.path changes nothing. Why it declines is unresolved and
+    # reported to scitex-dev rather than guessed at.
+    # Remove this comment once regeneration produces the entry itself.
+    "scitex_dev.ecosystem",
     "scitex_dev.linter._rules._base",
 ]
 # ===== END AUTO-GENERATED =====
