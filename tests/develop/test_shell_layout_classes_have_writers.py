@@ -98,6 +98,51 @@ _LAYOUT_PREFIX = re.compile(r"^(ws-|workspace-|mobile-)")
 #: that declaration belongs in the shell contract document, not only here.
 _ADOPTER_RENDERED: dict[str, str] = {}
 
+#: KNOWN ORPHANS — a CEILING, not a blessing. Deliberately a SEPARATE list from
+#: ``_ADOPTER_RENDERED`` above, because the two mean opposite things and merging
+#: them would destroy the only useful distinction here:
+#:
+#:     _ADOPTER_RENDERED   another repo owns writing this. Correct as it stands.
+#:     _KNOWN_ORPHANED     NOBODY writes this. A defect, recorded so the guard
+#:                         can ship and catch the NEXT one.
+#:
+#: An exemption list that mixes "fine" with "broken" tells a future reader
+#: nothing, and the entry describing a real bug is the one that goes unread.
+#: (scitex-hub made this argument about a different list of mine on 2026-08-18
+#: and it was right: a live defect filed under a heading nobody searches is a
+#: defect that has been hidden rather than tracked.)
+#:
+#: WHY SHIP THE GUARD RED-LISTED INSTEAD OF WAITING FOR THE FIX: the fix is a
+#: design decision that lost its rationale when the operator ruled hub keeps its
+#: own shell, so it is genuinely open. Meanwhile this check catches any NEW
+#: orphan the moment it appears. Holding a working guard hostage to an unrelated
+#: decision leaves the class undefended for as long as the decision takes.
+#:
+#: Every entry is tracked by
+#: scitex-ui-mobile-active-pane-has-no-writer-panes-unreachable-below-768px-20260818
+#: and the list must SHRINK. `test_no_stale_entries_in_known_orphaned` fails if
+#: an entry acquires a writer, so a fixed class cannot linger here pretending
+#: the debt is still owed.
+_KNOWN_ORPHANED: dict[str, str] = {
+    # THE DEFECT THIS FILE WAS WRITTEN FOR. mobile.css hides every pane below
+    # 768px and reveals `.mobile-active-pane` — a class that appears in exactly
+    # one file, mobile.css itself, and that no template/js/ts ever writes.
+    # Measured at 390x844: zero visible clickable elements on the whole page.
+    "mobile-active-pane": "the reveal half of the <=768px single-pane rule; no writer anywhere",
+    "mobile-tab-bar": "the switcher the reveal rule assumes; never rendered",
+    # The NEWER single-pane branch in the same stylesheet. It has a writer, but
+    # in scitex-hub, not here — and per the operator's 2026-08-18 ruling hub
+    # keeps its own shell, so it is not going to become this package's markup.
+    # Listed rather than filed under _ADOPTER_RENDERED because no adopter is
+    # CONTRACTUALLY expected to write it; that would be a claim I cannot support.
+    "workspace-layout": "second single-pane branch; written by hub's own shell, not by any declared adopter contract",
+    "workspace-pane": "child of workspace-layout, same story",
+    # Styled-but-never-rendered leftovers, unrelated to the mobile defect.
+    "ws-apps-nav": "styled in workspace-three-col.css; no template emits it",
+    "ws-viewer-mode-toggle-btn": "styled in workspace-viewer-preview.css; no writer",
+    "ws-worktree-empty": "styled in workspace-three-col.css; no writer",
+}
+
 
 def _layout_state_classes() -> dict[str, set[str]]:
     """Classes that appear in a selector of a rule which sets ``display``.
@@ -223,7 +268,9 @@ def test_every_layout_state_class_has_a_writer() -> None:
     orphans = {
         cls: files
         for cls, files in layout.items()
-        if cls not in written and cls not in _ADOPTER_RENDERED
+        if cls not in written
+        and cls not in _ADOPTER_RENDERED
+        and cls not in _KNOWN_ORPHANED
     }
     # Assert
     if orphans:
@@ -244,6 +291,52 @@ def test_every_layout_state_class_has_a_writer() -> None:
             "Fix by writing the class where the markup is produced, or by "
             "deleting the rule. Do NOT add it to _ADOPTER_RENDERED unless "
             "another repo genuinely owns rendering it — and then say which, "
-            "and record it in the shell contract.",
+            "and record it in the shell contract. Do NOT add it to "
+            "_KNOWN_ORPHANED either: that list is a CEILING for debt that "
+            "predates this guard, and it must only ever shrink.",
         ]
         pytest.fail("\n".join(lines))
+
+
+def test_no_stale_entries_in_known_orphaned() -> None:
+    """An entry that has acquired a writer must be deleted, not left standing.
+
+    A ceiling list rots the same way an exemption list does: once a class is
+    finally written, its entry silences nothing while still reading as
+    outstanding debt — and worse, the NAME keeps its exemption, so something
+    unrelated could later reuse it and inherit a pass nobody granted.
+
+    This is the half that makes the ceiling honest. Without it, "the list must
+    only shrink" is an instruction nobody enforces, which is the same shape as
+    the defect this whole file exists to catch: a rule with no mechanism behind
+    it.
+    """
+    # Arrange
+    written = _written_tokens()
+    # Act
+    now_written = {cls for cls in _KNOWN_ORPHANED if cls in written}
+    # Assert
+    assert not now_written, (
+        "these classes now HAVE a writer, so their _KNOWN_ORPHANED entries are "
+        f"stale and must be deleted: {sorted(now_written)}"
+    )
+
+
+def test_known_orphaned_entries_are_still_styled() -> None:
+    """An entry whose CSS rule is gone must also be deleted.
+
+    The other way a ceiling entry goes stale: the fix was to DELETE the rule
+    rather than to write the class. Then the entry describes nothing at all —
+    it neither exempts nor documents — and it is pure noise pointing at a file
+    that no longer mentions the name.
+    """
+    # Arrange
+    layout = _layout_state_classes()
+    # Act
+    no_longer_styled = {cls for cls in _KNOWN_ORPHANED if cls not in layout}
+    # Assert
+    assert not no_longer_styled, (
+        "these classes are no longer used in any `display` rule, so their "
+        "_KNOWN_ORPHANED entries describe nothing and must be deleted: "
+        f"{sorted(no_longer_styled)}"
+    )
