@@ -1,28 +1,21 @@
 /* =============================================================================
  * SciTeX Typography System
  * =============================================================================
- * Font families, sizes, and line heights for the SciTeX design system.
+ * Typography UTILITY RULES. The tokens they consume live in
+ * `primitives/typography-vars.css` — the file named for them — and are
+ * deliberately NOT redefined here.
+ *
+ * They used to be defined in BOTH files, with identical names and identical
+ * values. Two definitions that agree are indistinguishable from one definition
+ * until somebody edits one of them; then the winner is decided by bundle order
+ * and the loser's edit appears to do nothing. Measured 2026-08-18: every bundle
+ * that includes this file already includes typography-vars.css AHEAD of it —
+ * shell.css lines 57/58, all.css lines 41/42 — so this file's copy was the one
+ * that won, and an edit to typography-vars.css would have been the silent no-op.
+ *
+ * app.css pulls typography-vars.css via APP_TOKEN_PRIMITIVES in _build-index.ts
+ * and does NOT include this file at all, so app consumers were never affected.
  * ============================================================================= */
-
-:root {
-  /* Font Families — modern system font stacks */
-  --base-font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  --heading-font-family: var(--base-font-family);
-  --mono-font-family:
-    ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, Monaco,
-    "Andale Mono", monospace;
-
-  /* Font Sizes */
-  --base-font-size: 14px;
-  --small-font-size: 0.875rem; /* 12.25px */
-  --large-font-size: 1.125rem; /* 15.75px */
-
-  /* Line Heights */
-  --base-line-height: 1.6;
-  --heading-line-height: 1.2;
-}
 
 /* =============================================================================
  * SciTeX Brand Typography
