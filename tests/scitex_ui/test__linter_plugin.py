@@ -18,13 +18,24 @@ def test_get_plugin_returns_dict_with_expected_keys():
     assert keys == {"rules", "call_rules", "axes_hints", "checkers"}
 
 
-def test_get_plugin_ships_five_rules():
-    # Arrange
+def test_get_plugin_ships_the_declared_corpus():
+    # Arrange — the plugin roster is what scitex-dev's registry actually sees,
+    # so this is the REACH assertion: a rule present in build_rules() but
+    # missing here would be written, tested, and enforced nowhere. Verified
+    # against the live registry too — 41 rules with UI-107, 40 without.
     plugin = get_plugin()
     # Act
     ids = {rule.id for rule in plugin["rules"]}
     # Assert
-    assert ids == {"STX-UI101", "STX-UI102", "STX-UI103", "STX-UI104", "STX-UI105"}
+    assert ids == {
+        "STX-UI101",
+        "STX-UI102",
+        "STX-UI103",
+        "STX-UI104",
+        "STX-UI105",
+        "STX-UI106",
+        "STX-UI107",
+    }
 
 
 def test_get_plugin_checkers_is_empty_list():

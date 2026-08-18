@@ -2,13 +2,33 @@
  * SciTeX App — Context Menu
  * =============================================================================
  * Prefix: stx-app-context-menu
- * Requires: shell/theme.css
+ * Requires: shell/theme.css — and ONLY that. See below.
+ *
+ * EVERY TOKEN HERE MUST BE ONE theme.css DEFINES. This file used to read
+ * `--bg-secondary`, which lives in primitives/colors.css and NOT in theme.css,
+ * while its text read `--text-secondary`, which theme.css does define. So on a
+ * page linking only theme.css the background fell back to a hardcoded dark
+ * literal and could never follow the theme, while the text followed it — and in
+ * the light palette the two collided into dark-grey-on-dark. scitex-cards hit
+ * exactly that on the operator's live chat: the menu looked disabled and
+ * clicked fine.
+ *
+ * A component whose DOCUMENTED dependency is narrower than its ACTUAL one is
+ * broken for anyone who believes the documentation, which is everyone. Fixed by
+ * using --bg-surface, which theme.css defines in both palettes, so the stated
+ * one-file dependency is now the true one. Guarded by
+ * tests/develop/test_app_css_token_layer.py.
  * ============================================================================= */
 
 .stx-app-context-menu {
   position: fixed;
-  z-index: 1000;
-  background: var(--bg-secondary, #161b22);
+  /* Tokenised rather than raised. Measured 2026-07-28: figrecipe collides here
+     (three of their overlays also sit at 1000 and they do not portal the menu),
+     while scitex-cards' chat stacks at 20/15 and needs nothing. One app each
+     way, so raising the default would fix figrecipe's layering at everyone
+     else's cost — set --stx-context-menu-z instead of overriding the selector. */
+  z-index: var(--stx-context-menu-z, 1000);
+  background: var(--bg-surface, #161b22);
   border: 1px solid var(--border-default, #30363d);
   border-radius: 8px;
   padding: 4px;

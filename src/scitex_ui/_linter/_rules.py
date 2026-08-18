@@ -15,28 +15,83 @@ gate is enforced at the rule-build site below.
 
 from __future__ import annotations
 
+import importlib.util
 from dataclasses import dataclass
 from typing import Mapping
 
 
-# Try to import scitex-dev's canonical Rule dataclass. The plugin entry
-# point requires it (so `scitex-linter list-rules` displays correctly),
-# but a soft-import lets the standalone walker still produce violations
-# when scitex-dev is not installed in the consumer's venv.
-try:
+@dataclass(frozen=True)
+class _FallbackRule:
+    """Soft-fallback Rule shape — mirrors scitex-dev's Rule when absent.
+
+    Lets the standalone walker still produce violations when scitex-dev is
+    not installed in the consumer's venv.
+    """
+
+    id: str
+    severity: str
+    category: str
+    message: str
+    suggestion: str
+    requires: str = ""
+
+
+def _resolve_rule_cls() -> type:
+    """Return scitex-dev's canonical ``Rule``, or the fallback when absent.
+
+    Resolved on FIRST USE rather than at module import, and that timing is
+    the whole point — see :func:`__getattr__` below for why.
+
+    Absence and breakage are answered separately, because conflating them is
+    what made the old code fail silently: ``find_spec`` decides whether
+    scitex-dev is installed WITHOUT importing it, and only then is the real
+    import attempted. Any error from that import propagates. A cycle, or a
+    genuinely broken scitex-dev, is a defect to surface — not an "absent"
+    reading that quietly downgrades every rule to the fallback class.
+    """
+    if importlib.util.find_spec("scitex_dev") is None:
+        return _FallbackRule
     from scitex_dev.linter._rules._base import Rule  # type: ignore[import-not-found]
-except ImportError:  # pragma: no cover - exercised when scitex-dev absent
 
-    @dataclass(frozen=True)
-    class Rule:  # type: ignore[no-redef]
-        """Soft-fallback Rule shape — mirrors scitex-dev's Rule when absent."""
+    return Rule
 
-        id: str
-        severity: str
-        category: str
-        message: str
-        suggestion: str
-        requires: str = ""
+
+def __getattr__(name: str) -> type:
+    """Resolve ``Rule`` lazily (PEP 562), breaking a real import cycle.
+
+    Importing scitex-dev's ``Rule`` at MODULE SCOPE — which this module did
+    until 2026-08-09 — closes a loop that leaves this package's entire rule
+    corpus inactive:
+
+        import scitex_ui._linter._rules
+          -> from scitex_dev.linter._rules._base import Rule   (module scope)
+          -> scitex_dev.linter.__init__ runs _register_sweep_cli()
+          -> ... which reaches scitex-dev's plugin loader
+          -> loader imports scitex_ui._linter_plugin, calls get_plugin()
+          -> get_plugin() needs build_rules from THIS module
+          -> but we are still on the import line above: build_rules is
+             not yet defined
+          -> ImportError, caught by the loader, plugin dropped
+
+    The loader does not fail on that — it warns and carries on, so a run
+    with the UI rules ACTIVE and a run with them INACTIVE differ only by one
+    line of yellow text (measured: 41 rules / 7 UI vs 34 / 0).
+
+    Deferring to first ATTRIBUTE ACCESS fixes it because every access
+    happens inside :func:`build_rules`, i.e. after this module has finished
+    initialising — so the loader's re-entrant import finds ``build_rules``
+    present. Deferring into ``get_plugin`` instead does NOT work and was
+    tried: the loader CALLS ``get_plugin()`` during load, so the import
+    lands back inside the same partially-initialised module microseconds
+    later.
+
+    Regression-tested by tests/develop/test_linter_plugin_import_cycle.py.
+    """
+    if name == "Rule":
+        cls = _resolve_rule_cls()
+        globals()["Rule"] = cls  # cache: __getattr__ is only consulted on miss
+        return cls
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 @dataclass(frozen=True)
@@ -70,6 +125,13 @@ def build_rules() -> Mapping[str, Rule]:
     Mapping[str, Rule]
         ``{"STX-UI101": Rule(...), ..., "STX-UI105": Rule(...)}``.
     """
+    # Bound LOCALLY, not read from module globals. PEP 562's module-level
+    # __getattr__ is consulted only for attribute access on the module
+    # OBJECT (`_rules.Rule`) — a bare global lookup inside this function
+    # goes to globals() then builtins and never reaches it, so relying on
+    # the hook here raises NameError. Measured, not assumed: doing exactly
+    # that failed all four load orders on 2026-08-09.
+    Rule = _resolve_rule_cls()
 
     UI101 = Rule(
         id="STX-UI101",
@@ -166,13 +228,132 @@ def build_rules() -> Mapping[str, Rule]:
         requires="scitex-ui",
     )
 
+    UI106 = Rule(
+        id="STX-UI106",
+        severity="warning",
+        category=CATEGORY,
+        message=(
+            "long native `<select>` with no way to narrow it — a picker "
+            "past a dozen options is unscannable, and the native widget "
+            "offers only type-to-jump on the FIRST character"
+        ),
+        suggestion=(
+            "Layer scitex-ui's fuzzy Combobox over it as a progressive "
+            "enhancement — the <select> stays as the fallback:\n"
+            '  <script type="module" '
+            'src="{% static \'scitex_ui/js/app/combobox.js\' %}"></script>\n'
+            "  if (window.STX && window.STX.Combobox) {\n"
+            "    document.querySelectorAll('select.my-filter')\n"
+            "      .forEach((el) => new window.STX.Combobox({ from: el }));\n"
+            "  }\n"
+            "Fuzzy is subsequence matching, so `sui` finds `scitex-ui`. "
+            "Needs scitex-ui >= 0.12.1."
+        ),
+        requires="scitex-ui",
+    )
+
+    UI107 = Rule(
+        id="STX-UI107",
+        severity="error",
+        category=CATEGORY,
+        message=(
+            "root-anchored API path literal in client code — correct "
+            "standalone, silently wrong once the app is mounted as a "
+            "scitex-hub built-in under /apps/u/<module>/"
+        ),
+        suggestion=(
+            "Join the path onto the mount prefix the server put in the page:\n"
+            '  import { apiUrl } from "@scitex/ui/ts/_base";\n'
+            '  await fetch(apiUrl("/api/items"));\n'
+            "and have the view declare the prefix:\n"
+            "  from scitex_ui.mount import mount_context\n"
+            "  render(request, tpl, {..., **mount_context(request)})\n"
+            "apiUrl() THROWS when the marker is absent rather than "
+            "defaulting to '/', because a default works standalone and "
+            "fails only embedded. Needs scitex-ui >= 0.13.0; see "
+            "`scitex-ui skills get 41_dual-mode-mounting`."
+        ),
+        requires="scitex-ui",
+    )
+
     return {
         UI101.id: UI101,
         UI102.id: UI102,
         UI103.id: UI103,
         UI104.id: UI104,
         UI105.id: UI105,
+        UI106.id: UI106,
+        UI107.id: UI107,
     }
 
 
-__all__ = ["Rule", "UIViolation", "CATEGORY", "build_rules"]
+#: What this linter CANNOT see. Emitted on EVERY run, clean or not.
+#:
+#: A check whose output is indistinguishable from a complete one is the
+#: defect this exists to prevent: "no violations found" reads as "nothing
+#: is wrong" when it may mean "nothing was looked at". scitex-dev made
+#: stating the gap in the EMITTED VERDICT a requirement rather than a
+#: preference (2026-07-29) — not the docstring, not the card, the output.
+#: Their own corpus does the same for unregistered rule categories.
+#:
+#: Every entry here is a property of the code in `_checker.py`, not a
+#: guess. Add one whenever a rule's reach narrows.
+COVERAGE_GAPS: tuple[tuple[str, str], ...] = (
+    (
+        "runtime-generated markup",
+        "this is a static text scanner: elements created or populated at "
+        "runtime by JS are never inspected. STX-UI106 in particular counts "
+        "<option> tags in source, so a <select> filled from fetch() looks "
+        "empty to it and will not be flagged however long it gets.",
+    ),
+    (
+        "built output",
+        "dist/ and build/ are skipped, so what a consumer actually ships is "
+        "not scanned — only the sources it was built from.",
+    ),
+    (
+        "HTML assembled in Python",
+        "only .css/.html/.htm/.ts/.tsx/.js/.jsx are read. Markup built by "
+        "string concatenation inside .py is invisible.",
+    ),
+    (
+        "URLs built at runtime",
+        "STX-UI107 matches a root-anchored path LITERAL. A URL assembled by "
+        'concatenation (`"/" + kind + "/items"`) or read from config is not '
+        "a literal and is not flagged, so a clean UI-107 run is not evidence "
+        "an app is mount-safe. This is the same blind spot as STX-UI106 and "
+        "the reason the mount reader THROWS at runtime: the static check "
+        "cannot be the only gate.",
+    ),
+    (
+        "comment/exemption detection is line-prefix based",
+        "STX-UI107 skips a line whose first non-space characters are //, /*, "
+        "* or <!--, and skips a line that also contains `apiUrl(` — because "
+        "the correct fix, apiUrl(\"/api/x\"), contains the literal being "
+        "flagged. Both tests are per-LINE, so a literal inside a block "
+        "comment whose body does not start with * , or an apiUrl() call "
+        "split across lines, will be judged wrongly. Measured 2026-07-30: "
+        "both of scitex-ui's own two matches were documentation, one of "
+        "them the docstring for apiUrl itself.",
+    ),
+)
+
+
+def coverage_notice() -> str:
+    """Render the always-emitted statement of what was NOT inspected."""
+    lines = [
+        "NOT EVERYTHING WAS INSPECTED — this verdict covers only what a "
+        "static scan of the source can see:",
+    ]
+    lines += [f"  - {name}: {detail}" for name, detail in COVERAGE_GAPS]
+    return "\n".join(lines)
+
+
+__all__ = [
+    "Rule",
+    "UIViolation",
+    "CATEGORY",
+    "build_rules",
+    "COVERAGE_GAPS",
+    "coverage_notice",
+]

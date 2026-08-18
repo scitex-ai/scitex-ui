@@ -67,3 +67,19 @@ test -n "$(ls -A dist 2>/dev/null)" || {
     echo "::error::python -m build produced no artifacts in dist/"
     exit 1
 }
+
+# Gate: what we BUILT must be what the tag ASKED FOR, and it must carry the
+# browser-facing assets. Both run here, before publish, because the failure
+# they catch is otherwise first reported by PyPI as a bare "400 Bad Request"
+# (incident 2026-07-28: tag v0.12.1 built a 0.11.1 wheel because the tag was
+# created on a ref that predated the version bump — tests, build and artifact
+# upload were all green). Skipping the gate when no tag is passed would make it
+# unfailable, so a missing tag is itself an error.
+TAG="${2:-${GITHUB_REF#refs/tags/}}"
+test -n "$TAG" && [ "$TAG" != "${GITHUB_REF:-}" ] || {
+    echo "::error::no release tag resolved (arg2='${2:-}' GITHUB_REF='${GITHUB_REF:-}') — refusing to skip the release gate"
+    exit 1
+}
+
+echo "=== gate: artifacts must match tag $TAG ==="
+"$PY" "$(dirname "$0")/assert_release_artifacts.py" "$TAG" dist

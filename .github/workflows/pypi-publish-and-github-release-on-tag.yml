@@ -34,8 +34,37 @@ name: release
 # fail-loud: a missing SIF/shim/interpreter is a HARD error, never a
 # bare-runner fallback.
 #
-# runs-on driven by repo Actions Variable CI_RUNS_ON; SIF + apptainer paths
-# come from SCITEX_CI_SIF / SCITEX_CI_APPTAINER (same as pytest-matrix).
+# RUNS-ON IS PINNED TO `spartan-cpu` HERE, DELIBERATELY, AND IT IS TEMPORARY.
+# Everything else in this repo follows the CI_RUNS_ON variable; this workflow
+# does the opposite, which is the whole point:
+#
+#   PR CI      pooled via CI_RUNS_ON=scitex-ci   -> migrates automatically as
+#              runners join and Spartan drains. Nobody has to flip again.
+#   publish    pinned to spartan-cpu             -> stays where the dependency
+#              provably exists.
+#
+# THE DEPENDENCY: every job below runs inside SCITEX_CI_SIF
+# (~/.scitex/dev/containers/ci-cpu.sif) via SCITEX_CI_APPTAINER — tests, wheel
+# build, and the OIDC publish. `scitex-ci` is a POOL label, so pointing these
+# jobs at it means "any machine serving that label", and scitex-compute-01/02
+# will serve it while having apptainer 1.5.3 but NOT the SIF (confirmed with
+# scitex-hpc, 2026-08-05, who owns getting it there).
+#
+# WHY THIS FAILS SILENTLY IF YOU GET IT WRONG: pull-request CI never touches
+# these paths. A repo can move its PR legs to the pool, stay green for weeks,
+# and then fail on its FIRST TAG — the one moment nobody wants a surprise. The
+# green PRs are not evidence the release path survived the migration, because
+# they never exercised it.
+#
+# UNPINNING IS ONE LINE, AND HAS ONE PRECONDITION: restore
+#   runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+# on all four jobs once ci-cpu.sif EXISTS at the destination — not once the
+# runners are up, which is a different fact. scitex-hpc has agreed to announce
+# the SIF's presence separately and to verify it by reading the file on those
+# machines rather than by having run a copy.
+# Tracked: card scitex-ui-ci-still-100pct-spartan-after-ruling-20260805.
+#
+# SIF + apptainer paths come from SCITEX_CI_SIF / SCITEX_CI_APPTAINER.
 #
 # Manual re-run: the workflow also accepts a `version` input via
 # workflow_dispatch so you can re-publish without re-tagging.
@@ -56,7 +85,8 @@ env:
 
 jobs:
   test:
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    # PINNED — do not restore CI_RUNS_ON here without reading the header note.
+    runs-on: [self-hosted, Linux, X64, spartan-cpu]
     strategy:
       fail-fast: false
       matrix:
@@ -86,7 +116,8 @@ jobs:
 
   build:
     needs: test
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    # PINNED — do not restore CI_RUNS_ON here without reading the header note.
+    runs-on: [self-hosted, Linux, X64, spartan-cpu]
     outputs:
       version: ${{ steps.ver.outputs.version }}
     steps:
@@ -106,8 +137,12 @@ jobs:
       # Build INSIDE the SIF (no setup-python on the bare Spartan node).
       # build-in-sif.sh installs the `build` frontend into a writable --target
       # inside the SIF, then `python -m build` → dist/. fail-loud on empty dist.
-      - name: Build wheel + sdist in the CI SIF (apptainer exec)
-        run: bash .github/ci/exec-in-sif.sh build-in-sif.sh 3.12
+      # build-in-sif.sh ends with the release gate: the built artifacts must
+      # declare the tagged version AND carry the js/app bundles consumers load
+      # with a <script> tag. The tag is passed explicitly so a workflow_dispatch
+      # re-publish (where GITHUB_REF is a branch, not a tag) is gated too.
+      - name: Build wheel + sdist in the CI SIF, then gate against the tag
+        run: bash .github/ci/exec-in-sif.sh build-in-sif.sh 3.12 ${{ steps.ver.outputs.version }}
       # upload-artifact is a JS action — runs fine on the self-hosted runner.
       - uses: actions/upload-artifact@v4
         with:
@@ -116,7 +151,8 @@ jobs:
 
   publish:
     needs: build
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    # PINNED — do not restore CI_RUNS_ON here without reading the header note.
+    runs-on: [self-hosted, Linux, X64, spartan-cpu]
     environment:
       name: pypi
       url: https://pypi.org/p/scitex-ui
@@ -142,7 +178,8 @@ jobs:
 
   release:
     needs: [build, publish]
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    # PINNED — do not restore CI_RUNS_ON here without reading the header note.
+    runs-on: [self-hosted, Linux, X64, spartan-cpu]
     permissions:
       contents: write
     steps:
