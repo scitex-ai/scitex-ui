@@ -19,10 +19,8 @@ it only because scitex-cards happened to mention they detect
 `window.STX.Combobox`. That is too thin a thread to rely on twice.
 """
 
-import pathlib
 import re
 
-import scitex_ui
 from tests._checkout import static_dir
 
 _JS = static_dir() / "js" / "app"

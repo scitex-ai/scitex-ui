@@ -28,7 +28,6 @@ itself and are a different consumption story.
 
 from __future__ import annotations
 
-import pathlib
 
 import pytest
 

@@ -27,7 +27,6 @@ so, because the code alone cannot distinguish that intent from the bug.
 
 from __future__ import annotations
 
-import pathlib
 import re
 
 import pytest

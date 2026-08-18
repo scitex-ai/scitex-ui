@@ -3,10 +3,15 @@
 
 `ts/shell/mobile-swipe.ts` and `ts/shell/sidebar-drawer-gesture.ts` shipped for
 months while being reachable from nothing: absent from the `ts/shell/index.ts`
-barrel, imported by no module here, imported by no consumer, referenced by no
-template, and with no compiled counterpart under `js/`. They had been written,
-debugged and given `export function init()` — but a caller was never added, so
-no browser ever ran them. See ADR 0002.
+barrel, imported by no module here, referenced by no template, and with no
+compiled counterpart under `js/`. They had been written, debugged and given
+`export function init()` — but a caller was never added, so no browser ever ran
+them. See ADR 0002.
+
+("imported by no consumer" used to appear in that list. It was removed on
+2026-08-05 because this test never checked it and cannot — see the scope
+warning below. Claiming it here is what made the allow-list read as a
+deletion license.)
 
 That is the same defect class as the unregistered components 0.9.0 fixed, the
 unimported stylesheets `test_css_bundle_index.py` guards, and the orphaned
@@ -24,16 +29,55 @@ A module is REACHABLE when either:
 Known orphans are listed in `_ALLOWED_ORPHANS` with the reason. They are named
 rather than hidden: `test_allowlist_has_no_stale_entries` fails once one is
 fixed or removed, so the allowlist cannot quietly outlive the problem.
+
+SCOPE — WHAT "ORPHAN" MEANS HERE, AND WHAT IT DOES NOT
+======================================================
+Orphan means UNREACHABLE WITHIN THIS REPOSITORY. Both mechanisms above —
+the barrel and the template-loaded bundle — are local. This test does not
+look at any consumer, and it cannot: a component library's consumers live in
+other repositories by definition, so the one search that would establish
+"nobody imports this" is the one search this file never runs.
+
+**DO NOT TREAT AN ENTRY IN `_ALLOWED_ORPHANS` AS A LICENCE TO DELETE.**
+
+The warning exists because of a 2026-08-05 near-miss whose value is in how it
+resolved, not in the damage — there was none. A consumer (figrecipe) reported
+a broken frontend build and attributed it to this repo removing modules. Two
+of the modules named here HAD been removed by 15f37d2 (#119), both allow-listed
+in this file, so the story fit and was briefly accepted on both sides.
+
+It was wrong. Measured afterwards: figrecipe imports NEITHER removed module —
+zero occurrences of `standalone-terminal` or `workspace-shell` in their repo,
+against a positive control that returns hits. Their build broke for an
+unrelated reason of their own, and their initial report rested on a probe that
+listed files while hiding directories.
+
+The lesson survives the retraction, which is why this warning stays: for the
+half-hour that story was believed, NOTHING IN THIS FILE COULD HAVE SETTLED IT
+EITHER WAY. The guard was green throughout — correctly, since green was all it
+ever claimed. A removal here can be safe or catastrophic for a consumer and
+this test returns the same answer to both.
+
+Before removing an exported module, run the check this file cannot:
+  - grep the fleet for the export name, or
+  - ask the known consumers (figrecipe, scitex-writer, scitex-cards,
+    scitex-cloud, scitex-storage)
+A published-package dependency would turn such a removal into a version bump;
+consumers that symlink into this working checkout get it with no signal at all.
+
+This is the same defect class the module list above describes, pointed
+outward: there, an artifact shipped that reached nobody; here, a deletion
+COULD reach somebody nobody looked for. Both are "I checked the layer I could
+see", and they are the same query run in opposite directions — the reach audit
+and the deletion audit differ only in which way you point it.
 """
 
 from __future__ import annotations
 
-import pathlib
 import re
 
 import pytest
 
-import scitex_ui
 from tests._checkout import static_dir, templates_dir
 
 _STATIC = static_dir()

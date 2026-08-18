@@ -26,7 +26,6 @@ writer (derivation, the root-mount empty string, the shell actually emitting
 it) is covered in ``tests/scitex_ui/test_mount.py``.
 """
 
-import pathlib
 import re
 
 import scitex_ui

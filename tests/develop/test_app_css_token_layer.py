@@ -39,7 +39,6 @@ import re
 
 import pytest
 
-import scitex_ui
 from tests._checkout import css_dir
 
 _CSS = css_dir()

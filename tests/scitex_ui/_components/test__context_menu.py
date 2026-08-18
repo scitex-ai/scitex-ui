@@ -3,7 +3,6 @@
 
 """Tests for scitex_ui._components._context_menu."""
 
-import pathlib
 import re
 
 import scitex_ui

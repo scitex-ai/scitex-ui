@@ -20,12 +20,10 @@ generated bundles never import themselves, paths are `./`-prefixed and sorted.
 
 from __future__ import annotations
 
-import pathlib
 import re
 
 import pytest
 
-import scitex_ui
 from tests._checkout import css_dir
 
 _CSS_DIR = css_dir()

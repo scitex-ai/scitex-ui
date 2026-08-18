@@ -3,7 +3,6 @@
 
 """Tests for scitex_ui._components._attachment."""
 
-import pathlib
 import re
 
 import pytest

@@ -22,13 +22,13 @@ likely to break:
    reintroduce the 2.36:1 failure. Here it fails instead.
 """
 
-import pathlib
 import re
 
 import pytest
 
-import scitex_ui
 from tests._checkout import css_dir
+
+from . import _css_palette
 
 _CSS = css_dir()
 
@@ -48,21 +48,8 @@ _DARK_SURFACE = "#161b22"
 _AA_NORMAL_TEXT = 4.5
 
 
-def _channel(value: int) -> float:
-    c = value / 255.0
-    return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
-
-
-def _luminance(hex_colour: str) -> float:
-    h = hex_colour.lstrip("#")
-    r, g, b = (int(h[i : i + 2], 16) for i in (0, 2, 4))
-    return 0.2126 * _channel(r) + 0.7152 * _channel(g) + 0.0722 * _channel(b)
-
-
-def _contrast(foreground: str, background: str) -> float:
-    a, b = _luminance(foreground), _luminance(background)
-    lighter, darker = max(a, b), min(a, b)
-    return (lighter + 0.05) / (darker + 0.05)
+#: The WCAG arithmetic was byte-identical in three files; it now lives once.
+_contrast = _css_palette.contrast
 
 
 def _declarations(relative_path: str) -> list[str]:
@@ -72,7 +59,7 @@ def _declarations(relative_path: str) -> list[str]:
     consumption, so a file that merely uses the token cannot satisfy a test
     that asks whether it defines it.
     """
-    text = (_CSS / relative_path).read_text(encoding="utf-8")
+    text = _css_palette.inline_imports(_CSS / relative_path)
     return [m.strip() for m in re.findall(r"--text-link\s*:\s*([^;]+);", text)]
 
 
