@@ -1,0 +1,113 @@
+name: typecheck
+
+# ============================================================================
+# TypeScript typecheck gate.
+#
+# WHY THIS REPO NEEDS ONE: package.json `main`/`types`/`exports` point at raw
+# .ts SOURCE, so every consumer's compiler applies to OUR code and our
+# effective strictness is set by whichever consumer is strictest. Without this
+# job the first consumer to compile under strict settings discovers our type
+# errors for us — which is exactly how figrecipe found 56 of them in
+# scitex-ui's source (2026-07-22).
+#
+# THIS GATE MUST BE ABLE TO FAIL. No `continue-on-error`, no `|| true`, no
+# "report only new violations" flag. Verified before landing: injecting one
+# bad annotation makes `npm run typecheck` exit 2; removing it returns exit 0.
+# If you ever need to exempt something, exempt it in tsconfig.json one entry at
+# a time with a written reason — never by softening this job.
+#
+# LIVES HERE, NOT IN ci.yml, ON PURPOSE: ci.yml is the org-rendered canonical
+# caller whose job bodies live once in scitex-ai/.github, and no reusable
+# `typecheck.yml` exists there yet. Keeping the body out of ci.yml means
+# `scitex-dev ecosystem ci-template apply` cannot clobber it. Migrating this
+# into an org-side reusable workflow (so ci.yml gains a thin `uses:` and this
+# file goes away) is tracked separately.
+#
+# Runner destination: the CI_RUNS_ON variable, same as the org bodies. This
+# job used to hardcode `spartan-cpu`, which meant the repo variable could not
+# steer it and a migration had to find this file by hand. It is unpinned so
+# there is ONE place that decides where scitex-ui's PR CI runs.
+# ============================================================================
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: typecheck-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  typecheck:
+    name: typecheck
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    timeout-minutes: 15
+    steps:
+      # FORK GUARD — MUST BE THE FIRST STEP, AHEAD OF actions/checkout, which is
+      # what first puts fork-authored content on the node. `npm ci` runs this
+      # PR's own lifecycle scripts, so a fork's package.json executes here.
+      #
+      # The identical guard now sits on the five reusable workflows in
+      # scitex-ai/.github (#23), but a reusable workflow cannot guard a job
+      # DECLARED LOCALLY. This one and docs-sphinx are declared here, so they
+      # were outside that PR's reach entirely — found by auditing this repo's
+      # own workflows afterwards instead of assuming the shared fix covered
+      # them. typecheck is a REQUIRED status check on main and develop, which
+      # makes it the most reachable of the two.
+      #
+      # Refuses rather than re-routing to a hosted runner: operator mandate
+      # 2026-07-14 (PS-169) forbids GitHub-hosted runners with no exceptions,
+      # and operator 2026-07-30 forbids university resources for external
+      # code — nothing sits in the intersection. FAILS rather than skipping: a
+      # skipped job's check can be reported as successful to branch
+      # protection, which is a red that looks green.
+      - name: Refuse to run fork-authored code on self-hosted infrastructure
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          set -euo pipefail
+          echo "::error title=Fork PR blocked::Fork-authored code is not run on the self-hosted Spartan pool."
+          echo "head repo: ${{ github.event.pull_request.head.repo.full_name }}  base repo: ${{ github.repository }}"
+          echo "To review this contribution, adopt its branch into ${{ github.repository }} and open a same-repo PR:"
+          echo "  gh pr checkout ${{ github.event.pull_request.number }} && git push origin HEAD:review/pr-${{ github.event.pull_request.number }}"
+          exit 1
+
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      # A typecheck that loaded zero files also exits 0. Assert the file count
+      # first so a broken `include` glob fails loudly instead of passing
+      # vacuously — an earlier hand-run of tsc here reported "0 errors" while
+      # tsc had never actually executed.
+      - name: Assert the typecheck actually covers our source
+        run: |
+          set -euo pipefail
+          on_disk=$(find src/scitex_ui/static/scitex_ui/ts \
+                         src/scitex_ui/static/scitex_ui/react \
+                         \( -name '*.ts' -o -name '*.tsx' \) | wc -l)
+          # tsc exits non-zero when it finds type errors; --listFiles still
+          # prints the full set, and reporting THOSE errors is the next step's
+          # job. Capture separately so a real type error cannot masquerade as a
+          # coverage failure.
+          npx tsc -p tsconfig.json --listFiles --noEmit >listed.txt 2>/dev/null || true
+          loaded=$(grep -c "$PWD/src/scitex_ui/static" listed.txt || true)
+          rm -f listed.txt
+          echo "source files on disk: $on_disk / loaded by tsc: $loaded"
+          if [ "$on_disk" -eq 0 ] || [ "$loaded" -ne "$on_disk" ]; then
+            echo "::error::tsconfig include globs cover $loaded of $on_disk source files."
+            echo "Fix the \`include\` globs in tsconfig.json so every shipped .ts/.tsx is checked."
+            exit 1
+          fi
+
+      - name: Typecheck
+        run: npm run typecheck

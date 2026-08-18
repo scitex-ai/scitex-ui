@@ -44,6 +44,8 @@ export class HorizontalResizer extends BaseResizer {
       externalToggleBtnId: config.externalToggleBtnId,
       accordion: config.accordion,
       snapPoints: config.snapPoints,
+      collapseOnNarrow: config.collapseOnNarrow,
+      narrowQuery: config.narrowQuery,
     });
   }
 
@@ -92,7 +94,9 @@ export class HorizontalResizer extends BaseResizer {
 
     let current: Element | null = paneContainer;
     while (current) {
-      const sibling =
+      // Annotated because `current` is reassigned from `sibling` below: without
+      // it the two infer through each other and tsc falls back to implicit any.
+      const sibling: Element | null =
         direction === "previous"
           ? current.previousElementSibling
           : current.nextElementSibling;
@@ -162,6 +166,11 @@ export class HorizontalResizer extends BaseResizer {
       snapPoints: el.dataset.snap
         ? el.dataset.snap.split(",").map((s) => parseInt(s.trim(), 10))
         : undefined,
+      // Presence-only, like data-most-left / data-in-app above. Opt-in so that
+      // panels whose mobile layout already works (Scholar's scroll-snap
+      // library panes) are left exactly as they are.
+      collapseOnNarrow: el.hasAttribute("data-collapse-on-narrow"),
+      narrowQuery: el.dataset.narrowQuery,
     };
   }
 }

@@ -2,7 +2,7 @@
  * Workspace Files Tree - Initialization Handler
  * Ported from scitex-cloud (no API deps)
  */
-import type { TreeConfig } from "../types";
+import type { TreeConfig, TreeItem } from "../types";
 import type { TreeStateManager } from "../_TreeState";
 import type { TreeRenderer } from "../_TreeRenderer";
 import type { FileActions } from "./FileActions";
@@ -26,7 +26,7 @@ export interface TreeInitCallbacks {
   showMessage: (msg: string, type: "success" | "error" | "info") => void;
   getParentPath: (path: string) => string;
   handleContextMenuAction: (action: string, path: string) => Promise<void>;
-  getTreeData: () => unknown[];
+  getTreeData: () => TreeItem[];
   setSearchQuery: (query: string) => void;
   clearSearch: () => void;
   selectFile: (path: string) => void;

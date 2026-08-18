@@ -16,12 +16,26 @@ in its source tree. Two outcomes:
   (which installs every peer) catches cross-package renames.
 """
 
+import importlib
+
 import pytest
 
 # ===== AUTO-GENERATED: cross-package imports =====
 CROSS_PACKAGE_IMPORTS = [
     "scitex_dev._cli._completion",
     "scitex_dev.cli",
+    # ADDED BY HAND, and the generator is the reason. `_cli_help.py` imports
+    # this at four sites, PS-140 flags it as `missing from gate`, and the
+    # prescribed remedy does not supply it:
+    #     scitex-dev ecosystem install-cross-package-gate scitex-ui --force
+    #     -> exit 0, no stdout, no stderr, file byte-identical
+    # Same result with the checkout first on sys.path. Two explanations ruled
+    # out by measurement rather than argument: nested imports ARE handled (all
+    # three entries above are themselves function-scope), and forcing the
+    # checkout onto sys.path changes nothing. Why it declines is unresolved and
+    # reported to scitex-dev rather than guessed at.
+    # Remove this comment once regeneration produces the entry itself.
+    "scitex_dev.ecosystem",
     "scitex_dev.linter._rules._base",
 ]
 # ===== END AUTO-GENERATED =====
@@ -29,9 +43,29 @@ CROSS_PACKAGE_IMPORTS = [
 
 @pytest.mark.parametrize("module_name", CROSS_PACKAGE_IMPORTS)
 def test_cross_package_import(module_name):
-    """Importing scitex-ui's declared cross-package dependency must succeed."""
+    """Importing scitex-ui's declared cross-package dependency must succeed.
+
+    SKIP ON THE ROOT, HARD-IMPORT THE FULL PATH. The two steps answer two
+    different questions and collapsing them is what made this gate silent:
+
+    ``pytest.importorskip("scitex_dev.linter._rules._base")`` skips whenever
+    ANY part of that path is missing — including when the peer IS installed and
+    the SUBMODULE was renamed. That is precisely the case the module docstring
+    above promises to catch ("Module installed BUT import fails … → test FAILS
+    loudly"), and the gate reported green through it instead.
+
+    So the root import decides "is the peer here at all?" — a legitimate skip on
+    a lean install where the peer is an optional extra. The full import then
+    decides "does the path we actually reference still exist?" — never a skip,
+    always a failure.
+
+    Do NOT simplify this back to a single hard import: that breaks the lean
+    install the skip exists for. The two lines are two questions.
+    """
     # Arrange
+    root = module_name.split(".")[0]
     # Act
-    mod = pytest.importorskip(module_name)
+    pytest.importorskip(root)
+    mod = importlib.import_module(module_name)
     # Assert
     assert mod is not None

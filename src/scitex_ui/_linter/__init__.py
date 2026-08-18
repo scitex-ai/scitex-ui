@@ -1,7 +1,7 @@
-"""scitex-ui component-usage linter — UI-101..105.
+"""scitex-ui component-usage linter — UI-101..107.
 
 Public surface:
-- :func:`build_rules`               — rule corpus (UI-101..105 :class:`Rule`s)
+- :func:`build_rules`               — rule corpus (UI-101..107 :class:`Rule`s)
 - :func:`scan_path`                 — walk a directory / file and emit Issues
 - :class:`UIViolation`              — a single concrete violation
 - :func:`main` (via ``scitex-ui lint``) — CLI entry point

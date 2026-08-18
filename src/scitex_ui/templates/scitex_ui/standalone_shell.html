@@ -10,6 +10,13 @@
         <!-- Tab branding. Shared with GUIs that do NOT extend this shell, so the
              favicon markup lives in one partial rather than only here. -->
         {% include "scitex_ui/_branding_head.html" %}
+        <!-- Where am I mounted? Read by ts/_base/mount.ts's mountPrefix(), which
+             throws rather than guessing a root mount. Emitted only when the view
+             merged scitex_ui.mount.mount_context(request, view_path=...) — an
+             app that has not adopted the contract gets no marker and the reader
+             says so, instead of silently assuming "/". Shared with GUIs that do
+             NOT extend this shell, like the branding partial above. -->
+        {% include "scitex_ui/_mount_marker.html" %}
         <!-- Must stay above the stylesheets: resolves the stored theme before the
              first paint. Inline by design — an external script would cost a
              render-blocking request on every page. -->
@@ -92,13 +99,20 @@
                               title="Console">
                             <i class="fas fa-terminal"></i> Console
                         </span>
+                        <!-- Chat is the DEFAULT mode (operator decision, 2026-08-05).
+                             The switching JS only handles clicks — nothing sets an
+                             initial mode at load — so these static `active` classes
+                             ARE the default. Keep this button's `active` in sync with
+                             #stx-shell-ai-chat-view below; they are two halves of one
+                             state and a mismatch shows a highlighted tab over the
+                             other tab's content. -->
                         <div class="stx-shell-ai-mode-toggle">
-                            <button class="stx-shell-ai-mode-btn active"
+                            <button class="stx-shell-ai-mode-btn"
                                     data-mode="console"
                                     title="Terminal">
                                 <i class="fas fa-terminal"></i> Console
                             </button>
-                            <button class="stx-shell-ai-mode-btn" data-mode="chat" title="AI Chat">
+                            <button class="stx-shell-ai-mode-btn active" data-mode="chat" title="AI Chat">
                                 <i class="fas fa-robot"></i> Chat
                             </button>
                         </div>
@@ -109,8 +123,10 @@
                         </button>
                     </div>
                     <div class="stx-shell-sidebar__content stx-shell-ai-body">
-                        <!-- Chat view (matches scitex-cloud workspace_ai_pane.html) -->
-                        <div id="stx-shell-ai-chat-view" class="stx-shell-ai-view">
+                        <!-- Chat view (matches scitex-cloud workspace_ai_pane.html).
+                             `active` here is the other half of the default-mode
+                             state; its partner is the data-mode="chat" button above. -->
+                        <div id="stx-shell-ai-chat-view" class="stx-shell-ai-view active">
                             <div class="stx-shell-ai-sessions-bar">
                                 <button class="stx-shell-ai-new-chat" title="New chat">
                                     <i class="fas fa-plus"></i>
@@ -191,7 +207,7 @@
                         </div>
                         <!-- Console/Terminal view -->
                         <div id="stx-shell-ai-console-view"
-                             class="stx-shell-ai-view active"
+                             class="stx-shell-ai-view"
                              data-view="console">
                             <div class="stx-shell-ai-console-tabs-bar">
                                 <button class="stx-shell-ai-console-new-tab" title="New terminal">
@@ -466,6 +482,12 @@
         </div>
         <!-- scitex-ui vanilla shell initialization -->
         <script src="{% static 'scitex_ui/js/shell/standalone-shell-init.js' %}"
+                defer></script>
+        <!-- Mobile pane-collapse gestures (<=768px): two-finger swipe and
+             header double-click / drag on #workspace-three-col, which this
+             template renders above. Self-guards: no-op when that container is
+             absent or the viewport is wide. See ADR 0002. -->
+        <script src="{% static 'scitex_ui/js/shell/mobile-swipe.js' %}"
                 defer></script>
         {% block extra_js %}{% endblock %}
         <!-- Element inspector (Alt+I) — only emitted for DEBUG/staff -->

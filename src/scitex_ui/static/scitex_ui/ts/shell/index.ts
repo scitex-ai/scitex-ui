@@ -119,3 +119,9 @@ export {
 export type { PanelConfig } from "./workspace-panel-resizer";
 export type { AxisConfig } from "./workspace-panel-resizer";
 export { detectAxis, getAxis } from "./workspace-panel-resizer";
+
+// Mobile pane-collapse gestures. The shell already ships these to the browser
+// via js/shell/mobile-swipe.js (see ADR 0002), so consumers of
+// standalone_shell.html get them with no wiring. Re-exported for consumers that
+// bundle the TypeScript themselves and want to control init order.
+export { init as initMobileSwipe } from "./mobile-swipe";
