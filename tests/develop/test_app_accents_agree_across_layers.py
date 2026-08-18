@@ -96,10 +96,26 @@ def _colors_names() -> set[str]:
 def test_both_layers_declare_some_accents() -> None:
     """ANTI-VACUITY: two empty sets are equal, and that must not read as a pass.
 
-    Without this, a wrong path or a broken regex yields empty sets on both
-    sides, the equality below holds trivially, and the suite reports the palette
-    consistent. "Measured and agreed" and "did not measure" would be the same
-    green, which is the failure mode this whole file exists to prevent.
+    AN AGREEMENT-SHAPED CHECK FAILS OPEN; AN EXISTENCE-SHAPED ONE FAILS SAFE.
+    That distinction is why this test carries more weight here than the same
+    boilerplate does elsewhere, and it is worth stating rather than assuming:
+
+        existence  ("token X is declared")     a broken scan finds nothing,
+                                               the assertion fails, and the red
+                                               is loud. Wrong reason, right
+                                               colour.
+        agreement  ("both layers match")       a broken scan finds nothing on
+                                               BOTH sides, the sets are equal,
+                                               and the check goes GREEN while
+                                               having measured nothing at all.
+
+    So the population assertion below is not defensive boilerplate — it is the
+    only thing standing between "measured and agreed" and "did not measure".
+    Skip it on an existence check and you get a confusing failure; skip it here
+    and you get a silent pass.
+
+    (Named by scitex-hub, comparing this guard against their own existence-shaped
+    one during the same review.)
     """
     # Arrange
     theme, colors = _theme_names(), _colors_names()
