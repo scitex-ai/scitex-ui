@@ -36,7 +36,6 @@ below carries the invariant instead and can never skip.
 """
 
 import ast
-import pathlib
 import subprocess
 import sys
 import textwrap
@@ -44,8 +43,9 @@ import textwrap
 import pytest
 
 import scitex_ui
+from tests._checkout import package_dir
 
-_RULES_PY = pathlib.Path(scitex_ui.__file__).parent / "_linter" / "_rules.py"
+_RULES_PY = package_dir() / "_linter" / "_rules.py"
 
 #: Verbatim from scitex-dev's loader; the whole failure is that this is only
 #: a warning, so scanning stderr for it is the only way to see it.

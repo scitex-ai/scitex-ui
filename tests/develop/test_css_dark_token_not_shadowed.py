@@ -47,9 +47,9 @@ import re
 
 import pytest
 
-import scitex_ui
+from tests._checkout import css_dir
 
-_CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
+_CSS = css_dir()
 
 #: The generated bundles. Each is an independent cascade, so a token can be
 #: shadowed in one and clean in another — they import different file sets.

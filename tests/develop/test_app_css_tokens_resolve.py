@@ -27,9 +27,9 @@ import re
 
 import pytest
 
-import scitex_ui
+from tests._checkout import css_dir
 
-_CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
+_CSS = css_dir()
 
 # Supplied by the consuming page, legitimately undefined here.
 _CONSUMER_SUPPLIED = {"--app-accent-color", "--app-accent-tint"}
