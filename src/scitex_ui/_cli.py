@@ -13,7 +13,33 @@ from __future__ import annotations
 # must-be-core enforces this ecosystem-wide.
 import click
 
+# Structured help (§4b) resolved LAZILY — scitex-dev is the optional [cli]
+# extra, and this module is the console-script entry point, so importing it
+# here at module scope would violate PS-213. See _cli_help for the full
+# reconciliation of the two rules.
+from ._cli_help import cli_help, examples as _examples, spec_command, spec_group
+
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+
+_MAIN_HELP = cli_help(
+    summary="SciTeX UI — shared React/TypeScript components for the workspace.",
+    description=(
+        "Provides the shell, primitives and app components that consuming "
+        "SciTeX apps mount, plus the docs/skills/MCP surfaces every package "
+        "exposes.",
+        "Config is loaded with the SciTeX precedence chain: config.yaml -> "
+        "$SCITEX_UI_CONFIG -> ~/.scitex/ui/config.yaml -> defaults.",
+    ),
+    version_of="scitex-ui",
+)
+
+_MCP_HELP = cli_help(
+    summary="MCP (Model Context Protocol) server commands.",
+    description=(
+        "Start the server, check its dependencies, list the tools it exposes, "
+        "and print the client configuration needed to install it.",
+    ),
+)
 
 
 def _get_version() -> str:
@@ -28,6 +54,7 @@ def _get_version() -> str:
 @click.group(
     context_settings=CONTEXT_SETTINGS,
     invoke_without_command=True,
+    **spec_group(_MAIN_HELP),
 )
 @click.version_option(_get_version(), "-V", "--version", prog_name="scitex-ui")
 @click.option(
@@ -67,14 +94,36 @@ def main(ctx, help_recursive, as_json):
         click.echo(ctx.get_help())
 
 # -- MCP commands --------------------------------------------------------
-@click.group(invoke_without_command=True)
+@click.group(
+    invoke_without_command=True,
+    **spec_group(
+        _MCP_HELP,
+        command_categories=[
+            ("Run", ["start", "doctor"]),
+            ("Inspect", ["list-tools", "show-installation"]),
+        ],
+    ),
+)
 @click.pass_context
 def mcp_group(ctx):
     """MCP (Model Context Protocol) server commands."""
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
 
-@mcp_group.command("start")
+@mcp_group.command(
+    "start",
+    **spec_command(
+        cli_help(
+            summary="Start the scitex-ui MCP server.",
+            description=("Serves the scitex-ui tool surface over stdio transport.",),
+            examples=_examples(
+                ("{prog}", ""),
+                ("{prog} --dry-run", "print the launch plan only"),
+            ),
+            exit_codes=((0, "server exited normally"), (1, "fastmcp not installed")),
+        )
+    ),
+)
 @click.option("--dry-run", is_flag=True, help="Print launch plan without starting.")
 @click.option(
     "-y",
@@ -83,13 +132,7 @@ def mcp_group(ctx):
     help="Suppress interactive confirmation (assume yes).",
 )
 def mcp_start(dry_run, yes):
-    """Start the scitex-ui MCP server.
-
-    \b
-    Examples:
-      scitex-ui mcp-group start
-      scitex-ui mcp-group start --dry-run
-    """
+    """Start the scitex-ui MCP server."""
     if dry_run:
         click.echo("DRY RUN — would start scitex-ui MCP server (stdio transport)")
         return
@@ -104,14 +147,21 @@ def mcp_start(dry_run, yes):
         raise SystemExit(1) from e
     mcp_server.run()
 
-@mcp_group.command("doctor")
+@mcp_group.command(
+    "doctor",
+    **spec_command(
+        cli_help(
+            summary="Check MCP server health and dependencies.",
+            description=(
+                "Reports whether fastmcp is importable and whether the server "
+                "loads, with the tool count as evidence it actually started.",
+            ),
+            examples=_examples(("{prog}", "")),
+        )
+    ),
+)
 def mcp_doctor():
-    """Check MCP server health and dependencies.
-
-    \b
-    Examples:
-      scitex-ui mcp doctor
-    """
+    """Check MCP server health and dependencies."""
     click.echo("Checking MCP dependencies...")
     try:
         import fastmcp
@@ -136,7 +186,23 @@ def mcp_doctor():
     click.echo("MCP server is ready.")
     click.echo("Run with: scitex-ui mcp start")
 
-@mcp_group.command("list-tools")
+@mcp_group.command(
+    "list-tools",
+    **spec_command(
+        cli_help(
+            summary="List available MCP tools.",
+            description=(
+                "Verbosity is cumulative: -v adds each tool's first "
+                "description line, -vv the full description.",
+            ),
+            examples=_examples(
+                ("{prog}", "names only"),
+                ("{prog} -vv", "names with full descriptions"),
+                ("{prog} --json", "machine-readable"),
+            ),
+        )
+    ),
+)
 @click.option(
     "-v",
     "--verbose",
@@ -145,13 +211,7 @@ def mcp_doctor():
 )
 @click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
 def mcp_list_tools(verbose, as_json):
-    """List available MCP tools.
-
-    \b
-    Examples:
-      scitex-ui mcp list-tools
-      scitex-ui mcp list-tools -vv
-    """
+    """List available MCP tools."""
     try:
         from ._mcp.server import mcp as mcp_server
     except ImportError as e:
@@ -191,15 +251,26 @@ def mcp_list_tools(verbose, as_json):
                 click.echo(f"    {desc}")
             click.echo()
 
-@mcp_group.command("show-installation")
+@mcp_group.command(
+    "show-installation",
+    **spec_command(
+        cli_help(
+            summary="Show MCP server installation instructions.",
+            description=(
+                "Prints the mcpServers entry to add to a client config, or the "
+                "same config as JSON for scripted installation.",
+            ),
+            examples=_examples(
+                ("{prog}", ""),
+                ("{prog} --json", "emit just the config block"),
+            ),
+            see_also=("mcp start", "mcp doctor"),
+        )
+    ),
+)
 @click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
 def mcp_show_installation(as_json):
-    """Show MCP server installation instructions.
-
-    \b
-    Examples:
-      scitex-ui mcp show-installation
-    """
+    """Show MCP server installation instructions."""
     import json as json_mod
 
     config = {
@@ -224,7 +295,23 @@ def mcp_show_installation(as_json):
 
 # Deprecation redirect: mcp installation -> mcp show-installation
 @mcp_group.command(
-    "installation", hidden=True, context_settings={"ignore_unknown_options": True}
+    "installation",
+    hidden=True,
+    context_settings={"ignore_unknown_options": True},
+    **spec_command(
+        cli_help(
+            summary="(deprecated) Renamed to `show-installation`.",
+            description=(
+                "Kept as a hidden command so the old invocation fails with a "
+                "named redirect rather than click's generic 'No such command'.",
+            ),
+            examples=_examples(
+                ("{prog}", "always exits 2; use `mcp show-installation`"),
+            ),
+            exit_codes=((2, "always — this alias never succeeds"),),
+            see_also=("mcp show-installation",),
+        )
+    ),
 )
 @click.pass_context
 def mcp_installation_deprecated(ctx):
@@ -240,18 +327,27 @@ def mcp_installation_deprecated(ctx):
 main.add_command(mcp_group, "mcp")
 
 # -- Introspection ------------------------------------------------------
-@main.command("list-python-apis")
+@main.command(
+    "list-python-apis",
+    **spec_command(
+        cli_help(
+            summary="List public Python APIs in scitex-ui.",
+            description=(
+                "Reads `scitex_ui.__all__`, so it reports the surface the "
+                "package actually exports rather than everything importable.",
+            ),
+            examples=_examples(
+                ("{prog}", "names only"),
+                ("{prog} -vv", "names with signatures"),
+                ("{prog} --json", "machine-readable"),
+            ),
+        )
+    ),
+)
 @click.option("-v", "--verbose", count=True, help="-v names, -vv +sigs, -vvv +docs")
 @click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
 def list_python_apis(verbose, as_json):
-    """List public Python APIs in scitex-ui.
-
-    \b
-    Example:
-      $ scitex-ui list-python-apis
-      $ scitex-ui list-python-apis -vv
-      $ scitex-ui list-python-apis --json
-    """
+    """List public Python APIs in scitex-ui."""
     import inspect
 
     import scitex_ui

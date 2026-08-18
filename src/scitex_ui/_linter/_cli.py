@@ -16,6 +16,7 @@ from pathlib import Path
 
 import click
 
+from .._cli_help import cli_help, examples as _examples, spec_command
 from ._checker import scan_path
 from ._rules import COVERAGE_GAPS, coverage_notice
 
@@ -42,7 +43,27 @@ def _emit_coverage_json() -> None:
     )
 
 
-@click.command(name="lint")
+@click.command(
+    name="lint",
+    **spec_command(
+        cli_help(
+            summary="Lint a path against the scitex-ui component rules.",
+            description=(
+                "Defaults to treating TARGET as a CONSUMER repo, where UI-104 "
+                "fires on shell/primitive edits. Pass --treat-as-scitex-ui when "
+                "linting this package itself, where those edits are the point.",
+                "Rule coverage is reported explicitly: gaps are printed rather "
+                "than silently skipped, so a clean run means the rules ran, not "
+                "that they were absent.",
+            ),
+            examples=_examples(
+                ("{prog} ./src", "lint a consumer repo"),
+                ("{prog} ./src --treat-as-scitex-ui", "lint scitex-ui itself"),
+            ),
+            exit_codes=((0, "no violations"), (1, "violations found")),
+        )
+    ),
+)
 @click.argument(
     "target",
     type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=Path),

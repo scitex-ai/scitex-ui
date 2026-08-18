@@ -39,12 +39,30 @@ _CONSUMER_SUPPLIED = {"--app-accent-color", "--app-accent-tint"}
 # `var(--x)` with no fallback that nothing defines, so the declaration is
 # currently inert wherever it appears.
 _KNOWN_BROKEN_IN_ALL = {
+    # --primary-color, --secondary-color and --secondary-dark were RETIRED from
+    # this ceiling on 2026-08-18. They were not renamed on a hunch: what each
+    # one styled was read out of typography.css, and the link pair was measured
+    # rendering in chromium first --
+    #
+    #     before   link rgb(51,51,51) == body rgb(51,51,51), decoration none
+    #     after    link rgb(44,93,143) light / rgb(88,166,255) dark, != body
+    #
+    # -- so a link in body content had NO visual distinction from surrounding
+    # text at all. `a` and `a:hover` now read --text-link / --text-link-hover,
+    # and the six heading rules plus `.text-primary` read --text-primary.
     "--accent-color",
-    "--primary-color",
-    "--secondary-color",
-    "--secondary-dark",
+    # --text-dark / --text-light STAY, and the reason is sharper than "unknown".
+    # They are LITERAL colour utilities (`.text-light`, `.text-dark`) whose
+    # names describe an absolute colour, while every candidate token in the
+    # palette FLIPS with the theme. Mapping `.text-light` to --text-inverse
+    # would make it render DARK in dark mode -- inverting the one thing its
+    # name promises. Fixing them means deciding whether literal-colour
+    # utilities belong in a themed system at all, which is a design call.
     "--text-dark",
     "--text-light",
+    # These two are two drifted copies of one widget rather than a naming
+    # problem; see card
+    # scitex-ui-two-search-css-twins-disagree-and-one-renders-no-background-20260818
     "--workspace-bg-default",
     "--workspace-bg-input",
     "--workspace-border-muted",
