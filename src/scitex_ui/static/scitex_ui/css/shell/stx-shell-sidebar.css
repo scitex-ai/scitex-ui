@@ -238,8 +238,13 @@
   pointer-events: none !important;
 }
 
-/* Module panel headers still get tinted background */
-[data-pane-type="module"] {
+/* Module panel headers still get tinted background.
+   `data-pane`, not `data-pane-type`: scitex-hub writes `data-pane="module"` in
+   production and nothing has ever written `data-pane-type`, so the two spellings
+   were one concept with one real producer. Settled with hub 2026-08-18 —
+   `data-pane` wins, and it is also the better name: it says WHICH pane, where
+   `data-pane-type` reads as a category of pane, which is not the concept. */
+[data-pane="module"] {
   background: var(--app-accent-tint, transparent);
 }
 
