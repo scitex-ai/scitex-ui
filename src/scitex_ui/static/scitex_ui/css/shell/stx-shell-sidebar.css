@@ -258,6 +258,12 @@
   --app-accent-tint: var(--app-accent-scholar-tint);
 }
 [data-app-accent="visualizer"],
+/* ALIAS, not a missing token. `vis` is a short form of `visualizer` and
+   deliberately borrows its accent rather than defining a second one. A check
+   that compares data-app-accent VALUES against --app-accent-<name> TOKENS will
+   flag this as an orphan; it is not. Do not "fix" it by minting
+   --app-accent-vis — that would be two names for one colour, which is the
+   duplication this file exists to avoid. */
 [data-app-accent="vis"] {
   --app-accent-color: var(--app-accent-visualizer);
   --app-accent-tint: var(--app-accent-visualizer-tint);
@@ -311,6 +317,16 @@
   --app-accent-color: var(--app-accent-storage);
   --app-accent-tint: var(--app-accent-storage-tint);
 }
+/* TWO SPELLINGS, ONE ACCENT, ACROSS A PRODUCT RENAME. scitex-todo became
+   scitex-cards; the TOKEN kept the old name. Both selectors are listed so both
+   spellings keep working — pages in the wild still set data-app-accent="todo",
+   and carrying both is how a published contract is renamed without breaking it.
+   The same rename shows elsewhere in the fleet: SCITEX_TODO_AGENT_ID is still
+   spelled TODO because renaming it would break identity resolution for every
+   agent. Product renamed, identifier did not.
+   Like the `vis` alias above, a check comparing data-app-accent VALUES against
+   --app-accent-<name> TOKENS will flag `cards` as having no token. It is
+   correct as written; do not mint --app-accent-cards. */
 [data-app-accent="todo"],
 [data-app-accent="cards"] {
   --app-accent-color: var(--app-accent-todo);
