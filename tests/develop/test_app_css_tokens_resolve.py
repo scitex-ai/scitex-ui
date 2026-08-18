@@ -55,13 +55,29 @@ def _strip_comments(text: str) -> str:
     return re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
 
 
-def _expand(bundle: pathlib.Path) -> str:
+def _expand(bundle: pathlib.Path, _seen: set[pathlib.Path] | None = None) -> str:
+    """The bundle's text with every `@import` inlined, to any depth.
+
+    Depth matters. This used to follow exactly ONE level, which was correct only
+    because no stylesheet in the tree imported another. The moment one does —
+    and splitting an over-long token file is the obvious reason to — the tokens
+    behind that second hop become invisible here. The tests that ask "is this
+    token defined anywhere?" would then answer from a smaller corpus and the
+    ones asking "is anything undefined?" would answer from a larger one, so a
+    refactor with no visual effect could turn this file red or, worse, quiet.
+
+    Cycles are possible in principle (`a` imports `b` imports `a`), so visited
+    files are tracked; a cycle truncates rather than recurses forever.
+    """
+    seen = set() if _seen is None else _seen
+    resolved = bundle.resolve()
+    if resolved in seen or not bundle.exists():
+        return ""
+    seen.add(resolved)
     text = _strip_comments(bundle.read_text())
     parts = [text]
     for rel in re.findall(r'@import\s+"([^"]+)"', text):
-        target = (bundle.parent / rel).resolve()
-        if target.exists():
-            parts.append(_strip_comments(target.read_text()))
+        parts.append(_expand((bundle.parent / rel).resolve(), seen))
     return "\n".join(parts)
 
 
@@ -71,6 +87,45 @@ def _defined(css: str) -> set[str]:
 
 def _used_without_fallback(css: str) -> set[str]:
     return set(re.findall(r"var\(\s*(--[\w-]+)\s*\)", css))
+
+
+def test_expand_follows_an_import_two_levels_down(tmp_path) -> None:
+    """Control: the recursion above must be LIVE, not merely present.
+
+    Nothing in the tree nests today, so making `_expand` recursive produced a
+    byte-identical result on all three bundles — which is exactly what dead code
+    produces too. This fixture nests on purpose so the capability is asserted
+    rather than assumed, and it keeps asserting it after the tree does nest.
+    """
+    # Arrange
+    (tmp_path / "leaf.css").write_text(":root {\n  --probe-token: #123456;\n}\n")
+    (tmp_path / "mid.css").write_text('@import "./leaf.css";\n')
+    bundle = tmp_path / "bundle.css"
+    bundle.write_text('@import "./mid.css";\n')
+
+    # Act
+    defined = _defined(_expand(bundle))
+
+    # Assert
+    assert "--probe-token" in defined, (
+        "_expand stopped before the second hop, so tokens behind a nested "
+        "@import are invisible to every check in this file"
+    )
+
+
+def test_expand_survives_an_import_cycle(tmp_path) -> None:
+    """A cycle must truncate, not recurse until the stack runs out."""
+    # Arrange
+    (tmp_path / "a.css").write_text('@import "./b.css";\n:root {\n  --from-a: 1px;\n}\n')
+    (tmp_path / "b.css").write_text('@import "./a.css";\n:root {\n  --from-b: 2px;\n}\n')
+
+    # Act
+    defined = _defined(_expand(tmp_path / "a.css"))
+
+    # Assert
+    assert {"--from-a", "--from-b"} <= defined, (
+        "a cycle should still yield both files' tokens exactly once"
+    )
 
 
 def test_app_bundle_has_no_inert_token_references():

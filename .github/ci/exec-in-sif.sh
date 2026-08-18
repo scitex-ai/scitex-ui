@@ -54,9 +54,15 @@ if [ -n "${SCITEX_CI_APPTAINER:-}" ]; then
         echo "::warning::SCITEX_CI_APPTAINER=$CONFIGURED is not executable on $(hostname -s); falling back to PATH"
     fi
 fi
-[ -n "$APPTAINER" ] || APPTAINER="$(command -v apptainer || true)"
+APPTAINER_FROM="SCITEX_CI_APPTAINER"
+if [ -z "$APPTAINER" ]; then
+    APPTAINER="$(command -v apptainer || true)"
+    APPTAINER_FROM="PATH"
+fi
+# Name BOTH attempts in the failure: "which one did you even try" is the whole
+# diagnosis when a job lands on an unfamiliar runner.
 [ -n "$APPTAINER" ] && [ -x "$APPTAINER" ] || {
-    echo "::error::no apptainer found — set SCITEX_CI_APPTAINER to a valid path or install apptainer on this runner"
+    echo "::error::no apptainer on this runner. Tried (1) SCITEX_CI_APPTAINER=${SCITEX_CI_APPTAINER:-<unset>} — not an executable here; (2) 'apptainer' on PATH ($PATH) — not found. Install apptainer on this runner, or point SCITEX_CI_APPTAINER at a working shim. Running the job outside the SIF on a bare-runner install is NOT an acceptable fallback."
     exit 1
 }
 
@@ -67,21 +73,42 @@ SIF="$(expand_tilde "${SCITEX_CI_SIF:-$HOME/.scitex/dev/containers/ci-cpu.sif}")
 }
 
 # apptainer scratch. Prefer the shared project FS where it exists (keeps HOME
-# clean on Spartan, whose HOME is inode-capped); otherwise node-local temp.
+# clean on Spartan, whose HOME is inode-capped); otherwise host-local scratch
+# under $HOME. NOT ${TMPDIR:-/tmp}: the runner profile rewrites TMPDIR per job
+# and /tmp is wiped between them, so a shared, stable, fleet-wide location makes
+# a scratch-related failure reproducible instead of one-shot. Same path the rest
+# of the fleet uses (scitex-dev and siblings), so a finding on one node transfers.
 GPFS_ROOT="/data/gpfs/projects/punim0264"
 if [ -d "$GPFS_ROOT" ]; then
     export APPTAINER_TMPDIR="$GPFS_ROOT/ywatanabe/ci/apptainer-tmp"
 else
-    export APPTAINER_TMPDIR="${TMPDIR:-/tmp}/apptainer-tmp"
+    export APPTAINER_TMPDIR="$HOME/.cache/scitex-ci/apptainer-tmp"
 fi
 mkdir -p "$APPTAINER_TMPDIR"
 
 # --bind the project tree only where it exists: on Spartan $HOME/.scitex is a
 # symlink into punim0264 and the bind is what makes it resolve inside the
 # container. Binding a nonexistent source is a hard apptainer error, so this
-# must stay conditional. --pwd "$PWD" keeps the checkout as cwd.
-BIND_ARGS=()
-[ -d "$GPFS_ROOT" ] && BIND_ARGS=(--bind "$GPFS_ROOT")
+# must stay conditional. Building the WHOLE argv as one array (rather than
+# splicing a possibly-empty BIND_ARGS into a fixed command) means the bind is
+# genuinely absent when it does not apply — and the echoed plan below is then
+# the exact argv, not an approximation of it. --pwd "$PWD" keeps the checkout
+# as cwd.
+APPTAINER_ARGV=(exec --pwd "$PWD")
+if [ -d "$GPFS_ROOT" ]; then
+    APPTAINER_ARGV+=(--bind "$GPFS_ROOT")
+    GPFS_STATE="present (scratch on GPFS, punim0264 bound)"
+else
+    GPFS_STATE="absent (scratch under \$HOME, no GPFS bind)"
+fi
 
-exec "$APPTAINER" exec --pwd "$PWD" "${BIND_ARGS[@]+"${BIND_ARGS[@]}"}" \
-    "$SIF" bash ".github/ci/$INNER" "$@"
+# Echo the resolved plan. When a run fails on an unfamiliar node the FIRST
+# question is which profile it took — that answer must be in the log, not
+# reconstructed after the fact.
+echo "exec-in-sif: apptainer=$APPTAINER (via $APPTAINER_FROM)"
+echo "exec-in-sif: sif=$SIF"
+echo "exec-in-sif: $GPFS_ROOT $GPFS_STATE"
+echo "exec-in-sif: APPTAINER_TMPDIR=$APPTAINER_TMPDIR"
+echo "exec-in-sif: + $APPTAINER ${APPTAINER_ARGV[*]} $SIF bash .github/ci/$INNER $*"
+
+exec "$APPTAINER" "${APPTAINER_ARGV[@]}" "$SIF" bash ".github/ci/$INNER" "$@"
