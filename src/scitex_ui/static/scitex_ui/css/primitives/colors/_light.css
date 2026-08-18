@@ -138,8 +138,11 @@
   --app-accent-example-tint: rgba(138, 96, 48, 0.07);
   --app-accent-tools: #5a7a5a; /* Sage green - utilities, helpers */
   --app-accent-tools-tint: rgba(90, 122, 90, 0.07);
-  --app-accent-apps: #7a5a6a; /* Muted rose - store, browsing (legacy) */
-  --app-accent-apps-tint: rgba(122, 90, 106, 0.07);
+  /* `apps` and `cards` deliberately have NO tokens of their own: their
+     selector rows are ALIASES pointing at --app-accent-store /
+     --app-accent-todo (see shell/stx-shell-sidebar.css). A token here
+     would be unreferenced, and test_every_accent_token_is_referenced_by_
+     a_mapping_row fails on dead weight. shell/theme.css says the same. */
   --app-accent-store: #7a5a6a; /* Muted rose - app store, browsing */
   --app-accent-store-tint: rgba(122, 90, 106, 0.07);
   --app-accent-docs: #4a6a9a; /* Deep blue - documentation, reference */
