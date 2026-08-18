@@ -151,6 +151,43 @@ def test_the_two_palette_layers_declare_the_same_accents() -> None:
         )
 
 
+def test_the_bare_accent_token_is_in_both_layers() -> None:
+    """`--accent` is a palette token and must honour the same contract.
+
+    IT DID NOT, AND THE ACCENT-FAMILY CHECKS ABOVE MISS IT. They match
+    ``--app-accent-<name>``; the brand accent is the bare ``--accent``, a
+    different token, so scoping this file to the family left the one token an
+    app is most likely to want outside it.
+
+    Found by scitex-scholar, who grepped the INSTALLED 0.15.0 wheel before
+    adopting and got zero. Measured here on the tree: --text-link, --bg-surface
+    and --text-primary are each declared in BOTH layers; --accent was declared
+    only in primitives/colors/, while ``css/app/combobox.css`` consumes
+    ``var(--accent)`` at three sites. So an app taking the documented
+    theme.css-alone path rendered that accent as nothing — silently, because an
+    undefined custom property resolves to nothing rather than erroring.
+
+    Same defect as the comms tile, one token family over. Which is the argument
+    for this test existing rather than the fix being enough: I fixed the family
+    I was looking at and left the sibling, and only someone checking a shipped
+    artifact for a different reason noticed.
+    """
+    # Arrange
+    theme = _THEME.read_text(errors="replace")
+    light = (_COLORS / "_light.css").read_text(errors="replace")
+    bare = re.compile(r"^\s*--accent\s*:", re.M)
+    # Act
+    in_theme, in_colors = len(bare.findall(theme)), len(bare.findall(light))
+    # Assert
+    assert in_theme >= 2 and in_colors >= 1, (
+        f"--accent is declared {in_colors}x in primitives/colors/_light.css and "
+        f"{in_theme}x in shell/theme.css (expected >=2 there: light and dark). "
+        "theme.css is documented as consumable alone and app/combobox.css reads "
+        "var(--accent), so a token missing here renders as nothing for any app "
+        "that takes that path."
+    )
+
+
 def test_light_and_dark_declare_the_same_accents() -> None:
     """A name in one palette only is a silent theme-specific hole."""
     # Arrange
