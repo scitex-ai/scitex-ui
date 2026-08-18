@@ -1,12 +1,9 @@
 name: CLA Assistant
 
-# PILOT: org-level reusable-workflow caller (scitex-ai/.github, 2026-07-10).
-# Triggers/permissions preserved verbatim from the prior local file.
-# owner_allowlist override: this repo's prior allowlist was
-# "bot*,ywatanabe1989,LLEmacs" (default is "bot*,ywatanabe1989"), so it is
-# passed explicitly below. default_branch/owner_login defaults (main /
-# ywatanabe1989) already match. This repo's `GH_PERSONAL_ACCESS_TOKEN`
-# secret already matches the name the reusable workflow expects.
+# Org-level reusable-workflow caller (scitex-ai/.github; fleet CI
+# unification wave 2). Triggers/permissions preserved verbatim from the
+# prior local file; the job bodies live org-side so they cannot drift
+# per-repo.
 
 on:
   issue_comment:
