@@ -34,6 +34,9 @@
      dependency) never sees primitives/colors.css. Defining it in one place
      only is the exact bug that made the context menu render dark-on-dark. */
   --text-link: #2c5d8f;
+  --text-link-hover: #24507c; /* 7.94:1 on --bg-page #faf9f7; darker
+                                than --text-link's 6.50:1 so hover is a
+                                perceptible change, not just a colour */
   /* MIRRORS primitives/colors/_light.css, value unchanged. theme.css is
      documented as consumable ALONE (css/app/context-menu.css: "Requires:
      shell/theme.css — and ONLY that"), and app/combobox.css consumes
@@ -152,6 +155,9 @@
   --text-inverse: #161b22;
   /* The existing fallback, so dark mode is unchanged. See colors.css. */
   --text-link: #58a6ff;
+  --text-link-hover: #79b8ff; /* 9.11:1 on --bg-page #0d1117; LIGHTER
+                                than --text-link's 7.49:1 -- the light
+                                literal would be near-invisible here */
   /* MIRRORS primitives/colors/_dark.css, value unchanged — see the light block.
      The light literal measures 2.71:1 on this surface; this is the value that
      already fixed that, and copying the light one here would reintroduce it. */

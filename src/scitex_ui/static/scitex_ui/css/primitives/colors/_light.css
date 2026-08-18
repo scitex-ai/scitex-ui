@@ -86,6 +86,9 @@
      importing a brighter blue. Pinned by test_app_css_text_link_token.py. */
   --text-link: #2c5d8f;
 
+  --text-link-hover: #24507c; /* 7.94:1 on --bg-page #faf9f7; darker
+                                than --text-link's 6.50:1 so hover is a
+                                perceptible change, not just a colour */
   /* Background - warm, eye-friendly tones */
   --bg-page: var(--_warm-white); /* Warm off-white page background */
   --bg-surface: var(--_white); /* Warm white for cards/surfaces */

@@ -38,6 +38,9 @@
      verifiable without a screenshot of the dark surface. */
   --text-link: #58a6ff;
 
+  --text-link-hover: #79b8ff; /* 9.11:1 on --bg-page #0d1117; LIGHTER
+                                than --text-link's 7.49:1 -- the light
+                                literal would be near-invisible here */
   /* Background - flip to dark */
   --bg-page: #0d1117;
   --bg-surface: var(--_scitex-01);
