@@ -104,13 +104,31 @@ _USE = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)\s*(,)?")
 _KNOWN_UNRESOLVED = {
     # primitives/typography.css reaches for a colour vocabulary that predates
     # the semantic palette (--text-primary / --text-secondary / --text-muted)
-    # and was never migrated with it. Five names, one file, one abandoned
-    # rename -- so the fix is to find what these MEANT, not to pick new values.
+    # and was never migrated with it. What each one actually STYLES was read
+    # out of the file rather than guessed from its name:
+    #
+    #   --primary-color    h1..h6, all six heading rules      -> --text-primary
+    #   --secondary-color  `a { color }` AND `.text-secondary` -> TWO ROLES
+    #   --secondary-dark   `a:hover`                           -> no equivalent
+    #   --text-light       `.text-light` utility class         -> --text-inverse?
+    #   --text-dark        `.text-dark` utility class          -> --text-primary?
+    #
+    # --secondary-color IS WHY THESE ARE DEFERRED RATHER THAN RENAMED. It serves
+    # two different semantics in one file -- link colour and secondary text --
+    # which map to two DIFFERENT modern tokens (--text-link, --text-secondary).
+    # No single rename satisfies both, and a confident sed would collapse a
+    # distinction the palette deliberately draws while looking tidy in the diff.
+    #
+    # WORSE, AND SEPARATELY TRUE: --text-link IS declared (3 files) and used
+    # across the tree (5 files), but NEVER in typography.css -- so links styled
+    # by this file render with no colour while the WCAG-fixed value sits one
+    # line away. That is the defect scitex-hub carried for nine days, here, with
+    # no stale fork to blame.
     "--primary-color": "legacy typography palette, never migrated; see card scitex-ui-six-css-tokens-referenced-with-no-fallback-and-no-declaration-20260818",
-    "--secondary-color": "legacy typography palette, never migrated; same card",
-    "--secondary-dark": "legacy typography palette, never migrated; same card",
-    "--text-dark": "legacy typography palette, never migrated; same card",
-    "--text-light": "legacy typography palette, never migrated; same card",
+    "--secondary-color": "legacy typography palette; serves TWO roles (link + secondary text) so it must be SPLIT before it can be mapped; same card",
+    "--secondary-dark": "legacy typography palette, `a:hover`, no modern equivalent yet; same card",
+    "--text-dark": "legacy typography palette, `.text-dark` utility; same card",
+    "--text-light": "legacy typography palette, `.text-light` utility; same card",
     # shell/media-viewer.css, three sites (border-bottom, background, border).
     # Reads like a typo for --workspace-border-muted's real sibling
     # --workspace-border-subtle, but "reads like" is not evidence, so it is
@@ -129,15 +147,26 @@ _KNOWN_UNRESOLVED = {
     # once in primitives/typography.css WITHOUT. So five sites degrade to a
     # blue and the sixth degrades to nothing.
     "--accent-color": "one fallback-free use in primitives/typography.css; six others carry `, #58a6ff`; same card",
-    # These two are a HALF-PAIR DRIFT and the clearest live bug of the nine:
+    # THESE TWO ARE FILED ELSEWHERE ON PURPOSE, and the reason is worth reading
+    # before adding anything to this dict.
+    #
     #   shell/workspace-files-tree/search.css:7   var(--workspace-bg-default)
     #   app/file-browser/search.css:7             var(--workspace-bg-default, #1e1e1e)
-    # Two near-duplicate stylesheets for the same widget, and only ONE was given
-    # the fallback. The app copy renders #1e1e1e; the shell copy renders nothing
-    # and inherits. Neither errors. Fixing means deciding whether these two
-    # files should be one file -- a dedup question, not a colour question.
-    "--workspace-bg-default": "half-pair: app/file-browser/search.css has `, #1e1e1e`, the shell twin does not; same card",
-    "--workspace-bg-input": "half-pair with --workspace-bg-default, same two files, same asymmetry; same card",
+    #
+    # Confirmed DIFFERENT FILES (88 vs 85 lines, `.wft-search-box` vs
+    # `.stx-app-file-tree__search-box`, the latter headed "Ported verbatim from
+    # scitex-cloud"). Two drifted copies of one widget: the app copy renders
+    # #1e1e1e, the shell copy renders nothing. A user can see that today.
+    #
+    # scitex-hub's objection to listing them here, which I accept: an exemption
+    # list is where a LIVE RENDERING DIVERGENCE goes to die. Nobody searches it
+    # when they hit the visual bug, and the stale-exemption test below will
+    # never retire these -- the exemption stays legitimately true for as long as
+    # the tokens stay undeclared, so they can sit here CORRECTLY forever while
+    # the widget keeps rendering two ways. They stay in this dict only because
+    # the guard must be green; the WORK is tracked as its own card.
+    "--workspace-bg-default": "NOT a naming problem -- two drifted copies of one widget; see card scitex-ui-two-search-css-twins-disagree-and-one-renders-no-background-20260818",
+    "--workspace-bg-input": "same two files, same asymmetry; same card as --workspace-bg-default",
 }
 
 
