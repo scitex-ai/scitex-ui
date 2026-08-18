@@ -7,6 +7,22 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-08-18
+
+- **`--app-accent-storage` and `--app-accent-comms` existed in one palette layer and not the other, and scitex-hub's comms tile had been rendering with no accent bar.** The accent tokens are declared in BOTH `primitives/colors/` and `shell/theme.css`, and that duplication is the design rather than a defect — `shell/theme.css` is documented as consumable alone (`css/app/context-menu.css`: *"Requires: shell/theme.css — and ONLY that"*), so a page linking it never sees the primitives layer. What had gone wrong is that the duplication was INCOMPLETE: `comms`, `storage` and `todo` lived only in the theme layer, `apps` only in the colors layer. An adopter loading the primitives layer — which is what hub does — silently lost three accents. Nothing errors: `var()` on an undefined custom property resolves to nothing, so the only symptom is an absent 2px bar somebody has to notice, and in July somebody did, for a different app, which is why a test pinning `--app-accent-storage` existed to catch this one.
+
+  The first attempt at this consolidated everything into the colors layer and stripped `theme.css`, which CI caught: that would have re-created the exact defect recorded in `test_app_css_text_link_token.py` as *"the exact defect that made the context menu render dark-grey-on-dark (0.12.1)"*. `--app-accent-apps` was removed instead, because `apps` and `cards` are alias ROWS pointing at `--app-accent-store` / `--app-accent-todo` and a token for them is unreferenced dead weight.
+
+  New guard `test_app_accents_agree_across_layers.py` asserts the two layers declare the SAME names. Its docstring records why anti-vacuity matters more for an agreement check than an existence one: **an agreement check fails OPEN.** A broken existence scan finds nothing and goes red — wrong reason, right colour. A broken agreement scan finds nothing on both sides, calls them equal, and goes green having measured nothing.
+
+- **The cross-package import gate reported GREEN on the rename it exists to catch.** `pytest.importorskip()` was called on the FULL dotted path, so it skipped whenever any segment was missing — including when the peer IS installed and the submodule was renamed. That is precisely the case the file's own docstring promises will *"FAIL loudly"*. It now skips on the ROOT (a legitimate skip when the peer is an optional extra) and hard-imports the FULL path (never a skip). Verified by mutation: a renamed entry now fails where it previously passed. The generator that emits this file produces the same shape for every package in the fleet; reported upstream.
+
+- **`primitives/colors.css` is split into per-palette parts behind a shared reader**, and a guard follows nested `@import`s so the split cannot make the dark-mode check go quiet. The underscore prefixes on `_light.css` / `_dark.css` are load-bearing rather than stylistic: the CSS index builder skips `_`-prefixed entries, which is what keeps them out of the bundles' alphabetical order — named without it, `colors-dark.css` would sort BEFORE `colors-light.css` and every dark token would end the cascade shadowed by its light value.
+
+- **`package.json` claimed `0.1.0` fourteen releases after that stopped being true.**
+
+- **CI's `CI_RUNS_ON` fallback is asserted to be self-hosted, and the guard now states what it cannot see** — a destination that lives in a repo Actions variable is not in any file, so a file-reading test cannot check it. Saying so beats a regex that matches a default which is unused whenever the variable is set.
+
 - **Every CLI command now constructs its help via `CliHelp` — and one command's help had been pointing at a command that does not exist.** All 13 sites this package registers (`_cli.py` 8, `_skills.py` 4, `_linter/_cli.py` 1) move from free-form docstrings to structured specs, clearing the 13 §4b findings that had appeared on every green audit run since 2026-07-29.
 
   **`_cli.py:90` told users to run `scitex-ui mcp-group start`.** `mcp-group` is the PYTHON VARIABLE NAME; the command is registered as `mcp` (`main.add_command(mcp_group, "mcp")`), and the neighbouring `doctor` example got it right. So it was not ignorance — it was one hand-typed invocation path drifting while its sibling did not. `CliHelp` makes that class unrepresentable: `Example.cmd` **must** contain `{prog}`, which the renderer substitutes, so the path is derived rather than authored. The constructor rejected the migration until it was.
