@@ -1,7 +1,14 @@
 """`scitex-ui skills` — list / get / install agent-facing skills.
 
-Self-contained. No scitex-dev runtime dep — walks the package's own
-`_skills/scitex-ui/` directory directly.
+Self-contained for its actual WORK: walks the package's own
+`_skills/scitex-ui/` directory directly, with no scitex-dev runtime dep.
+
+The structured HELP (§4b) is the one place scitex-dev is consulted, and it is
+resolved lazily through `_cli_help` so the "no runtime dep" property still
+holds — when the optional `[cli]` extra is absent these commands decorate as
+plain click and render their docstrings. Nothing here imports scitex-dev at
+module scope, which PS-213 forbids for anything reachable from the
+console-script entry point.
 """
 
 from __future__ import annotations
@@ -10,6 +17,8 @@ import os as _os
 from pathlib import Path
 
 import click
+
+from ._cli_help import cli_help, examples as _examples, spec_command, spec_group
 
 PKG = "scitex-ui"
 
@@ -29,7 +38,28 @@ def _list_skill_files(root: Path) -> list[Path]:
     return sorted(p for p in root.rglob("*.md") if p.is_file() and p.name != "SKILL.md")
 
 
-@click.group(name="skills", invoke_without_command=True)
+@click.group(
+    name="skills",
+    invoke_without_command=True,
+    **spec_group(
+        cli_help(
+            summary="Agent-facing skills bundled with scitex-ui.",
+            description=(
+                "Skills are markdown files shipped inside the package, so they "
+                "travel with the installed version rather than a checkout.",
+            ),
+            examples=_examples(
+                ("{prog} list", "what is bundled"),
+                ("{prog} get 01_installation", "read one"),
+                ("{prog} install", "materialise them for an agent"),
+            ),
+        ),
+        command_categories=[
+            ("Read", ["list", "get"]),
+            ("Materialise", ["install"]),
+        ],
+    ),
+)
 @click.pass_context
 def skills_group(ctx) -> None:
     """Agent-facing skills bundled with scitex-ui.
@@ -45,7 +75,22 @@ def skills_group(ctx) -> None:
         click.echo(ctx.get_help())
 
 
-@skills_group.command(name="list")
+@skills_group.command(
+    name="list",
+    **spec_command(
+        cli_help(
+            summary="List skill files bundled with this package.",
+            description=(
+                "Lists every .md under the bundled skills root except SKILL.md, "
+                "which is the index rather than a skill.",
+            ),
+            examples=_examples(
+                ("{prog}", ""),
+                ("{prog} --json", "machine-readable"),
+            ),
+        )
+    ),
+)
 @click.option("--json", "as_json", is_flag=True, help="Emit machine-readable JSON.")
 def skills_list(as_json: bool) -> None:
     """List skill files bundled with this package.
@@ -75,7 +120,23 @@ def skills_list(as_json: bool) -> None:
         click.echo(f"{p.stem:36s}  {rel}")
 
 
-@skills_group.command(name="get")
+@skills_group.command(
+    name="get",
+    **spec_command(
+        cli_help(
+            summary="Print the contents of a skill file by NAME.",
+            description=(
+                "NAME is the stem shown by `skills list` (e.g. 01_installation); "
+                "the .md extension is optional.",
+            ),
+            examples=_examples(
+                ("{prog} 01_installation", ""),
+                ("{prog} 01_installation --json", "wrapped for programmatic use"),
+            ),
+            see_also=("skills list",),
+        )
+    ),
+)
 @click.argument("name")
 @click.option("--json", "as_json", is_flag=True, help="Emit machine-readable JSON.")
 def skills_get(name: str, as_json: bool) -> None:
@@ -111,7 +172,24 @@ def skills_get(name: str, as_json: bool) -> None:
     click.echo(match.read_text(encoding="utf-8"))
 
 
-@skills_group.command(name="install")
+@skills_group.command(
+    name="install",
+    **spec_command(
+        cli_help(
+            summary="Materialise the bundled skills into a destination dir.",
+            description=(
+                "Symlinks by default so the installed copy follows package "
+                "upgrades; --no-link copies instead, which is what you want "
+                "when the destination must survive the package being removed.",
+            ),
+            examples=_examples(
+                ("{prog}", "symlink into the default dir"),
+                ("{prog} --dest ./skills --no-link", "copy to a chosen dir"),
+            ),
+            see_also=("skills list",),
+        )
+    ),
+)
 @click.option(
     "--dest",
     type=click.Path(),

@@ -23,7 +23,10 @@ name: typecheck
 # into an org-side reusable workflow (so ci.yml gains a thin `uses:` and this
 # file goes away) is tracked separately.
 #
-# Runner policy: SELF-HOSTED ONLY (PS-169) — same labels as the org bodies.
+# Runner destination: the CI_RUNS_ON variable, same as the org bodies. This
+# job used to hardcode `spartan-cpu`, which meant the repo variable could not
+# steer it and a migration had to find this file by hand. It is unpinned so
+# there is ONE place that decides where scitex-ui's PR CI runs.
 # ============================================================================
 
 on:
@@ -40,7 +43,7 @@ concurrency:
 jobs:
   typecheck:
     name: typecheck
-    runs-on: [self-hosted, Linux, X64, spartan-cpu]
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
     timeout-minutes: 15
     steps:
       # FORK GUARD — MUST BE THE FIRST STEP, AHEAD OF actions/checkout, which is

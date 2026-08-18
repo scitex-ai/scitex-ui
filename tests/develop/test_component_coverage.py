@@ -23,8 +23,18 @@ import pytest
 import scitex_ui  # noqa: F401  (import registers every component)
 from scitex_ui._registry import _COMPONENTS
 
-_STATIC = pathlib.Path(scitex_ui.__file__).parent / "static"
-_APP_CSS_DIR = _STATIC / "scitex_ui" / "css" / "app"
+from tests._checkout import css_dir, package_dir
+
+# The REGISTRY comes from the imported package; the FILES come from the
+# checkout. That split is deliberate: this guard compares what components
+# declare against what the branch actually ships, so the file side must be the
+# tree under review. Reading both from the import would compare an installed
+# package against itself and pass no matter what the branch did.
+# NOTE THE DEPTH: this is <pkg>/static, NOT <pkg>/static/scitex_ui. A component's
+# declared ts_entry already begins with "scitex_ui/", so joining it onto
+# static_dir() would double that segment and every lookup would silently miss.
+_STATIC = package_dir() / "static"
+_APP_CSS_DIR = css_dir() / "app"
 
 _APP_CSS_FILES = sorted(p.name for p in _APP_CSS_DIR.glob("*.css"))
 _DECLARED_CSS = {

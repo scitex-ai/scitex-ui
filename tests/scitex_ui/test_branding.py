@@ -36,6 +36,8 @@ from django.template.loader import render_to_string  # noqa: E402
 
 from scitex_ui.branding import (  # noqa: E402
     FAVICON_STATIC_PATH,
+    PANE_NAMES,
+    PANE_STATES,
     shell_context,
     shell_title,
 )
@@ -444,6 +446,53 @@ def test_shell_context_rejects_an_unknown_pane_state():
     # Assert
     with pytest.raises(ValueError, match="unknown state"):
         declare()
+
+
+@pytest.mark.parametrize("pane", PANE_NAMES)
+def test_every_declared_pane_name_actually_collapses(pane):
+    # Arrange — PANE_NAMES is the contract's vocabulary and the validator
+    # accepts every member of it, but nothing yet made the SHELL honour one.
+    # A name added to the tuple would validate, render no change, and leave the
+    # app's declaration silently ignored — which is the exact failure the
+    # unknown-name ValueError exists to prevent, one level up: an accepted
+    # declaration that does nothing looks identical to never having declared.
+    # Parametrising over the constant is what makes a future fourth pane fail
+    # HERE rather than in a consumer's layout. Until this test, `viewer` was a
+    # legal name with no assertion that it did anything.
+    context = shell_context("Storage", panes={pane: "unused"})
+    # Act
+    html = _render(context)
+    # Assert
+    assert html.count("ws-pane-unused") == 1
+
+
+def test_the_shell_honours_exactly_the_declared_pane_names():
+    # Arrange — the other direction: a template condition on a pane no app can
+    # declare is dead code, and a rename of the constant that missed the
+    # template would leave the old name honoured and the new one inert.
+    template = (_templates_dir() / "standalone_shell.html").read_text()
+    # Act
+    honoured = set(re.findall(r"panes\.(\w+)\s*==\s*'unused'", template))
+    # Assert — no separate positive control is needed here, and adding one
+    # would be cargo cult. This guard cannot pass vacuously: the right-hand
+    # side is a non-empty literal constant, so a regex that goes stale (a
+    # template reformat, a switch to double quotes) yields the empty set and
+    # FAILS the comparison. A control is only load-bearing when BOTH sides are
+    # extracted and can go empty together.
+    assert honoured == set(PANE_NAMES)
+
+
+@pytest.mark.parametrize("state", PANE_STATES)
+def test_only_the_unused_pane_state_changes_the_layout(state):
+    # Arrange — PANE_STATES documents that "client-populated" and "used" are
+    # equivalent today and both mean leave it alone. That is prose in a
+    # docstring until something asserts it, and the two non-collapsing states
+    # are the ones a consumer relies on to NOT lose their pane.
+    context = shell_context("Storage", panes={"ai": state})
+    # Act
+    html = _render(context)
+    # Assert
+    assert html.count("ws-pane-unused") == (1 if state == "unused" else 0)
 
 
 def test_shell_context_omits_panes_when_none_are_declared():

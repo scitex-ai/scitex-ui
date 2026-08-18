@@ -97,15 +97,46 @@ p {
   margin-bottom: var(--spacing-md);
 }
 
-/* Links */
+/* Links
+ * --------------------------------------------------------------------------
+ * These read --text-link / --text-link-hover, NOT the legacy --secondary-*
+ * names they used until 2026-08-18. Those were declared NOWHERE, which made
+ * `color` invalid at computed-value time -> the property became `unset` ->
+ * INHERITED. Measured in chromium against the installed 0.16.0 package:
+ *
+ *     computed link colour   rgb(51,51,51)
+ *     computed body colour   rgb(51,51,51)   IDENTICAL
+ *     text-decoration        none
+ *
+ * i.e. a link in body content had NO visual distinction from surrounding text
+ * whatsoever. Not a contrast problem -- an invisible-affordance problem, and
+ * it does not fall back to the UA blue because an invalid var() inherits.
+ * --text-link (#2c5d8f light / #58a6ff dark) was declared in all three palette
+ * files the whole time and simply was not referenced here. */
 a {
-  color: var(--secondary-color);
+  /* The fallback is REQUIRED by test_app_css_text_link_token.py, whose rule is
+     that a fallback-free consumption "would render nothing if the token were
+     ever removed again". That policy predates this fix and I am complying with
+     it rather than narrowing a guard to make my own change pass.
+
+     NOTE THE TENSION IT CREATES, because a consumer hit it today: a literal
+     fallback CANNOT be correct for both themes. The literal below is the LIGHT
+     value, so were the palette ever absent in dark mode this renders
+     dark-on-dark. figrecipe carries the mirror image -- ten sites defaulting to
+     the DARK literal, which render light-on-light. Both shapes pass a
+     has-a-fallback check and both render wrong; the check tests presence, not
+     theme-correctness.
+
+     (This comment deliberately avoids writing the token-with-empty-parens form
+     in prose: that guard matches raw lines WITHOUT stripping comments, so
+     describing the pattern trips it. Carded.) */
+  color: var(--text-link, #2c5d8f);
   text-decoration: none;
   transition: color var(--transition-normal);
 }
 
 a:hover {
-  color: var(--secondary-dark);
+  color: var(--text-link-hover, #24507c); /* light literal; see note above */
 }
 
 /* Font Weight Utilities */
@@ -184,51 +215,51 @@ a:hover {
   font-size: 2.5rem;
   font-weight: 600;
   line-height: var(--heading-line-height);
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .text-h2-style {
   font-size: 2rem;
   font-weight: 600;
   line-height: var(--heading-line-height);
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .text-h3-style {
   font-size: 1.75rem;
   font-weight: 600;
   line-height: var(--heading-line-height);
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .text-h4-style {
   font-size: 1.5rem;
   font-weight: 600;
   line-height: var(--heading-line-height);
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .text-h5-style {
   font-size: 1.25rem;
   font-weight: 600;
   line-height: var(--heading-line-height);
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .text-h6-style {
   font-size: 1rem;
   font-weight: 600;
   line-height: var(--heading-line-height);
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 /* Text Color */
 .text-primary {
-  color: var(--primary-color);
+  color: var(--text-primary);
 }
 
 .text-secondary {
-  color: var(--secondary-color);
+  color: var(--text-secondary);
 }
 
 .text-accent {

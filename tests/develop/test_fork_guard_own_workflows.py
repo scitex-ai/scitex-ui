@@ -256,6 +256,35 @@ _ALL_JOBS = [
 def test_no_job_targets_a_github_hosted_image(
     workflow: str, job_id: str, job: dict
 ) -> None:
+    """A job must not name a GitHub-hosted image LITERALLY in the workflow.
+
+    SCOPE — what this test cannot see, stated because a guard that quietly
+    covers less than its name suggests is worse than no guard. It reads
+    `runs-on` from the FILE, so it only sees a literal. A destination that
+    lives in the `CI_RUNS_ON` Actions Variable is invisible to it. Measured
+    2026-08-05 with a mutation probe:
+
+        runs-on: ubuntu-latest                              -> CAUGHT
+        fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]')    -> NOT CAUGHT
+
+    Two jobs (typecheck, docs-sphinx) moved from the first form to the second
+    in #127, so they are outside this check now. That is not fixable here:
+    the fact genuinely left the file. Matching the string inside `fromJSON(...)`
+    would be worse than the gap, because it would assert on a DEFAULT that is
+    unused whenever the variable is set — i.e. always. Checking the variable
+    belongs where the variable is set, not in a test that parses YAML.
+
+    WHAT THE GUARD IS FOR, restated since its original rationale expired:
+    this repo runs CI on self-hosted runners, and a literal hosted image in a
+    workflow file is almost always an accident (a copied snippet, a scaffold
+    default) rather than a decision. It is NOT forbidden any more — PS-169 was
+    demoted to a flat advisory in scitex-ai/scitex-dev#512 (841bc73,
+    2026-08-05), and the operator's ruling the same day explicitly permits
+    GitHub-hosted runners for PUBLIC repos, which this is. So if you are
+    moving a job to a hosted image DELIBERATELY, that is now allowed: change
+    this test in the same commit and say why. The point is that it should cost
+    a deliberate edit.
+    """
     # Arrange
     runs_on = job.get("runs-on", "")
     labels = runs_on if isinstance(runs_on, list) else [str(runs_on)]
@@ -265,7 +294,11 @@ def test_no_job_targets_a_github_hosted_image(
     ]
     # Assert
     assert not hosted, (
-        f"{workflow}:{job_id} targets {hosted}. Operator mandate 2026-07-14 "
-        "(PS-169) forbids GitHub-hosted runners with no exceptions; if the "
-        "self-hosted pool cannot run it, fix the pool"
+        f"{workflow}:{job_id} literally targets {hosted}. This repo runs CI "
+        "self-hosted, so a hardcoded hosted image is usually an accident. If "
+        "it is deliberate it is permitted (PS-169 is advisory since "
+        "2026-08-05; hosted runners are allowed for public repos) — then "
+        "amend this test in the same commit with the reason. Note this check "
+        "only sees LITERAL labels; a destination set via CI_RUNS_ON is not "
+        "covered here."
     )
