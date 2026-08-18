@@ -91,46 +91,12 @@
   /* --- Preset App Accent Colors --- */
   --app-accent-color: transparent;
   --app-accent-tint: transparent;
-  --app-accent-writer: #a07040;
-  --app-accent-writer-tint: rgba(160, 112, 64, 0.07);
-  --app-accent-scholar: #3d7a5e;
-  --app-accent-scholar-tint: rgba(61, 122, 94, 0.07);
-  --app-accent-visualizer: #2e7070;
-  --app-accent-visualizer-tint: rgba(46, 112, 112, 0.07);
-  --app-accent-console: #3e6080;
-  --app-accent-console-tint: rgba(62, 96, 128, 0.07);
-  --app-accent-clew: #8a6a4a;
-  --app-accent-clew-tint: rgba(138, 106, 74, 0.07);
-  --app-accent-figrecipe: #7c5cbf;
-  --app-accent-figrecipe-tint: rgba(124, 92, 191, 0.07);
-  --app-accent-docs: #4a6a9a;
-  --app-accent-docs-tint: rgba(74, 106, 154, 0.07);
-  --app-accent-hub: #6a5a8a;
-  --app-accent-hub-tint: rgba(106, 90, 138, 0.07);
-  --app-accent-tools: #5a7a5a;
-  --app-accent-tools-tint: rgba(90, 122, 90, 0.07);
-  --app-accent-store: #7a5a6a;
-  --app-accent-store-tint: rgba(122, 90, 106, 0.07);
-  --app-accent-home: #6a5a8a;
-  --app-accent-home-tint: rgba(106, 90, 138, 0.07);
-  --app-accent-discovery: #3a6a7a;
-  --app-accent-discovery-tint: rgba(58, 106, 122, 0.07);
-  --app-accent-example: #8a6030;
-  --app-accent-example-tint: rgba(138, 96, 48, 0.07);
-  --app-accent-notebook: #4a7a3a;
-  --app-accent-notebook-tint: rgba(74, 122, 58, 0.07);
   /* `apps` and `cards` have no tokens of their own: their selector rows are
      aliases pointing at --app-accent-store / --app-accent-todo. A duplicate
      token here would be dead weight (tests assert every token is referenced). */
-  --app-accent-storage: #4a7a8a;
-  --app-accent-storage-tint: rgba(74, 122, 138, 0.07);
   /* todo/cards: scitex-cards' own board values (2026-07-18), not a colour
      picked here — the board already renders this amber, so mapping to it keeps
      continuity for the operator instead of shifting a familiar UI. */
-  --app-accent-todo: #d99700;
-  --app-accent-todo-tint: #fff7e6;
-  --app-accent-comms: #5a6a9a;
-  --app-accent-comms-tint: rgba(90, 106, 154, 0.07);
 
   /* --- Custom App Accent (user/creator override) --- */
   --stx-app-accent: var(--app-accent-color);
@@ -181,43 +147,9 @@
   --status-error: #c08888;
   --status-info: #9ca3af;
 
-  --app-accent-writer: #d4a87a;
-  --app-accent-writer-tint: rgba(212, 168, 122, 0.08);
-  --app-accent-scholar: #6ba89a;
-  --app-accent-scholar-tint: rgba(107, 168, 154, 0.08);
-  --app-accent-visualizer: #6ab0b0;
-  --app-accent-visualizer-tint: rgba(106, 176, 176, 0.08);
-  --app-accent-console: #7a9ab8;
-  --app-accent-console-tint: rgba(122, 154, 184, 0.08);
-  --app-accent-clew: #b89070;
-  --app-accent-clew-tint: rgba(184, 144, 112, 0.08);
-  --app-accent-figrecipe: #a07ae0;
-  --app-accent-figrecipe-tint: rgba(160, 122, 224, 0.08);
-  --app-accent-docs: #7a9ac8;
-  --app-accent-docs-tint: rgba(122, 154, 200, 0.08);
-  --app-accent-hub: #9a8ab8;
-  --app-accent-hub-tint: rgba(154, 138, 184, 0.08);
-  --app-accent-tools: #8ab88a;
-  --app-accent-tools-tint: rgba(138, 184, 138, 0.08);
-  --app-accent-store: #b88a9a;
-  --app-accent-store-tint: rgba(184, 138, 154, 0.08);
-  --app-accent-home: #9a8ab8;
-  --app-accent-home-tint: rgba(154, 138, 184, 0.08);
-  --app-accent-discovery: #5a9ab8;
-  --app-accent-discovery-tint: rgba(90, 154, 184, 0.08);
-  --app-accent-example: #c08850;
-  --app-accent-example-tint: rgba(192, 136, 80, 0.08);
-  --app-accent-notebook: #7a9a6a;
-  --app-accent-notebook-tint: rgba(122, 154, 106, 0.08);
   /* No `apps` / `cards` tokens — see the light block above. */
-  --app-accent-storage: #7ab0c0;
-  --app-accent-storage-tint: rgba(122, 176, 192, 0.08);
   /* todo/cards dark: cards' amber (#d99700) lightened for dark surfaces; their
      #fff7e6 soft is a light-mode wash, so the tint is an alpha of the accent. */
-  --app-accent-todo: #e8ad2e;
-  --app-accent-todo-tint: rgba(232, 173, 46, 0.08);
-  --app-accent-comms: #8a9ad0;
-  --app-accent-comms-tint: rgba(138, 154, 208, 0.08);
 }
 
 /* --- Custom Accent Override ---

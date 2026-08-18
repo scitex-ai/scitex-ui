@@ -104,6 +104,13 @@
   --app-accent-figrecipe-tint: rgba(160, 122, 224, 0.08);
   --app-accent-notebook: #7a9a6a; /* Soft green - lab notebook, experiments */
   --app-accent-notebook-tint: rgba(122, 154, 106, 0.08);
+  /* Moved here from shell/theme.css, values UNCHANGED — see _light.css. */
+  --app-accent-storage: #7ab0c0;
+  --app-accent-storage-tint: rgba(122, 176, 192, 0.08);
+  --app-accent-comms: #8a9ad0;
+  --app-accent-comms-tint: rgba(138, 154, 208, 0.08);
+  --app-accent-todo: #e8ad2e;
+  --app-accent-todo-tint: rgba(232, 173, 46, 0.08);
 
   /* Workspace icon color scheme (TOGGLE: swap _icon-green ↔ _icon-white below) */
   /* Green scheme (dark mode) */

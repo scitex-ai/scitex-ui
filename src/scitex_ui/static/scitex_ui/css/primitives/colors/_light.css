@@ -148,6 +148,18 @@
   --app-accent-figrecipe-tint: rgba(124, 92, 191, 0.07);
   --app-accent-notebook: #4a7a3a; /* Deep green - lab notebook, experiments */
   --app-accent-notebook-tint: rgba(74, 122, 58, 0.07);
+  /* Moved here from shell/theme.css, values UNCHANGED. They were defined only
+     in the theme layer, which adopters that load the primitives layer alone
+     never see — scitex-hub's comms tile has been rendering with no accent bar
+     for exactly that reason. See the file header for the full story. */
+  --app-accent-storage: #4a7a8a; /* Deep steel - object storage */
+  --app-accent-storage-tint: rgba(74, 122, 138, 0.07);
+  --app-accent-comms: #5a6a9a; /* Deep indigo - messaging */
+  --app-accent-comms-tint: rgba(90, 106, 154, 0.07);
+  --app-accent-todo: #d99700; /* Amber - task board */
+  /* Not an rgba like its siblings. Preserved byte-for-byte: this is a MOVE,
+     and "tidying" it here would make a visual change hide inside a refactor. */
+  --app-accent-todo-tint: #fff7e6;
 
   /* Workspace icon color scheme (TOGGLE: swap _icon-green ↔ _icon-white below) */
   /* Green scheme */
@@ -261,7 +273,12 @@
   --color-done-fg: #7744aa; /* 6.15:1; the palette carries no purple of its own */
   --color-canvas-overlay: var(--bg-surface); /* a surface, not text */
   --color-success-emphasis: var(--status-success-text); /* #2d6a4f, 5.97:1 */
-  --color-success-subtle: rgba(90, 154, 126, 0.2); /* --_success at the fallback's own alpha */
+  --color-success-subtle: rgba(
+    90,
+    154,
+    126,
+    0.2
+  ); /* --_success at the fallback's own alpha */
 
   /* Five more names our stylesheets read and nothing defined. Not one family —
    * what groups them is that every call site agreed on ONE fallback, so the
@@ -272,7 +289,12 @@
   --accent: #6d4cad; /* 5.97:1 — the historical literal, pinned HERE not dark */
   --workspace-text-muted: var(--workspace-text-secondary); /* #57606a, 5.97:1 */
   --border-primary: var(--border-default); /* a border, no contrast claim */
-  --bg-hover: rgba(0, 0, 0, 0.05); /* the dark wash, inverted for a light surface */
+  --bg-hover: rgba(
+    0,
+    0,
+    0,
+    0.05
+  ); /* the dark wash, inverted for a light surface */
 
   /* Compatibility aliases for tool templates */
   --bg-primary: var(--bg-page);
