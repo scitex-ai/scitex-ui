@@ -38,6 +38,7 @@ from scitex_ui.branding import (  # noqa: E402
     FAVICON_STATIC_PATH,
     PANE_NAMES,
     PANE_STATES,
+    launcher_context,
     shell_context,
     shell_title,
 )
@@ -555,3 +556,33 @@ def test_shell_context_rejects_an_empty_launcher_value():
     # Assert
     with pytest.raises(ValueError, match="empty"):
         declare()
+
+
+def test_launcher_context_returns_a_template_ready_dict():
+    # Arrange — the shape a context processor returns directly.
+    launcher = {"url": "/apps/store/", "label": "Apps"}
+    # Act
+    context = launcher_context(launcher)
+    # Assert
+    assert context == {"launcher": launcher}
+
+
+def test_launcher_context_rejects_the_same_shapes_shell_context_does():
+    # Arrange — ONE implementation backs both entry points, so a caller cannot
+    # get a laxer check by coming through the other door. This asserts they
+    # agree rather than trusting that they do.
+    bad = {"href": "/apps/store/", "label": "Apps"}
+    # Act
+    via_helper = functools.partial(launcher_context, bad)
+    # Assert
+    with pytest.raises(ValueError, match="unknown launcher key"):
+        via_helper()
+
+
+def test_shell_context_and_launcher_context_agree_on_a_good_value():
+    # Arrange
+    launcher = {"url": "/apps/store/", "label": "Apps"}
+    # Act
+    from_shell = shell_context("Storage", launcher=launcher)["launcher"]
+    # Assert
+    assert from_shell == launcher_context(launcher)["launcher"]

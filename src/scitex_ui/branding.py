@@ -190,33 +190,56 @@ def shell_context(
                 )
         context["panes"] = dict(panes)
     if launcher:
-        # Validated for the same reason panes are: a typo must fail HERE, at the
-        # call site, rather than silently rendering no link. A missing back-link
-        # and a misspelled key look identical on the page, and the whole defect
-        # this exists to fix was "nothing to click, and nothing said so".
-        # BOTH directions reported in ONE error, deliberately. The natural typo
-        # is `{"href": ..., "label": ...}`, which is simultaneously missing
-        # `url` and carrying an unknown key. Checking missing-first would say
-        # only "missing ['url']" — the caller adds `url`, keeps `href`, and hits
-        # a SECOND error for the same single mistake. One message that names the
-        # whole diff is one round trip.
-        missing = _LAUNCHER_KEYS - launcher.keys()
-        unknown = launcher.keys() - _LAUNCHER_KEYS
-        if missing or unknown:
-            problems = []
-            if missing:
-                problems.append(f"missing {sorted(missing)}")
-            if unknown:
-                problems.append(f"unknown launcher key(s) {sorted(unknown)}")
-            raise ValueError(
-                f"launcher {' and '.join(problems)}; "
-                f"expected exactly {sorted(_LAUNCHER_KEYS)}"
-            )
-        for key in sorted(_LAUNCHER_KEYS):
-            if not str(launcher[key]).strip():
-                raise ValueError(
-                    f"launcher[{key!r}] is empty; omit `launcher` entirely to "
-                    "render no link, rather than passing a blank one"
-                )
-        context["launcher"] = dict(launcher)
+        context.update(launcher_context(launcher))
     return context
+
+
+def launcher_context(launcher: dict[str, str]) -> dict[str, object]:
+    """Validate a launcher destination and return it as a template context.
+
+    ``{"url": ..., "label": ...}`` in, ``{"launcher": {...}}`` out.
+
+    **Use this rather than :func:`shell_context` when the launcher is all you
+    are supplying** — typically a Django context processor on a platform that
+    mounts many apps, where there is a request but no single "tool".
+    ``shell_context`` takes a tool name and builds a whole shell context; asking
+    a context processor to invent one just to reach this validation is the wrong
+    shape, and it was scitex-hub about to write that workaround that produced
+    this function.
+
+    Both functions share one implementation on purpose. Two places checking the
+    same shape is how they drift, and a validator that disagrees with itself
+    depending on which door you came through is worse than none.
+
+    :param launcher: ``url`` and ``label``, both required and both non-empty.
+    :raises ValueError: on a missing key, an unknown key, or a blank value.
+
+    **Why this raises instead of returning nothing.** A missing back-link and a
+    misspelled key look IDENTICAL on the rendered page — no link, no error, no
+    hint. That silent-absence failure is the entire defect this feature exists
+    to fix, so reproducing it in the validator would be self-defeating.
+
+    Both key problems are reported in ONE error, deliberately. The natural typo
+    is ``{"href": ..., "label": ...}``, which is simultaneously missing ``url``
+    AND carrying an unknown key; reporting missing-first would send the caller
+    round twice for one mistake.
+    """
+    missing = _LAUNCHER_KEYS - launcher.keys()
+    unknown = launcher.keys() - _LAUNCHER_KEYS
+    if missing or unknown:
+        problems = []
+        if missing:
+            problems.append(f"missing {sorted(missing)}")
+        if unknown:
+            problems.append(f"unknown launcher key(s) {sorted(unknown)}")
+        raise ValueError(
+            f"launcher {' and '.join(problems)}; "
+            f"expected exactly {sorted(_LAUNCHER_KEYS)}"
+        )
+    for key in sorted(_LAUNCHER_KEYS):
+        if not str(launcher[key]).strip():
+            raise ValueError(
+                f"launcher[{key!r}] is empty; omit the launcher entirely to "
+                "render no link, rather than passing a blank one"
+            )
+    return {"launcher": dict(launcher)}
