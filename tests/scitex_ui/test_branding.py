@@ -502,3 +502,56 @@ def test_shell_context_omits_panes_when_none_are_declared():
     context = shell_context(tool)
     # Assert
     assert "panes" not in context
+
+
+def test_shell_context_omits_launcher_when_none_is_declared():
+    # Arrange — a STANDALONE app supplies no destination, and must get no link.
+    # Per the dual-mode contract it is itself mounted at "/", so an invented
+    # link would point at the page it is on.
+    tool = "Storage"
+    # Act
+    context = shell_context(tool)
+    # Assert
+    assert "launcher" not in context
+
+
+def test_shell_context_carries_a_declared_launcher():
+    # Arrange
+    launcher = {"url": "/apps/store/", "label": "Apps"}
+    # Act
+    context = shell_context("Storage", launcher=launcher)
+    # Assert
+    assert context["launcher"] == launcher
+
+
+def test_shell_context_rejects_a_launcher_missing_a_key():
+    # Arrange — a half-specified launcher renders a link with no label or no
+    # destination, which looks the same as the defect this feature fixes.
+    launcher = {"url": "/apps/store/"}
+    # Act
+    declare = functools.partial(shell_context, "Storage", launcher=launcher)
+    # Assert
+    with pytest.raises(ValueError, match="missing"):
+        declare()
+
+
+def test_shell_context_rejects_an_unknown_launcher_key():
+    # Arrange — `href` is the natural wrong guess, and silently ignoring it
+    # would render nothing while the caller believes they supplied a link.
+    launcher = {"href": "/apps/store/", "label": "Apps"}
+    # Act
+    declare = functools.partial(shell_context, "Storage", launcher=launcher)
+    # Assert
+    with pytest.raises(ValueError, match="unknown launcher key"):
+        declare()
+
+
+def test_shell_context_rejects_an_empty_launcher_value():
+    # Arrange — a blank url is worse than no launcher: it renders a link that
+    # goes nowhere, so the page LOOKS escapable and is not.
+    launcher = {"url": "   ", "label": "Apps"}
+    # Act
+    declare = functools.partial(shell_context, "Storage", launcher=launcher)
+    # Assert
+    with pytest.raises(ValueError, match="empty"):
+        declare()

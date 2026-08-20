@@ -218,3 +218,52 @@ body {
 }
 
 /* Mobile layout rules → mobile.css (single source of truth) */
+
+/* ── Way out of a mounted app ──────────────────────────────────────────────
+ * Rendered only when the composer supplied shell_context(launcher=...). See
+ * branding.py for why the DESTINATION comes from the composer rather than
+ * being hardcoded to "/": a standalone app IS "/" and would be linking to
+ * itself.
+ *
+ * Positioned rather than in flow, and deliberately so. The shell's panes fill
+ * the viewport and every one of them is display:none below 768px — which is
+ * the defect this exists to fix (scitex-hub measured /apps/storage/ at 390x844
+ * with zero anchor elements). An escape route that participates in the layout
+ * it is escaping from shares that layout's fate.
+ *
+ * Colours come from tokens, not literals, so this follows the theme. Both are
+ * declared in BOTH palette layers — see test_app_accents_agree_across_layers
+ * for why a token in one layer only renders as nothing for half the adopters. */
+.stx-shell-launcher-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border-muted, #c0c0c0);
+  border-radius: 6px;
+  background: var(--bg-surface, #f8f7f5);
+  color: var(--text-link, #2c5d8f);
+  font-size: 0.85rem;
+  line-height: 1.2;
+  text-decoration: none;
+  /* 44px is the WCAG 2.5.5 target minimum. Stated as min-height rather than a
+     fixed height so the label can wrap without the target shrinking. */
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.stx-shell-launcher-link:hover {
+  color: var(--text-link-hover, #24507c);
+  border-color: var(--text-link-hover, #24507c);
+}
+
+/* Visible keyboard focus. The link is the only route out of a mounted app on a
+   narrow viewport, so it must be reachable without a pointer. */
+.stx-shell-launcher-link:focus-visible {
+  outline: 2px solid var(--text-link, #2c5d8f);
+  outline-offset: 2px;
+}
