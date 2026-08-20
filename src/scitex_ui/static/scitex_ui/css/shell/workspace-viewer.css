@@ -247,7 +247,15 @@
 }
 
 /* ============================================================
-   Responsive: mobile pane switching handled by mobile.css
-   (Previously hid viewer with display:none — removed because
-    mobile-swipe.ts now manages pane visibility via .mobile-active)
+   Responsive: mobile layout handled by mobile.css, where the three
+   columns become a vertical STACK below 768px.
+
+   The note that stood here was wrong and worth naming, because it is
+   why the viewer stayed hidden for so long: it said mobile-swipe.ts
+   "manages pane visibility via .mobile-active". That module writes no
+   such class -- it toggles `collapsed` on `.stx-shell-sidebar` and
+   nothing else -- so this file correctly stopped hiding the viewer,
+   handed the job to a module that was not doing it, and mobile.css
+   then hid it anyway via `.mobile-active-pane`, a third name no code
+   ever wrote. Three files, three spellings, no writer.
    ============================================================ */

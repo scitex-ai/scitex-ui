@@ -128,8 +128,13 @@ _KNOWN_ORPHANED: dict[str, str] = {
     # 768px and reveals `.mobile-active-pane` — a class that appears in exactly
     # one file, mobile.css itself, and that no template/js/ts ever writes.
     # Measured at 390x844: zero visible clickable elements on the whole page.
-    "mobile-active-pane": "the reveal half of the <=768px single-pane rule; no writer anywhere",
-    "mobile-tab-bar": "the switcher the reveal rule assumes; never rendered",
+    # EMPTY, and that is the point. Both entries retired on 2026-08-19 when the
+    # <=768px layout became a vertical stack: `mobile-active-pane` and
+    # `mobile-tab-bar` were deleted rather than given writers, because a reader
+    # with no writer should GO, not be joined (constitution S3).
+    #
+    # Keep this dict. It is the mechanism, not the debt -- an empty ceiling is
+    # a guard with no exemptions, which is the state we want to notice leaving.
     # The NEWER single-pane branch in the same stylesheet. It has a writer, but
     # in scitex-hub, not here — and per the operator's 2026-08-18 ruling hub
     # keeps its own shell, so it is not going to become this package's markup.
