@@ -33,6 +33,25 @@ _MAIN_HELP = cli_help(
     version_of="scitex-ui",
 )
 
+_DEV_HELP = cli_help(
+    summary="Self-maintenance surfaces for this package.",
+    description=(
+        "Housekeeping, not domain: `scitex-ui --help` should read as the tool, "
+        "not as the tool's own upkeep (doctrine 20_dev-commands.md, §13).",
+        "`dev` is a group only and never takes a positional argument directly.",
+    ),
+)
+
+_SKILLS_ALIAS_HELP = cli_help(
+    summary="DEPRECATED spelling of `scitex-ui dev skills`.",
+    description=(
+        "Kept as a Phase W warn-forward alias so nothing in the wild breaks "
+        "mid-migration (§1a requires `<cli> skills` to exist while `_skills/` "
+        "ships; §13 wants it under `dev`). Removed in scitex-ui 0.20.0.",
+        "Use `scitex-ui dev skills` — identical behaviour, no warning.",
+    ),
+)
+
 _MCP_HELP = cli_help(
     summary="MCP (Model Context Protocol) server commands.",
     description=(
@@ -403,11 +422,97 @@ try:
 except Exception:
     pass
 
-# audit-cli §1a — packages with _skills/ MUST expose
-# `<cli> skills {list,get,install}`.
+# §13 vs §1a — TWO DOCTRINES ASK FOR OPPOSITE THINGS, and this block is where
+# they meet. Both are quoted rather than paraphrased, because the resolution
+# only makes sense if you can see that neither was ignored.
+#
+#   §1a, 03_required-introspection-commands.md:98-104 —
+#     "If the package ships `_skills/<pkg>/`, `<cli> skills` exists as a group
+#      with `list`, `get`, and `install` subcommands. SELF-CONTAINED (no
+#      scitex-dev runtime dep) so users can introspect bundled skills without
+#      discovering the ecosystem-wide tooling first."
+#
+#   §13, 20_dev-commands.md — `skills` is one of SIX FIXED verbs that mount
+#     under `dev`. The doctrine is explicit that the six NAMES are fixed even
+#     though the verbs inside each are not.
+#
+# So §1a wants `scitex-ui skills` to exist and §13 wants it gone from top level.
+#
+# THE AUDITOR'S HINT DOES NOT WORK HERE. It offers
+# `scitex_dev.ecosystem.deprecated_alias()`, which imports scitex-dev — and
+# scitex-dev is this package's OPTIONAL [cli] extra (pyproject `[project.
+# optional-dependencies] cli`). Routing the §1a-mandated command through it
+# would hand that command a scitex-dev runtime dependency and break it for
+# every install without the extra, which is the exact thing §1a's
+# "self-contained" clause exists to prevent. The hint is right about the SHAPE
+# and wrong about the MECHANISM, so the alias below is plain click.
+#
+# THE FLEET ALREADY SOLVED THIS, one line away in §1a's own file (:23), for
+# `list-python-apis`: "the legacy top-level mount stays as a Phase W
+# warn-forward alias during migration". Same collision, same answer —
+# canonical under `dev`, legacy top level kept and warning.
 from ._skills import skills_group as _skills_group
 
-main.add_command(_skills_group, name="skills")
+
+class _WarnForwardMixin:
+    """A Phase W alias: works exactly as before, says where it moved.
+
+    Deliberately NOT a silent alias. A rename nobody is told about is
+    discovered when it is REMOVED, which is the worst possible moment; the
+    point of a Phase W window is that the warning arrives while both spellings
+    still work.
+
+    The warning goes to STDERR (§14) so it can never corrupt `--json` output
+    being piped into something — that is the difference between a migration
+    aid and the breakage it exists to avoid.
+
+    A MIXIN rather than a base class because the base has to be chosen at
+    import time: `SpecGroup` when scitex-dev is importable (so §4b's help-spec
+    coverage sees a spec), plain `click.Group` when it is not (so §1a's
+    self-contained rule still holds without the optional [cli] extra). Writing
+    it as a mixin keeps ONE copy of the warning logic across both.
+    """
+
+    _canonical = ""
+    _removed_in = ""
+
+    def invoke(self, ctx):
+        click.echo(
+            f"DEPRECATED: `{ctx.command_path}` has moved to `{self._canonical}` "
+            f"and this spelling is removed in scitex-ui {self._removed_in}. "
+            f"Update to `{self._canonical}`; the two behave identically today.",
+            err=True,
+        )
+        return super().invoke(ctx)
+
+
+@click.group(name="dev", **spec_group(_DEV_HELP))
+def dev_group():
+    """Self-maintenance surfaces (§13). Group only — never takes an argument."""
+
+
+# CANONICAL (§13).
+dev_group.add_command(_skills_group, name="skills")
+main.add_command(dev_group, name="dev")
+
+# LEGACY (§1a), warn-forward. Shares the canonical group's subcommands rather
+# than re-declaring them, so the two spellings cannot drift apart — a copy
+# would be a second implementation, and the one that is not exercised is the
+# one that rots.
+_alias_kwargs = spec_group(_SKILLS_ALIAS_HELP)
+_alias_base = _alias_kwargs.pop("cls", click.Group)
+_WarnForwardGroup = type(
+    "_WarnForwardGroup", (_WarnForwardMixin, _alias_base), {}
+)
+
+_skills_alias = _WarnForwardGroup(
+    name="skills",
+    commands=_skills_group.commands,
+    **_alias_kwargs,
+)
+_skills_alias._canonical = "scitex-ui dev skills"
+_skills_alias._removed_in = "0.20.0"
+main.add_command(_skills_alias, name="skills")
 
 # UI-101..105 component-usage lint walker — `scitex-ui lint <path>`.
 # Plugin entry-point (`scitex_dev.linter.plugins`) handles RULE registration;
