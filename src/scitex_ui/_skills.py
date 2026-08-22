@@ -1,4 +1,4 @@
-"""`scitex-ui skills` — list / get / install agent-facing skills.
+"""`scitex-ui dev skills` — list / get / install agent-facing skills.
 
 Self-contained for its actual WORK: walks the package's own
 `_skills/scitex-ui/` directory directly, with no scitex-dev runtime dep.
@@ -9,6 +9,11 @@ holds — when the optional `[cli]` extra is absent these commands decorate as
 plain click and render their docstrings. Nothing here imports scitex-dev at
 module scope, which PS-213 forbids for anything reachable from the
 console-script entry point.
+
+Mounted under the `dev` group by `_dev_group.register_dev_group` (§13:
+self-maintenance lives under `dev`); the legacy `scitex-ui skills`
+spelling is a Phase W warn-forward alias built by
+`_dev_group.install_dev_aliases`.
 """
 
 from __future__ import annotations
@@ -66,10 +71,10 @@ def skills_group(ctx) -> None:
 
     \b
     Examples:
-      $ scitex-ui skills list
-      $ scitex-ui skills get 01_installation
-      $ scitex-ui skills install                  # → ~/.scitex/dev/skills/scitex-ui/
-      $ scitex-ui skills install --claude-symlink # also expose to ~/.claude/skills/scitex/
+      $ scitex-ui dev skills list
+      $ scitex-ui dev skills get 01_installation
+      $ scitex-ui dev skills install                  # → ~/.scitex/dev/skills/scitex-ui/
+      $ scitex-ui dev skills install --claude-symlink # also expose to ~/.claude/skills/scitex/
     """
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
@@ -97,8 +102,8 @@ def skills_list(as_json: bool) -> None:
 
     \b
     Example:
-      $ scitex-ui skills list
-      $ scitex-ui skills list --json
+      $ scitex-ui dev skills list
+      $ scitex-ui dev skills list --json
     """
     root = _skills_root()
     files = _list_skill_files(root)
@@ -144,8 +149,8 @@ def skills_get(name: str, as_json: bool) -> None:
 
     \b
     Example:
-      $ scitex-ui skills get 01_installation
-      $ scitex-ui skills get 02_quick-start --json
+      $ scitex-ui dev skills get 01_installation
+      $ scitex-ui dev skills get 02_quick-start --json
     """
     root = _skills_root()
     target_stem = name[:-3] if name.endswith(".md") else name
@@ -225,9 +230,9 @@ def skills_install(
 
     \b
     Example:
-      $ scitex-ui skills install
-      $ scitex-ui skills install --claude-symlink
-      $ scitex-ui skills install --no-link --dest /tmp/scitex-ui-skills
+      $ scitex-ui dev skills install
+      $ scitex-ui dev skills install --claude-symlink
+      $ scitex-ui dev skills install --no-link --dest /tmp/scitex-ui-skills
     """
     del yes  # accepted for §2 compliance; install is non-interactive
     src = _skills_root().resolve()

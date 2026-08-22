@@ -39,12 +39,17 @@ Add to `~/.claude/settings.json`.
 ## Skills
 
 ```bash
-scitex-ui skills list              # List available skill pages
-scitex-ui skills get               # Get main SKILL.md
-scitex-ui skills get shell-modules # Get a named sub-skill page
+scitex-ui dev skills list              # List available skill pages
+scitex-ui dev skills get               # Get main SKILL.md
+scitex-ui dev skills get 31_shell-modules # Get a named sub-skill page
 ```
 
-Available skill names: `python-api`, `shell-modules`, `frontend-components`, `css-theme`, `cli`.
+Available skill names: `01_installation`, `02_quick-start`, `03_python-api`,
+`04_cli-reference`, `12_python-api`, `13_cli`, `20_css-theme`,
+`30_shell-framework`, `31_shell-modules`, `32_frontend-components`,
+`33_frontend-components-bridge`, `34_frontend-components-theme`,
+`35_shell-modules-reference`, `36_shell-modules-app-shell`,
+`40_component-usage-doctrine`, `41_dual-mode-mounting`.
 
 ## Documentation
 

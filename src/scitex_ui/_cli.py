@@ -403,11 +403,15 @@ try:
 except Exception:
     pass
 
-# audit-cli §1a — packages with _skills/ MUST expose
-# `<cli> skills {list,get,install}`.
-from ._skills import skills_group as _skills_group
+# audit-cli §1a — packages with _skills/ MUST expose the skills group
+# (`{list,get,install}`); §13 (doctrine 20_dev-commands.md) further
+# requires self-maintenance surfaces under `dev`. So the group now lives
+# at `scitex-ui dev skills`, and the legacy top-level `skills` spelling
+# is a Phase W warn-forward alias — both handled by `_dev_group`.
+from ._dev_group import install_dev_aliases, register_dev_group
 
-main.add_command(_skills_group, name="skills")
+_dev = register_dev_group(main)
+install_dev_aliases(main, _dev)
 
 # UI-101..105 component-usage lint walker — `scitex-ui lint <path>`.
 # Plugin entry-point (`scitex_dev.linter.plugins`) handles RULE registration;

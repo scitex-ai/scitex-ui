@@ -35,19 +35,19 @@ CLI flags  →  ./config.yaml  →  $SCITEX_UI_CONFIG
 | Command            | Purpose                                              |
 |--------------------|------------------------------------------------------|
 | `docs`             | View package documentation (bundled Sphinx HTML)     |
-| `skills`           | View package skills (workflow-oriented guides)       |
+| `dev skills`       | View package skills (workflow-oriented guides)       |
 | `mcp`              | MCP server management (start / stop / status)        |
 | `list-python-apis` | List the public Python API surface                   |
 
 ## Examples
 
 ```bash
-scitex-ui docs                           # open bundled docs
-scitex-ui skills list                    # list available skill leaves
-scitex-ui skills get 02_quick-start      # show one leaf
-scitex-ui mcp start                      # start the standalone MCP server
-scitex-ui list-python-apis               # dump the public Python tree
-scitex-ui --help-recursive | head -60    # full surface dump
+scitex-ui docs                             # open bundled docs
+scitex-ui dev skills list                  # list available skill leaves
+scitex-ui dev skills get 02_quick-start    # show one leaf
+scitex-ui mcp start                        # start the standalone MCP server
+scitex-ui list-python-apis                 # dump the public Python tree
+scitex-ui --help-recursive | head -60      # full surface dump
 ```
 
 ## Frontend tooling

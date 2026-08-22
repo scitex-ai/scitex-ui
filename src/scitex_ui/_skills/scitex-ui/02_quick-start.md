@@ -66,7 +66,7 @@ scitex_ui.get_component("DataTable")  # metadata dict
 ```bash
 scitex-ui mcp start
 scitex-ui docs
-scitex-ui skills list
+scitex-ui dev skills list
 ```
 
 ## Next steps

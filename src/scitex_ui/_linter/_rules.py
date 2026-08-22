@@ -271,7 +271,7 @@ def build_rules() -> Mapping[str, Rule]:
             "apiUrl() THROWS when the marker is absent rather than "
             "defaulting to '/', because a default works standalone and "
             "fails only embedded. Needs scitex-ui >= 0.13.0; see "
-            "`scitex-ui skills get 41_dual-mode-mounting`."
+            "`scitex-ui dev skills get 41_dual-mode-mounting`."
         ),
         requires="scitex-ui",
     )
