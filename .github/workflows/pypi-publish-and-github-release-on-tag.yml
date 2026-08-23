@@ -34,35 +34,49 @@ name: release
 # fail-loud: a missing SIF/shim/interpreter is a HARD error, never a
 # bare-runner fallback.
 #
-# RUNS-ON IS PINNED TO `spartan-cpu` HERE, DELIBERATELY, AND IT IS TEMPORARY.
-# Everything else in this repo follows the CI_RUNS_ON variable; this workflow
-# does the opposite, which is the whole point:
-#
-#   PR CI      pooled via CI_RUNS_ON=scitex-ci   -> migrates automatically as
-#              runners join and Spartan drains. Nobody has to flip again.
-#   publish    pinned to spartan-cpu             -> stays where the dependency
-#              provably exists.
+# RUNS-ON WAS PINNED TO `spartan-cpu` HERE. UNPINNED 2026-08-22, precondition
+# met. The note below is kept because the REASONING still governs any future
+# change, and because the precondition is the whole story.
 #
 # THE DEPENDENCY: every job below runs inside SCITEX_CI_SIF
 # (~/.scitex/dev/containers/ci-cpu.sif) via SCITEX_CI_APPTAINER — tests, wheel
 # build, and the OIDC publish. `scitex-ci` is a POOL label, so pointing these
-# jobs at it means "any machine serving that label", and scitex-compute-01/02
-# will serve it while having apptainer 1.5.3 but NOT the SIF (confirmed with
-# scitex-hpc, 2026-08-05, who owns getting it there).
+# jobs at it means "any machine serving that label". On 2026-08-05 those
+# machines had apptainer but NOT the SIF, which is why this was pinned.
 #
-# WHY THIS FAILS SILENTLY IF YOU GET IT WRONG: pull-request CI never touches
-# these paths. A repo can move its PR legs to the pool, stay green for weeks,
-# and then fail on its FIRST TAG — the one moment nobody wants a surprise. The
-# green PRs are not evidence the release path survived the migration, because
-# they never exercised it.
+# WHY IT FAILS SILENTLY IF YOU GET IT WRONG, and this has not changed:
+# pull-request CI never touches these paths. A repo can move its PR legs to the
+# pool, stay green for weeks, then fail on its FIRST TAG — the one moment
+# nobody wants a surprise. Green PRs are NOT evidence the release path survived
+# the migration, because they never exercised it. Do not reason from "the pool
+# already builds this repo"; it does not build it this way.
 #
-# UNPINNING IS ONE LINE, AND HAS ONE PRECONDITION: restore
-#   runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
-# on all four jobs once ci-cpu.sif EXISTS at the destination — not once the
-# runners are up, which is a different fact. scitex-hpc has agreed to announce
-# the SIF's presence separately and to verify it by reading the file on those
-# machines rather than by having run a copy.
-# Tracked: card scitex-ui-ci-still-100pct-spartan-after-ruling-20260805.
+# THE PRECONDITION, AND HOW IT WAS DISCHARGED (2026-08-22). The note asked that
+# ci-cpu.sif EXIST at the destination — "not once the runners are up, which is
+# a different fact" — and that it be verified by READING THE FILE on those
+# machines rather than by having run a copy. Read, over ssh:
+#
+#     scitex-compute-01   ci-cpu.sif  1221599232 bytes  Aug  5 14:23   runner ONLINE
+#     scitex-compute-02   host key verification failed                 runner OFFLINE
+#     scitex-compute-03   ci-cpu.sif  1221599232 bytes  Aug  5 14:18   runner ONLINE
+#     scitex-compute-04   ci-cpu.sif  1221599232 bytes  Aug  5 14:23   runner ONLINE
+#
+# Every ONLINE machine serving `scitex-org-cpu` (which is what CI_RUNS_ON is
+# set to) carries the SIF, identical size on all three.
+#
+# RESIDUAL RISK, stated rather than smoothed over: scitex-compute-02 could not
+# be read (host key verification failed) and is currently OFFLINE, so it cannot
+# take a job today. If it returns to the pool WITHOUT the SIF, a release landing
+# on it hard-fails — which is the designed `fail-loud` behaviour, is visible,
+# and is re-runnable. That is strictly better than the state this change fixes:
+# a release pinned to a pool with ZERO online runners sits `queued` forever,
+# never fails, and tells nobody.
+#
+# WHY IT WAS UNPINNED: on 2026-08-22 all four `spartan-cpu` runners were
+# offline, so the v0.17.0 publish could not start at all. The pin had become
+# the thing preventing releases rather than the thing protecting them.
+# Tracked: cards scitex-ui-ci-still-100pct-spartan-after-ruling-20260805 and
+# ci-spartan-cpu-runner-pool-entirely-offline-20260822.
 #
 # SIF + apptainer paths come from SCITEX_CI_SIF / SCITEX_CI_APPTAINER.
 #
@@ -85,8 +99,7 @@ env:
 
 jobs:
   test:
-    # PINNED — do not restore CI_RUNS_ON here without reading the header note.
-    runs-on: [self-hosted, Linux, X64, spartan-cpu]
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
     strategy:
       fail-fast: false
       matrix:
@@ -116,8 +129,7 @@ jobs:
 
   build:
     needs: test
-    # PINNED — do not restore CI_RUNS_ON here without reading the header note.
-    runs-on: [self-hosted, Linux, X64, spartan-cpu]
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
     outputs:
       version: ${{ steps.ver.outputs.version }}
     steps:
@@ -151,8 +163,7 @@ jobs:
 
   publish:
     needs: build
-    # PINNED — do not restore CI_RUNS_ON here without reading the header note.
-    runs-on: [self-hosted, Linux, X64, spartan-cpu]
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
     environment:
       name: pypi
       url: https://pypi.org/p/scitex-ui
@@ -178,8 +189,7 @@ jobs:
 
   release:
     needs: [build, publish]
-    # PINNED — do not restore CI_RUNS_ON here without reading the header note.
-    runs-on: [self-hosted, Linux, X64, spartan-cpu]
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
     permissions:
       contents: write
     steps:

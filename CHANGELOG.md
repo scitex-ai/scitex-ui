@@ -7,6 +7,30 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-08-20
+
+- **Below 768px the shell hid the Console/Chat, Files and Viewer panes and nothing could bring them back.** `mobile.css` set `display: none !important` on all three and revealed the active one via `.mobile-active-pane` — a class that appeared in exactly one file, `mobile.css` itself, and that no template, js or ts in this package ever wrote. The destructive half shipped; the restorative half never ran, and the resizers that might have dragged a pane back were hidden by the same media block. On a phone those panes were not collapsed, they were gone.
+
+  Measured in chromium at 390x844 against the rendered shell: before, `ws-ai-pane` and `ws-viewer-pane` at `display:none` with width 0 and **zero** visible clickable elements on the entire page; after, four panes stacked at top 0/462/579/701 and **28 of 33** controls visible, all reachable by scrolling, no horizontal overflow.
+
+  Nothing errored in the broken state. The page was valid, it painted, dark mode was correct, and there was no horizontal overflow — every cheap check passed, which is why it survived. Below 768px the three columns now STACK: no switcher, no JS, no state class. That was already what the rest of the package assumed — `ts/shell/mobile-swipe.ts` opens with *"On mobile (<=768px), workspace panes stack vertically"* and toggles `collapsed`, never `.mobile-active-pane` — so the CSS had been contradicting the shipped JS, and the CSS won. The orphaned reader is DELETED rather than given a writer, along with `.mobile-tab-bar` (styling for a switcher nothing renders); `_KNOWN_ORPHANED` in the layout-writer guard is now empty.
+
+  An app that does not want a pane already has a declared way to say so — `shell_context(panes={"ai": "unused"})` emits `ws-pane-unused` — so the stack is as short as the app declares and full only when it declares nothing. That contract is load-bearing here in a way worth naming: the first draft of the stacking rule wrote `display: flex !important`, and `.ws-pane-unused` hides with a plain `display: none` that any `!important` outranks, so every pane an app had explicitly declared unused would have been dragged back on screen at the width where space is scarcest. `:not(.ws-pane-unused)` is why it is not, and a test pins it.
+
+  Also corrected: `workspace-viewer.css` claimed mobile-swipe.ts *"manages pane visibility via `.mobile-active`"*. It writes no such class. Three files carried three spellings of one idea and none of them had a writer.
+
+- **`standalone_shell.html` gives a mounted app a way back to its launcher.** `shell_context(launcher={"url": ..., "label": ...})` renders a link; omit it and nothing renders, which is correct for a leaf app running standalone at `/` where such a link would point at itself. Validation reports missing AND unknown keys together rather than sending the caller round twice, and refuses an empty value instead of rendering a blank control.
+
+  The link is a direct child of `<body>`, outside `.workspace-three-col`, and a test asserts that placement — a link inside a pane would have been hidden by the very media block the entry above fixes.
+
+- **A guard that fails when a pane-visibility rule has no writer**, carrying a written ceiling for pre-existing debt rather than a blanket exemption, plus tests that fail when a ceiling entry goes stale or stops describing anything real.
+
+- **The packaging gate now says WHY it cannot run.** It had surfaced as a bare `CalledProcessError` naming neither the cause nor the fix; the actual cause was a missing `build` module, and reading `"282 passed, 2 errors"` made that indistinguishable from infrastructure noise.
+
+- **Package assets resolve from the checkout, not `site-packages`.** Nineteen modules derived their paths from `scitex_ui.__file__`, so under a non-editable install a guard asserted about a different tree than the branch under review — passing or failing for one commit depending on which directory pytest ran from.
+
+- **Links rendered identical to body text**, because `primitives/typography.css` read tokens that were never declared. An undefined custom property is invalid at computed-value time, so the property becomes `unset` and INHERITS — it does not fall back to the user-agent default. Anchors therefore took the body colour and lost every visual cue that they were links.
+
 ## [0.16.0] - 2026-08-18
 
 - **`--app-accent-storage` and `--app-accent-comms` existed in one palette layer and not the other, and scitex-hub's comms tile had been rendering with no accent bar.** The accent tokens are declared in BOTH `primitives/colors/` and `shell/theme.css`, and that duplication is the design rather than a defect — `shell/theme.css` is documented as consumable alone (`css/app/context-menu.css`: *"Requires: shell/theme.css — and ONLY that"*), so a page linking it never sees the primitives layer. What had gone wrong is that the duplication was INCOMPLETE: `comms`, `storage` and `todo` lived only in the theme layer, `apps` only in the colors layer. An adopter loading the primitives layer — which is what hub does — silently lost three accents. Nothing errors: `var()` on an undefined custom property resolves to nothing, so the only symptom is an absent 2px bar somebody has to notice, and in July somebody did, for a different app, which is why a test pinning `--app-accent-storage` existed to catch this one.

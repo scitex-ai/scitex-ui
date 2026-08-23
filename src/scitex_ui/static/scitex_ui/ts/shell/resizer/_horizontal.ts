@@ -84,7 +84,7 @@ export class HorizontalResizer extends BaseResizer {
 
     // Find the pane wrapper of the collapsing panel
     const paneContainer = collapsingPanel.closest(
-      ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane, .ws-module-pane",
+      ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-module-pane",
     );
     if (!paneContainer) return null;
 
