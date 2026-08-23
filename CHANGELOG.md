@@ -7,6 +7,18 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-08-23
+
+- **`<html lang>` follows the active language instead of a hardcoded `"en"`.** Reported by scitex-scholar, found in the SHIPPED wheel rather than the source tree. `lang` is where a screen reader takes its PRONUNCIATION rules from, so Japanese served as `lang="en"` is read aloud with English phonetics — closer to unusable than to imperfect. Every leaf running standalone inherited it; hub's own fix covered only hub's `global_base.html`.
+
+  `shell_context(..., lang=None)` now defaults to Django's ACTIVE language via `get_language()`, and an explicit `lang=` overrides for a page whose content is not the UI language. This deliberately breaks the package's declared-not-detected habit: panes and accents are CHOICES an app makes, so a typo raises; the page language is not a choice the shell gets to make, and a second place to state it is a second place to be wrong.
+
+  **The template carries its own default too, and that is the load-bearing half.** scitex-scholar measured that two of the four leaves rendering this shell — scholar itself and figrecipe — never call `shell_context` at all; they build their own context dict and call `render_to_string` directly. Django renders an undefined variable as the empty string, so a bare `{{ shell_lang }}` would have given those two `lang=""`: no rule for a screen reader to apply at all, rather than the wrong rule. The fix would have repaired two leaves and degraded the other two.
+
+  **Why it survived review in two shells independently**, which generalises past this attribute: a rendered-text sweep reads page TEXT and the text was correct Japanese — AN ATTRIBUTE IS NOT TEXT, so the check was structurally blind to it. And a human skim registers "this line is handled" because the line CONTAINS `{{ }}` — the presence of one dynamic thing camouflages the static thing beside it. Someone reached that exact character position, parameterised `data-theme-default`, and left `lang` literal.
+
+  Guard mutation-probed against the literal that shipped in 0.18.0: the parametrised `en` case PASSES BY COINCIDENCE and only `ja`/`fr` fail, which reads as one flake among greens. The test that actually binds asserts two languages render DIFFERENTLY. Served bytes verified over real HTTP, including a route that bypasses `shell_context` entirely.
+
 ## [0.18.0] - 2026-08-23
 
 - **A self-explanatory demo page, and the gate that had been switched off by the bug it should have caught.** `examples/03_self_explanatory_demo.py` renders every semantic token as a light/dark swatch pair, every registered component with its description and file path, and a LIVE ACCENT SWITCHER — shipped / teal / green / blue / amber / crimson — so the brand colour can be judged by looking rather than argued about. The shipped purple is presented as one option among several, deliberately not as the answer. The component list is generated from the registry, because a hardcoded gallery would be exactly the second-source-of-truth defect this package spent 0.16.0 removing from its stylesheets.
