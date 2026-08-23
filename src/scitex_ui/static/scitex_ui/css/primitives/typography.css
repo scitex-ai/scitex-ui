@@ -263,16 +263,23 @@ a:hover {
 }
 
 .text-accent {
-  color: var(--accent-color);
+  color: var(--accent);
 }
 
-.text-light {
-  color: var(--text-light);
-}
-
-.text-dark {
-  color: var(--text-dark);
-}
+/*
+ * .text-light and .text-dark were REMOVED here, not repaired.
+ *
+ * Both read tokens (--text-light / --text-dark) that no stylesheet in this
+ * package defines, so `color` was invalid at computed-value time and the
+ * element simply inherited. They therefore did nothing, in either palette,
+ * for as long as they have shipped.
+ *
+ * Removing them is behaviour-preserving for adopters: an undefined custom
+ * property and an absent rule both leave the colour inherited. Defining the
+ * two tokens instead would have CHANGED rendering for anyone already using
+ * the classes, on a guess about what "light" and "dark" text should mean in
+ * a themed system that already expresses that axis as --text-inverse.
+ */
 
 .text-white {
   color: white;
