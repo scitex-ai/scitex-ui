@@ -52,8 +52,25 @@ import html
 import json
 import pathlib
 import re
+import sys
 
-import scitex as stx
+# OPTIONAL, and the fallback is the point rather than politeness.
+#
+# The session framework supplies exactly two things here: an output directory
+# (CONFIG.SDIR_RUN) and a logger. It comes from the `scitex` UMBRELLA, which
+# pins its siblings with `==` and will downgrade an installed scitex-ui out
+# from under you -- measured 2026-08-18: scitex-ui 0.16.0 -> 0.6.0 plus ~40
+# other packages.
+#
+# This file's whole claim is that it is RUNNABLE STANDALONE -- that is what
+# makes it evidence that scitex-ui works outside hub rather than a brochure.
+# A demo that cannot start without the entire ecosystem installed does not
+# demonstrate that. So the framework is used WHERE PRESENT and stood in for
+# where it is not, which keeps both properties instead of trading one away.
+try:
+    import scitex as stx
+except ModuleNotFoundError:  # standalone: the umbrella is not installed
+    stx = None
 
 import scitex_ui
 
@@ -298,32 +315,60 @@ apply();
 """
 
 
-@stx.session
-def main(
-    CONFIG=stx.session.INJECTED,
-    logger=stx.session.INJECTED,
-) -> int:
-    """Write the demo page into this run's session directory."""
-    OUT = pathlib.Path(CONFIG.SDIR_RUN)
+def render(out_dir: pathlib.Path, log) -> int:
+    """Write the demo page into ``out_dir``. The whole job lives here.
 
+    Kept free of the session framework so the SAME code path runs with and
+    without the umbrella. If the framework wrapped the real work, the
+    standalone route would be a second implementation and the one nobody runs
+    is the one that rots.
+    """
     css_dir = pathlib.Path(scitex_ui.get_static_dir()) / "css"
     if not (css_dir / "shell" / "theme.css").exists():
         # Fail loud and NAME THE PATH. A demo that silently emits an unthemed
         # page is the exact failure this package shipped for fourteen releases:
         # an undefined custom property is not an error, so the page renders
         # successfully and wrong.
-        logger.error(f"no shell/theme.css under {css_dir}")
+        log.error(f"no shell/theme.css under {css_dir}")
         return 1
 
     page = build(css_dir)
-    output_file = OUT / "index.html"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    output_file = out_dir / "index.html"
     output_file.write_text(page, encoding="utf-8")
 
-    logger.info(f"components : {len(scitex_ui.list_components())}")
-    logger.info(f"css source : {css_dir}")
-    logger.info(f"wrote      : {output_file} ({len(page):,} bytes)")
+    log.info(f"components : {len(scitex_ui.list_components())}")
+    log.info(f"css source : {css_dir}")
+    log.info(f"wrote      : {output_file} ({len(page):,} bytes)")
     return 0
 
 
+if stx is not None:
+
+    @stx.session
+    def main(
+        CONFIG=stx.session.INJECTED,
+        logger=stx.session.INJECTED,
+    ) -> int:
+        """Write the demo page into this run's session directory."""
+        return render(pathlib.Path(CONFIG.SDIR_RUN), logger)
+
+else:
+
+    def main() -> int:
+        """Standalone entry point: no umbrella, no session directory.
+
+        Writes beside this file so a reader who just ran
+        `pip install scitex-ui` and executed the example can find the output
+        without knowing anything about session directories.
+        """
+        import logging
+
+        logging.basicConfig(
+            level=logging.INFO, format="%(levelname)s %(message)s", stream=sys.stderr
+        )
+        return render(pathlib.Path(__file__).parent / "_demo_out", logging.getLogger("demo"))
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

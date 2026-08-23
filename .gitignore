@@ -682,3 +682,9 @@ slurm_logs
 # ignored meant PS-102 flagged the repo as dirty and a stray `git add -A` could
 # have committed a session log. Runtime artifact — regenerable, never shipped.
 /logs/
+
+# Output of examples/03_self_explanatory_demo.py when run standalone.
+# The demo writes beside itself so a reader who just ran it can find the
+# page without knowing about session directories -- which means the tree
+# gets dirty on every run unless this is ignored.
+examples/_demo_out/
