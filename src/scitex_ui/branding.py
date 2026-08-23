@@ -90,12 +90,32 @@ PANE_STATES = ("unused", "client-populated", "used")
 _LAUNCHER_KEYS = {"url", "label"}
 
 
+def _active_language() -> str:
+    """The language Django has active for this request, or ``"en"``.
+
+    ``get_language()`` returns ``None`` when translations are deactivated, so
+    the fallback is not decoration — without it the attribute would render
+    empty, and an empty ``lang=""`` is worse than a wrong one: a screen reader
+    then has no rule to apply at all rather than the wrong rule.
+
+    Imported lazily because ``branding`` is imported by code paths that have not
+    configured Django, and a module-scope import of ``django.utils.translation``
+    would make those paths fail on an attribute this package can default.
+    """
+    try:
+        from django.utils.translation import get_language
+    except Exception:  # Django absent or not configured
+        return "en"
+    return get_language() or "en"
+
+
 def shell_context(
     tool: str,
     *,
     accent: str | None = None,
     favicon_href: str | None = None,
     theme_default: str = "dark",
+    lang: str | None = None,
     panes: dict[str, str] | None = None,
     launcher: dict[str, str] | None = None,
 ) -> dict[str, object]:
@@ -109,6 +129,16 @@ def shell_context(
         supplying one means the shared mark never renders for your app.
     :param theme_default: theme used when the visitor has no stored preference.
         Dark by default; a stored preference always wins (see ``_theme_boot``).
+    :param lang: BCP-47 tag for ``<html lang>``. Left out, the shell uses the
+        language Django has ACTIVE for this request, falling back to ``"en"``.
+
+        **Why this one is detected rather than declared**, against the rest of
+        this API. Panes and accents are CHOICES an app makes, so they are
+        declared and a typo raises. The page language is not a choice the shell
+        gets to make — Django has already resolved it from the request, and a
+        second place to state it is a second place to be wrong. Requiring every
+        leaf to pass it would reproduce the bug this parameter fixes: four
+        leaves inheriting a value nobody remembered to set.
     :param panes: what each pane IS, e.g. ``{"ai": "unused", "files": "unused"}``.
         Keys from :data:`PANE_NAMES`, values from :data:`PANE_STATES`. Omitted
         panes are left visible.
@@ -172,6 +202,7 @@ def shell_context(
     context: dict[str, object] = {
         "app_label": shell_title(tool),
         "shell_theme_default": theme_default,
+        "shell_lang": lang or _active_language(),
     }
     if accent:
         context["app_accent"] = accent
