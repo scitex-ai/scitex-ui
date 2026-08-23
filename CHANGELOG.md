@@ -7,6 +7,22 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.19.1] - 2026-08-23
+
+- **Six `var(--x)` references had no fallback and no definition, so those declarations did nothing at all.** An undefined custom property is invalid at computed-value time, which means the browser discards the declaration rather than falling back to anything — so `.text-accent` set no colour, and the file-tree search box rendered with **no background**. All six are repaired at the CALL SITE rather than exempted, which empties `_KNOWN_BROKEN_IN_ALL` in `test_app_css_tokens_resolve.py` for the first time since that ceiling was created.
+
+  `.text-accent` now reads `--accent`, which is defined in both palettes and carries the WCAG correction (`#a371f7` dark, 5.16:1, raised from `#6d4cad` at 2.71:1). The shell search box reads `--workspace-bg-primary` / `--workspace-bg-elevated`, and `media-viewer.css` reads `--workspace-border-subtle` across nine sites.
+
+  **`.text-light` and `.text-dark` are DELETED rather than defined**, and the reasoning is the reusable part. The previous ceiling note called this a design question: they are literal-colour utilities whose names promise an absolute colour, in a system where every candidate token FLIPS with the theme — so mapping `.text-light` to `--text-inverse` would render it DARK in dark mode, inverting the one thing its name promises. That was correct, and the design call turned out not to be needed, because nobody had asked the cheaper question first: **nothing uses them.** Both classes appear in ZERO html/ts/js/py files, against a control of `.text-primary` at 3. Deletion is behaviour-preserving for adopters — an undefined custom property and an absent rule both leave the colour inherited — whereas defining the tokens would have changed rendering on a guess. A design question can sometimes be dissolved by a usage count instead of answered.
+
+  **Deliberately not fixed:** the app-side twin still reads `var(--workspace-bg-default, #1e1e1e)`. Those fallbacks are ARMOUR, not sloppiness — `app.css` does not import the primitives layer, so an adopter linking `app.css` alone depends on every one of them. (That literal is itself the single-fallback bug class, dark in BOTH palettes, and is tracked with the `app.css`/primitives decision rather than patched here.)
+
+- **Emptying an allowlist silenced the guard that polices it — in two files.** Both reverse-checks are parametrised over their own allowlist, so at zero entries pytest reports `got empty parameter set` and SKIPS. Zero is the state these allowlists are *designed* to reach, so success and breakage look identical exactly when it matters, and a skip is indistinguishable from a test that broke.
+
+  `test_the_ceiling_is_empty` and `test_the_allowlist_is_empty` now assert the zero state directly. The second is in `test_shell_ts_reachability.py`, which had the identical hole and was already at zero — and which the CSS ceiling's own docstring cites as the PRECEDENT for emptying an allowlist. The precedent carried the defect too.
+
+  Mutation-probed rather than assumed: injecting a no-fallback undefined token into `media-viewer.css` turns the inert-token guard RED naming that token, so the emptied ceiling is a live gate and not a decorative one.
+
 ## [0.19.0] - 2026-08-23
 
 - **`<html lang>` follows the active language instead of a hardcoded `"en"`.** Reported by scitex-scholar, found in the SHIPPED wheel rather than the source tree. `lang` is where a screen reader takes its PRONUNCIATION rules from, so Japanese served as `lang="en"` is read aloud with English phonetics — closer to unusable than to imperfect. Every leaf running standalone inherited it; hub's own fix covered only hub's `global_base.html`.
