@@ -174,3 +174,47 @@ def test_the_fallback_is_en_when_translations_are_deactivated() -> None:
         translation.activate("en")
     # Assert
     assert value == "en", f"expected the 'en' fallback, got {value!r}"
+
+
+def test_a_leaf_that_bypasses_shell_context_still_gets_a_language() -> None:
+    """The template's OWN default, exercised without ``shell_context`` at all.
+
+    RAISED BY scitex-scholar before this landed, and it is the "who are the
+    CONSUMERS" question rather than the "can the check fail" question — the two
+    are independent, and every other test in this file answers only the second.
+
+    MEASURED BY THEM across the four leaves that render this shell:
+
+        scitex-writer    calls shell_context      (6 sites)
+        scitex-storage   calls shell_context      (4 sites)
+        scitex-scholar   DOES NOT                 (0, control: render_to_string 2)
+        figrecipe        DOES NOT                 (0)
+
+    Two of four build their own context dict and call ``render_to_string``
+    directly. So a fix delivered ONLY through ``shell_context`` reaches half the
+    consumers, and every test above renders through that function — the path
+    under test is the path they do not take.
+
+    THE FAILURE IT GUARDS AGAINST IS WORSE THAN THE ORIGINAL BUG. Django renders
+    an undefined variable as the EMPTY STRING, so a bare ``{{ shell_lang }}``
+    would give those two leaves ``lang=""`` — no rule for a screen reader to
+    apply at all, rather than the wrong rule. Repairing two leaves while
+    degrading two others.
+
+    The template therefore carries the default itself, and this test is what
+    stops someone "tidying" it away on the reasonable-sounding grounds that
+    ``shell_context`` already defaults it.
+    """
+    # Arrange
+    _configure_django()
+    from django.template.loader import render_to_string
+
+    context = {"app_label": "Bypass", "mount_prefix": ""}  # NO shell_lang
+    # Act
+    html = render_to_string("scitex_ui/standalone_shell.html", context)
+    # Assert
+    assert _LANG_ATTR.search(html).group(1) == "en", (
+        "a renderer that does not use shell_context got "
+        f"lang={_LANG_ATTR.search(html).group(1)!r}; the template must default "
+        "it, because two of the four leaves build their own context"
+    )
