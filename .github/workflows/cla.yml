@@ -33,7 +33,7 @@ jobs:
     # (`runs_on`), the two `runs-on:` lines, and comment corrections. No change
     # to triggers, permissions, declared secrets, or the pinned action SHA
     # (`scitex-ai/github-action@114064ad`).
-    uses: scitex-ai/.github/.github/workflows/cla.yml@8da375a9771a07cf3f281c5f6fb450ab64dc7c0a # main@2026-08-30
+    uses: scitex-ai/.github/.github/workflows/cla.yml@f5d19f5b7424fcf985137bb6acff54f5d0e11749 # main@2026-08-30
     with:
       # MUST be carried forward. The reusable defaults to "bot*,ywatanabe1989";
       # dropping this silently starts demanding a CLA from LLEmacs, who is
