@@ -23,7 +23,17 @@ jobs:
     # to the reusable lands in every calling repo at once with no review in any
     # of them — and it lands in a job an outsider can start (see the trigger
     # list above) that holds write permissions and a PAT. Bump this deliberately.
-    uses: scitex-ai/.github/.github/workflows/cla.yml@1c5939858918fc83988955df15af3340da5c8fb1 # main @ 2026-07-31
+    #
+    # BUMPED 2026-08-30, `1c593985` -> `8da375a9`, FOR THE RUNNER. At the old
+    # pin both callee jobs hard-coded `runs-on: [self-hosted, Linux, X64,
+    # spartan-cpu]`, so the outsider-triggerable job above was landing on the
+    # persistent, credential-bearing pool. Upstream 57e2e772 added a `runs_on`
+    # input defaulting to '["ubuntu-latest"]'; this caller passes no runs_on, so
+    # it now takes that default. Reviewed diff old->new: one new optional input
+    # (`runs_on`), the two `runs-on:` lines, and comment corrections. No change
+    # to triggers, permissions, declared secrets, or the pinned action SHA
+    # (`scitex-ai/github-action@114064ad`).
+    uses: scitex-ai/.github/.github/workflows/cla.yml@8da375a9771a07cf3f281c5f6fb450ab64dc7c0a # main@2026-08-30
     with:
       # MUST be carried forward. The reusable defaults to "bot*,ywatanabe1989";
       # dropping this silently starts demanding a CLA from LLEmacs, who is
