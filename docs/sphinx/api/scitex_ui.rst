@@ -13,6 +13,17 @@ Registry
    :members:
    :undoc-members:
 
+Testing helpers
+---------------
+
+Contract assertions a CONSUMER runs in its own suite. Documented because these
+are meant to be imported from outside this package.
+
+.. automodule:: scitex_ui.testing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Components
 ----------
 
