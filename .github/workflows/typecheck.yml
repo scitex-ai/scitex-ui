@@ -111,3 +111,105 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+  # ==========================================================================
+  # LINT — a SEPARATE JOB, deliberately, and NOT a step in `typecheck` above.
+  #
+  # `typecheck` is a REQUIRED status check on main and develop. Adding lint as
+  # a step inside it would make the linter required the moment it landed —
+  # which is exactly the thing this repo's first TypeScript linter should not
+  # do on its first day. Its exemption list (eslint.config.mjs, #185) is new
+  # and unexercised: if it is wrong anywhere, a required check turns that error
+  # into everyone's problem before a single person has read it.
+  #
+  # As its own job it is its own status check, and a check is only REQUIRED
+  # when branch protection names it. So this lands as a RECORD: visible on
+  # every PR, blocking nothing. Promotion is a separate, deliberate act once it
+  # has a track record — the same call scitex-app made for their cross-package
+  # check on 2026-09-03, and their reasoning was better than my instinct to
+  # gate immediately.
+  #
+  # WHAT IT MUST NOT BECOME: a check that is red-by-default and therefore
+  # ignored. A record that nobody looks at is worse than no check, because the
+  # config still lists rules and everyone believes they are enforced. If this
+  # sits red for more than a few days, either fix it or delete the job —
+  # do not let it become furniture.
+  # ==========================================================================
+  lint:
+    name: lint
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    timeout-minutes: 10
+    steps:
+      # FORK GUARD — MUST BE FIRST, ahead of actions/checkout, for the same
+      # reason it is first in `typecheck`: `npm ci` runs this PR's own
+      # lifecycle scripts, so a fork's package.json executes on the node.
+      #
+      # THIS IS THE THIRD COPY of this guard in the repo, and the duplication
+      # is forced rather than sloppy: a reusable workflow cannot guard a job
+      # DECLARED LOCALLY, and both jobs in this file are. Copying a security
+      # guard is a smell, so it is checked rather than trusted —
+      # tests/develop/test_fork_guard_own_workflows.py fails if any locally
+      # declared job lacks it, which is what will catch the next person who
+      # adds a job here and forgets.
+      - name: Refuse to run fork-authored code on self-hosted infrastructure
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          set -euo pipefail
+          echo "::error title=Fork PR blocked::Fork-authored code is not run on the self-hosted Spartan pool."
+          echo "head repo: ${{ github.event.pull_request.head.repo.full_name }}  base repo: ${{ github.repository }}"
+          echo "To review this contribution, adopt its branch into ${{ github.repository }} and open a same-repo PR:"
+          echo "  gh pr checkout ${{ github.event.pull_request.number }} && git push origin HEAD:review/pr-${{ github.event.pull_request.number }}"
+          exit 1
+
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      # A lint run that matched ZERO files also exits 0 — the same vacuity the
+      # typecheck job guards against above, and the reason that guard exists.
+      # eslint's flat config silently lints nothing when its `files` globs stop
+      # matching, so assert the file COUNT before trusting the result.
+      - name: Assert the lint actually covers our source
+        run: |
+          set -euo pipefail
+          on_disk=$(find src/scitex_ui/static/scitex_ui/ts \
+                         src/scitex_ui/static/scitex_ui/react \
+                         \( -name '*.ts' -o -name '*.tsx' \) | wc -l)
+          # `|| true` because eslint exits NON-ZERO when it finds violations,
+          # and this step is only counting COVERAGE — reporting violations is
+          # the next step's job. Without it, a single real lint error would
+          # abort here and be reported as a coverage failure, which is the
+          # "a real error masquerading as a different error" shape the
+          # typecheck job's equivalent step also guards against.
+          npx eslint . -f json > lint-report.json 2>/dev/null || true
+          # grep/wc rather than a JSON parser: setup-node guarantees node, but
+          # NOTHING here guarantees python3, and a coverage assertion that
+          # crashes on a missing interpreter fails the job for a reason that
+          # has nothing to do with the code.
+          #
+          # RESTRICTED TO THE SAME TWO DIRECTORIES `on_disk` counts. Counting
+          # every filePath eslint reported compares two DIFFERENT POPULATIONS:
+          # eslint also lints eslint.config.mjs and anything else its globs
+          # match, so the totals were 272 on disk against 376 linted. That
+          # margin would have absorbed eslint silently dropping an entire
+          # directory — the assertion would still pass, for the wrong reason,
+          # which is precisely the vacuity this step exists to prevent.
+          linted=$(grep -o '"filePath":"[^"]*"' lint-report.json \
+                   | grep -cE 'static/scitex_ui/(ts|react)/' || true)
+          rm -f lint-report.json
+          echo "source files on disk: $on_disk / linted in those dirs: $linted"
+          if [ "$on_disk" -eq 0 ] || [ "$linted" -lt "$on_disk" ]; then
+            echo "::error::eslint covered $linted files against $on_disk on disk."
+            echo "Fix the \`files\` globs in eslint.config.mjs so every shipped .ts/.tsx is linted."
+            exit 1
+          fi
+
+      - name: Lint
+        run: npm run lint
