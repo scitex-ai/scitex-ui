@@ -28,6 +28,39 @@ export interface ShellInstances {
   viewer?: ViewerManager;
 }
 
+const LOG = "[ShellInit]";
+
+/**
+ * Resolve a widget's container, or decline to build the widget.
+ *
+ * OPTING IN IS A CONFIG FACT; THE CONTAINER EXISTING IS A DOM FACT, and nothing
+ * links them. `initShell` is handed a config by the app and hardcodes the
+ * selectors the SHELL TEMPLATE would render — but a leaf running standalone
+ * renders its own markup, and the containers scitex-hub supplies are simply not
+ * there. Before this, the widget was constructed anyway and threw on first
+ * dereference, which is what figrecipe hit on standalone first load (measured
+ * 2026-09-02).
+ *
+ * Returning null lets the caller SKIP the widget instead. The warning is
+ * unconditional, matching the convention already used across shell/ (see
+ * resizer/index.ts, which warns the same way when `configFromElement` returns
+ * null). A silent skip would hide a real misconfiguration — "I passed
+ * config.fileTree and nothing happened" — which is exactly the case the
+ * developer needs to see.
+ */
+function containerFor(selector: string, widget: string): HTMLElement | null {
+  const el = document.querySelector<HTMLElement>(selector);
+  if (!el) {
+    console.warn(
+      `${LOG} ${widget}: no element matches "${selector}", so it was not ` +
+        `initialised. This is expected when running standalone — that ` +
+        `container is supplied by the mounting platform. Render it, or omit ` +
+        `${widget} from the initShell config.`,
+    );
+  }
+  return el;
+}
+
 /**
  * Initialize the workspace shell with all modules.
  *
@@ -41,7 +74,7 @@ export async function initShell(config: ShellConfig): Promise<ShellInstances> {
   initModeToggle();
 
   // File Tree
-  if (config.fileTree) {
+  if (config.fileTree && containerFor("#ws-worktree-tree", "fileTree")) {
     const fileTree = new ShellFileTree({
       container: "#ws-worktree-tree",
       adapter: config.fileTree.adapter,
@@ -64,7 +97,10 @@ export async function initShell(config: ShellConfig): Promise<ShellInstances> {
   }
 
   // Terminal
-  if (config.terminal) {
+  if (
+    config.terminal &&
+    containerFor("#stx-shell-ai-console-terminal", "terminal")
+  ) {
     await initTerminal({
       container: "#stx-shell-ai-console-terminal",
       adapter: config.terminal.adapter,
