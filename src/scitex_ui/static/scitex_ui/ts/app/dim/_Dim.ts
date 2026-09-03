@@ -165,12 +165,15 @@ export function applyVerdict(
 
   // TWO PATHS TO ONE REASON, which is what hub specified ("tooltip /
   // aria-describedby") and not redundancy:
-  //   data-tooltip      the sighted, mouse path — rendered by app/tooltip
-  //   aria-describedby  the assistive and keyboard path — owned here
-  // They are separate because app/tooltip binds mouseenter/mouseleave only, so
-  // it cannot serve a keyboard user. Setting the attribute costs nothing when
-  // Tooltip.init() was never called, and the accessible description does not
-  // depend on it either way.
+  //   data-tooltip      the VISIBLE path — rendered by app/tooltip
+  //   aria-describedby  the ACCESSIBLE path — owned here, added below
+  //
+  // These stay separate now that app/tooltip HAS focus support, because they
+  // answer different questions. The tooltip renders a visible panel; this
+  // component's reason node is what assistive technology reads, and it is
+  // present whether or not `Tooltip.init()` ever ran. Setting data-tooltip
+  // costs nothing when it did not, and the accessible description never
+  // depends on it.
   el.setAttribute("data-tooltip", reason);
 
   const node = reasonNodeFor(el);

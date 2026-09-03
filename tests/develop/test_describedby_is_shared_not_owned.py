@@ -57,8 +57,18 @@ _ASSIGNS = re.compile(r'setAttribute\(\s*["\']aria-describedby["\']')
 _CLEARS = re.compile(r'removeAttribute\(\s*["\']aria-describedby["\']')
 
 #: The shared helpers every writer must go through.
-_ADD = "addDescribedBy"
-_REMOVE = "removeDescribedBy"
+#:
+#: THE TRAILING PAREN IS LOad-BEARING and was added because a probe caught its
+#: absence. Checking for the bare identifier is satisfied by the IMPORT LINE:
+#:
+#:     import { addDescribedBy, removeDescribedBy } from "../../_base/..."
+#:
+#: so a component that imports the helper and never calls it passed the guard.
+#: The probe "tooltip stops adding its description id" deleted the call, left
+#: the import, and the guard stayed GREEN — a detector satisfied by the
+#: paperwork rather than the behaviour.
+_ADD = "addDescribedBy("
+_REMOVE = "removeDescribedBy("
 
 #: Components that describe controls and therefore share the attribute.
 _WRITERS = {
@@ -300,6 +310,33 @@ def test_the_clear_pattern_can_actually_match() -> None:
     assert matched is not None, (
         "_CLEARS cannot match a real removeAttribute call, so the guard "
         "against clearing is inert."
+    )
+
+
+def test_an_unused_import_does_not_satisfy_the_helper_guards() -> None:
+    """The hole a probe found: paperwork is not behaviour.
+
+    An earlier version checked for the bare identifier `addDescribedBy`, which
+    the import line contains. Deleting the CALL while leaving the import kept
+    the guard green — it verified that the component had been told about the
+    helper, not that it used it.
+
+    This is the same shape as a detector satisfied by a mention rather than an
+    instance, arriving through imports instead of comments.
+    """
+    # Arrange
+    import_only = (
+        'import { addDescribedBy, removeDescribedBy } from "../../_base/x";\n'
+        "export function show(el) { el.classList.add('x'); }\n"
+    )
+
+    # Act
+    satisfied = _ADD in import_only
+
+    # Assert
+    assert not satisfied, (
+        f"the helper guard is satisfied by an import alone ({_ADD!r} matched a "
+        f"file that never calls it). Require the call, not the identifier."
     )
 
 
