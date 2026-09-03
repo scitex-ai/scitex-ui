@@ -89,7 +89,7 @@
 }
 
 .stx-app-combobox__item--disabled {
-  opacity: 0.4;
+  opacity: var(--disabled-opacity);
   cursor: default;
   pointer-events: none;
 }

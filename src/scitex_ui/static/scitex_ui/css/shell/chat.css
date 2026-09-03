@@ -148,6 +148,6 @@
 }
 
 .stx-shell-chat__send:disabled {
-  opacity: 0.4;
+  opacity: var(--disabled-opacity);
   cursor: default;
 }

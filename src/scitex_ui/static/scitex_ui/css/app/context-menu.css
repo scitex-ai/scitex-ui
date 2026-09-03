@@ -70,6 +70,16 @@
 
 .stx-app-context-menu__item:disabled {
   color: var(--text-secondary, #c9d1d9);
+  /* NOT var(--disabled-opacity), deliberately. This file is one of two listed
+     in _THEME_ONLY (tests/develop/test_app_css_token_layer.py): it advertises
+     itself as consumable with shell/theme.css ALONE. The token lives in
+     primitives/spacing.css, and no single home satisfies both contracts —
+     app.css imports primitives but NOT shell/theme.css, so moving it to
+     theme.css would break the other fourteen sites instead. Reaching across
+     that layer is how the context menu once rendered dark-on-dark on a live
+     page. The value below is the token's value; keep them equal by hand until
+     the app.css/primitives layering question is settled
+     (scitex-ui-app-css-tokens-defined-nowhere-20260728). */
   opacity: 0.5;
   cursor: default;
 }
