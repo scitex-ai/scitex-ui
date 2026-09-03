@@ -72,11 +72,16 @@ PANE_NAMES = ("ai", "files", "viewer")
 
 #: What an app may declare a pane to BE. Declared, never inferred.
 #:
-#: ``"unused"``            the app does not use this pane at all — collapse it
-#:                         and give the app's content the width back.
-#: ``"client-populated"``  the pane IS used, but its content arrives after
-#:                         mount, so it is legitimately empty at render time.
-#: ``"used"``              the pane is populated server-side.
+#: ``"unused"``
+#:     the app does not use this pane at all — collapse it and give the app's
+#:     content the width back.
+#:
+#: ``"client-populated"``
+#:     the pane IS used, but its content arrives after mount, so it is
+#:     legitimately empty at render time.
+#:
+#: ``"used"``
+#:     the pane is populated server-side.
 #:
 #: Only ``"unused"`` changes the layout. The other two are equivalent today and
 #: both mean "leave it alone"; they are distinct because they say different
