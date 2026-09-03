@@ -35,6 +35,7 @@
     "./ts/app/confirm-modal": "./src/scitex_ui/static/scitex_ui/ts/app/confirm-modal/index.ts",
     "./ts/app/context-menu": "./src/scitex_ui/static/scitex_ui/ts/app/context-menu/index.ts",
     "./ts/app/data-table": "./src/scitex_ui/static/scitex_ui/ts/app/data-table/index.ts",
+    "./ts/app/dim": "./src/scitex_ui/static/scitex_ui/ts/app/dim/index.ts",
     "./ts/app/drawer": "./src/scitex_ui/static/scitex_ui/ts/app/drawer/index.ts",
     "./ts/app/dropdown": "./src/scitex_ui/static/scitex_ui/ts/app/dropdown/index.ts",
     "./ts/app/empty": "./src/scitex_ui/static/scitex_ui/ts/app/empty/index.ts",
