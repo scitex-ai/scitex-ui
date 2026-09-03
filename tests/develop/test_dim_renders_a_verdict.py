@@ -506,6 +506,162 @@ def test_the_literal_opacity_regex_ignores_a_token_reference() -> None:
     )
 
 
+def test_the_constant_regex_ignores_a_commented_out_declaration() -> None:
+    """A commented-out declaration is NOT prose, and anchoring does not save you.
+
+    scitex-app found this exact hole in their own scanner on 2026-09-03: they
+    anchored on `export const NAME =` believing it immune to comments, and
+    `// export const MOUNT_META_NAME = "stx-OLD"` matched perfectly and yielded
+    the stale value. It is syntactically identical to the real thing.
+
+    This repo is protected by stripping comments BEFORE searching, not by the
+    anchor. That protection is what this asserts — remove the stripper and a
+    deleted constant left behind in a comment would still read as present.
+    """
+    # Arrange
+    sample = '// export const DENIED = "stale";\n'
+
+    # Act
+    matched = _CONST.search(_strip_ts_comments(sample))
+
+    # Assert
+    assert matched is None, (
+        "a commented-out declaration was read as a live one. The kind-pinning "
+        "guard would then accept a constant that has been DELETED, as long as "
+        "its corpse remains in a comment — which is exactly the hole "
+        "scitex-app found in their own scanner, where anchoring on "
+        "`export const NAME =` matched the comment perfectly."
+    )
+
+
+def test_the_union_regex_finds_a_real_union() -> None:
+    """Positive control for the union counter."""
+    # Arrange
+    sample = "export type Verdict =\n  | A\n  | B;\n"
+
+    # Act
+    matched = _UNION.search(sample)
+
+    # Assert
+    assert matched is not None, (
+        "_UNION cannot match a real union declaration, so the exactly-four "
+        "guard would be counting an empty match and passing vacuously."
+    )
+
+
+def test_the_union_regex_ignores_a_commented_out_union() -> None:
+    """Negative control: a union in a comment is not a union."""
+    # Arrange
+    sample = "// export type Verdict = A | B;\nconst x = 1;\n"
+
+    # Act
+    matched = _UNION.search(_strip_ts_comments(sample))
+
+    # Assert
+    assert matched is None, (
+        "a commented-out union was read as the live declaration, so deleting "
+        "the real union while leaving it in a comment would go unnoticed."
+    )
+
+
+def test_the_allowed_property_regex_matches_a_real_property() -> None:
+    """Positive control: it must recognise the field it forbids."""
+    # Arrange
+    sample = "interface V {\n  allowed: boolean;\n}\n"
+
+    # Act
+    matched = _ALLOWED_PROPERTY.search(sample)
+
+    # Assert
+    assert matched is not None, (
+        "_ALLOWED_PROPERTY cannot match a real `allowed:` field, so the guard "
+        "forbidding it is inert."
+    )
+
+
+def test_the_allowed_property_regex_ignores_a_mention_in_prose() -> None:
+    """Negative control: naming the forbidden field must not trip the guard."""
+    # Arrange
+    sample = "// there is deliberately no allowed: property here\nconst x = 1;\n"
+
+    # Act
+    matched = _ALLOWED_PROPERTY.search(_strip_ts_comments(sample))
+
+    # Assert
+    assert matched is None, (
+        "a comment explaining the ABSENCE of an `allowed:` property tripped "
+        "the guard against it — the documentation inversion this module was "
+        "written to eliminate."
+    )
+
+
+def test_the_block_comment_stripper_matches_a_block_comment() -> None:
+    """Positive control for the stripper's own pattern."""
+    # Arrange
+    sample = "/* a JSDoc block */\nconst x = 1;\n"
+
+    # Act
+    matched = _BLOCK_COMMENT.search(sample)
+
+    # Assert
+    assert matched is not None, (
+        "_BLOCK_COMMENT cannot match a block comment, so _strip_ts_comments "
+        "removes nothing and every prose mention counts as code again."
+    )
+
+
+def test_the_block_comment_stripper_leaves_code_alone() -> None:
+    """Negative control: it must not eat the code between comments."""
+    # Arrange
+    sample = "const kept = 1;\n"
+
+    # Act
+    matched = _BLOCK_COMMENT.search(sample)
+
+    # Assert
+    assert matched is None, (
+        "_BLOCK_COMMENT matched a line with no block comment in it, so the "
+        "stripper would delete code and every negative guard would pass "
+        "against an emptied source."
+    )
+
+
+def test_the_line_comment_stripper_matches_a_line_comment() -> None:
+    """Positive control for the line-comment half of the stripper."""
+    # Arrange
+    sample = "  // an explanatory line\n"
+
+    # Act
+    matched = _LINE_COMMENT.search(sample)
+
+    # Assert
+    assert matched is not None, (
+        "_LINE_COMMENT cannot match an indented `//` comment, so prose on "
+        "such lines still counts as code."
+    )
+
+
+def test_the_line_comment_stripper_ignores_a_url_in_a_string() -> None:
+    """Negative control, and the reason the pattern is anchored to line start.
+
+    `//` also appears inside every absolute URL. A stripper that removed from
+    any `//` onward would truncate the string and silently delete code — a
+    false negative, which is strictly worse than the false positive it fixes.
+    """
+    # Arrange
+    sample = 'const u = "https://scitex.ai/signin";\n'
+
+    # Act
+    matched = _LINE_COMMENT.search(sample)
+
+    # Assert
+    assert matched is None, (
+        "_LINE_COMMENT matched a URL inside a string literal. Stripping from "
+        "there would remove real code and empty the source that every "
+        "negative assertion in this module reads."
+    )
+
+
 def test_dim_is_registered_under_its_name() -> None:
     """A component absent from the registry is undiscoverable."""
     # Arrange
