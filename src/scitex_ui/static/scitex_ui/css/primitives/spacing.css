@@ -49,4 +49,27 @@
   --transition-fast: 150ms;
   --transition-normal: 200ms;
   --transition-slow: 300ms;
+
+  /*
+   * Disabled appearance.
+   *
+   * ONE value, because there were two. Measured 2026-09-03: sixteen literal
+   * opacities across fifteen stylesheets, split EIGHT-EIGHT between 0.4 and
+   * 0.5 — not a majority with an outlier, a coin flip propagated by
+   * copy-paste in both directions.
+   *
+   * There is no semantic split under it. The tempting reading is "0.4 for
+   * buttons, 0.5 for content"; it fails, because recent-pane's and
+   * git-panel's buttons were 0.4 while toast's and media-input's were 0.5.
+   *
+   * 0.5 wins on LEGIBILITY: eight of the sixteen sites dim TEXT (textarea,
+   * checkbox label, context-menu item, file name), and WCAG exempts disabled
+   * controls from contrast minimums — which is precisely why the value drifts
+   * to whoever typed last unless it is decided once, here.
+   *
+   * Dim (the "sign in to use this" state) is a SIBLING of disabled, not this
+   * token reused. "Broken" and "available once you sign in" are different
+   * facts and must not share an appearance.
+   */
+  --disabled-opacity: 0.5;
 }
