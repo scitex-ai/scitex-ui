@@ -43,3 +43,17 @@ html_theme = "sphinx_rtd_theme"
 # html_static_path = ["_static"]
 
 autodoc_member_order = "bysource"
+
+# `asgiref.sync` does `if TYPE_CHECKING: from _typeshed import ...`, and
+# `_typeshed` is a stubs-only module that never exists at runtime — so
+# sphinx_autodoc_typehints' guarded-import probe always fails there and warns.
+# It fires for ANY module that imports Django, which is why it appeared the day
+# `apps` / `context_processors` / `middleware` were first documented rather than
+# for anything those modules do.
+#
+# Scoped to this one category deliberately, in the spirit of the filter above:
+# it is a diagnostic about a dependency's type-checking imports, not about our
+# doc tree, and nothing on our side can act on it. A blanket `-W` opt-out would
+# also hide the project-side warnings this build exists to catch — the two
+# malformed docstrings it caught in `branding` and `apps` are exactly that.
+suppress_warnings = ["sphinx_autodoc_typehints.guarded_import"]
