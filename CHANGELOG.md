@@ -7,6 +7,32 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-09-03
+
+- **A `dim` primitive that explains itself, and never uses the `disabled` attribute to do it.** `applyVerdict(el, verdict, config)` renders one of four authorization outcomes — allowed, denied, denied-because-not-signed-in, denied-because-not-entitled — as a visual state plus a REASON the user can actually reach. It sets `aria-disabled`, never native `disabled`: a natively disabled control leaves the tab order, taking its own explanation with it, so the person most in need of the reason is the one who cannot get to it.
+
+  The four kind strings are a deliberate SECOND COPY of `scitex_app.authz`'s, because this package must not depend on scitex-app. That copy is the risk the release exists to close: scitex-app now runs a cross-package check that reads `ts/app/dim/types.ts` out of the INSTALLED wheel and compares it to their Python constants as a NAME→VALUE mapping — not as a set, since two constants with swapped values match as sets while meaning the opposite.
+
+- **`--disabled-opacity` consolidated from 16 hardcoded literals into one token.**
+
+- **`assert_has_route_away()` — a contract assertion consumers run in their own suite**, in the new public `scitex_ui.testing` module. `standalone_shell.html` renders a route back to the launcher only when the composer supplies one, which is correct — only a mounting platform knows where its launcher lives — but it means an app can mount, supply nothing, carry no navigation, and ship a page a visitor cannot leave. Nothing fails; the page returns 200.
+
+  `shell_context()` cannot detect this: it runs in the VIEW, and the mounted app's content does not merely belong to someone else at that moment — it does not exist yet. A consumer's test is the first place the rendered page exists as a string.
+
+  **The predicate is "an anchor that navigates away", not "an anchor exists".** scitex-hub measured `/apps/cards/` at 6 anchors (navigable) and `/apps/storage/` at 1 (still a dead end), so `count(<a>) >= 1` is GREEN on the exact page this work exists to catch. In-page fragments, empty href, absent href, non-navigating schemes and self-links are all rejected. An earlier design — warn when no launcher was supplied — was killed by scitex-hub using this card's own control: that condition is TRUE for cards, which works fine, so the guard would have cried on a healthy page and been disbelieved on the broken one.
+
+  Empty input raises `ValueError` rather than asserting: "the fixture fetched nothing" and "this page has no way out" are different answers, and collapsing them lets a broken fixture read as a real finding.
+
+- **The TypeScript surface got its first linter, and then something that runs it.** 272 files had no lint at all — `tsc --noEmit` checks types, not unused bindings, no-op expressions, `this` aliasing, or React hook dependencies. Every rule is ON and gates new code; all 166 existing violations are grandfathered per-rule with written reasons, never by a blanket flag. 98 of the 127 `no-explicit-any` sit in five directories wrapping untyped peer dependencies, where `any` is frequently the honest type.
+
+  Five `eslint-disable react-hooks/exhaustive-deps` comments had been INERT for their entire life, and eslint 9 treats a disable naming an unknown rule as an error — so adding config without the plugin turns five dormant comments into five hard failures.
+
+  CI runs it as a separate job, deliberately NOT a required check: a rule set with an exemption list nobody has exercised should be a RECORD before it is a gate. The job asserts its own coverage first, because a flat config that stops matching lints zero files and still exits 0.
+
+- **Every regex detector in the test suite must now carry controls in BOTH directions.** A guard that fires on a real instance but has never been shown to ignore a mention of one is indistinguishable from a guard that fires on everything. The meta-check parametrises over the detectors and fails any that carries only one direction.
+
+- **Two accessibility repairs found by measurement rather than review.** An icon-only button whose entire accessible name was a `data-tooltip` (screen readers announce "button", and the supported-formats list was unreachable), and tooltips that were mouse-only — now reachable by keyboard via `focusin`/`focusout`, with `aria-describedby` treated as a SHARED LIST where each component adds and removes only its own id, so two components describing one control stop overwriting each other.
+
 ## [0.19.1] - 2026-08-23
 
 - **Six `var(--x)` references had no fallback and no definition, so those declarations did nothing at all.** An undefined custom property is invalid at computed-value time, which means the browser discards the declaration rather than falling back to anything — so `.text-accent` set no colour, and the file-tree search box rendered with **no background**. All six are repaired at the CALL SITE rather than exempted, which empties `_KNOWN_BROKEN_IN_ALL` in `test_app_css_tokens_resolve.py` for the first time since that ceiling was created.
