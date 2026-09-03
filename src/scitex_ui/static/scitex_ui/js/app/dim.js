@@ -1,5 +1,32 @@
 /* AUTO-GENERATED from ts/app/dim/index.ts via esbuild — do not edit by hand. Rebuild: npx esbuild ts/app/dim/index.ts --bundle --format=esm --outfile=js/app/dim.js */
 
+// ts/_base/aria-describedby.ts
+var ATTR = "aria-describedby";
+function ids(el) {
+  const raw = el.getAttribute(ATTR);
+  return raw ? raw.split(/\s+/).filter(Boolean) : [];
+}
+function write(el, list) {
+  if (list.length === 0) {
+    el.removeAttribute(ATTR);
+    return;
+  }
+  el.setAttribute(ATTR, list.join(" "));
+}
+function addDescribedBy(el, id, position = "last") {
+  const list = ids(el);
+  if (list.includes(id)) return;
+  write(el, position === "first" ? [id, ...list] : [...list, id]);
+}
+function removeDescribedBy(el, id) {
+  const list = ids(el);
+  if (!list.includes(id)) return;
+  write(
+    el,
+    list.filter((each) => each !== id)
+  );
+}
+
 // ts/app/dim/types.ts
 var ALLOWED = "allowed";
 var DENIED = "denied";
@@ -48,9 +75,7 @@ function clear(el) {
   el.removeAttribute("data-tooltip");
   const node = reasonNodes.get(el);
   if (node) {
-    if (el.getAttribute("aria-describedby") === node.id) {
-      el.removeAttribute("aria-describedby");
-    }
+    removeDescribedBy(el, node.id);
     node.remove();
     reasonNodes.delete(el);
   }
@@ -77,7 +102,7 @@ function applyVerdict(el, verdict, config = {}) {
   el.setAttribute("data-tooltip", reason);
   const node = reasonNodeFor(el);
   node.textContent = reason;
-  el.setAttribute("aria-describedby", node.id);
+  addDescribedBy(el, node.id, "first");
   const route = routeFor(verdict);
   if (route === null) {
     el.classList.remove(CLS_ACTIONABLE);

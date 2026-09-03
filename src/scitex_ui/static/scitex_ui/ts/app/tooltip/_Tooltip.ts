@@ -10,10 +10,22 @@
  *   <button data-tooltip="Delete" data-tooltip-position="top">Del</button>
  */
 
+import { addDescribedBy, removeDescribedBy } from "../../_base/aria-describedby";
 import type { TooltipConfig, TooltipPosition } from "./types";
 
 const CLS = "stx-app-tooltip";
 const MARGIN = 8;
+
+/**
+ * Id of the single shared tooltip node, referenced by the target's
+ * `aria-describedby` while shown.
+ *
+ * ONE node is reused for every target, so only ONE element may reference it at
+ * a time — which is already true, because only one tooltip is ever visible.
+ * hideTooltip() removes the reference before currentTarget is cleared; leaving
+ * it behind would point a still-focused control at a hidden node.
+ */
+const TOOLTIP_ID = "stx-app-tooltip-description";
 
 let tooltipEl: HTMLDivElement | null = null;
 let showTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -23,6 +35,7 @@ function getOrCreateTooltip(): HTMLDivElement {
   if (!tooltipEl) {
     tooltipEl = document.createElement("div");
     tooltipEl.className = CLS;
+    tooltipEl.id = TOOLTIP_ID;
     tooltipEl.setAttribute("role", "tooltip");
     document.body.appendChild(tooltipEl);
   }
@@ -96,6 +109,16 @@ function showTooltip(target: HTMLElement, config: TooltipConfig): void {
 
   currentTarget = target;
 
+  // The ASSISTIVE path. Everything else in this function is the visual one, and
+  // for eighteen months that was all there was: the text lived in a data
+  // attribute nothing exposes, so a screen reader got nothing from a tooltip.
+  //
+  // "last" because a tooltip DESCRIBES. Anything actionable — dim's "Sign in to
+  // use this" — is added "first" by its own component, so the user hears what
+  // they can DO before what the control WOULD do, whichever component ran
+  // first. See _base/aria-describedby.
+  addDescribedBy(target, TOOLTIP_ID, "last");
+
   // Position after content renders
   requestAnimationFrame(() => {
     const rect = target.getBoundingClientRect();
@@ -114,6 +137,15 @@ function hideTooltip(): void {
   if (showTimeout) {
     clearTimeout(showTimeout);
     showTimeout = null;
+  }
+  // Drop the reference BEFORE clearing currentTarget — otherwise the target
+  // keeps pointing at a node that is now hidden, and a still-focused control
+  // describes itself with something nobody can see. Removes ONLY this
+  // component's id: clearing the attribute would silently discard a
+  // description another component owns, and the symptom (one description
+  // instead of two) is invisible to anyone not listening for the missing one.
+  if (currentTarget) {
+    removeDescribedBy(currentTarget, TOOLTIP_ID);
   }
   if (tooltipEl) {
     tooltipEl.style.display = "none";
@@ -143,6 +175,40 @@ export const Tooltip = {
 
     root.addEventListener(
       "mouseleave",
+      (e: Event) => {
+        const target = (e.target as HTMLElement)?.closest?.(
+          config.selector || "[data-tooltip]",
+        );
+        if (target) hideTooltip();
+      },
+      true,
+    );
+
+    // THE KEYBOARD PATH. Without these two, a tooltip reached only a user
+    // holding a mouse: tab to the same control and there was nothing, no
+    // visible tooltip and nothing in the accessibility tree either.
+    //
+    // focusin/focusout rather than focus/blur because those do not BUBBLE, and
+    // this is a single delegated listener on the root — focus/blur here would
+    // simply never fire for a descendant.
+    //
+    // No `delay` on the focus path, deliberately. The hover delay exists to
+    // stop tooltips flickering as the pointer crosses a toolbar; keyboard focus
+    // is a deliberate act with no such sweep, so the delay would only make the
+    // control feel unresponsive to the users who most need the text.
+    root.addEventListener(
+      "focusin",
+      (e: Event) => {
+        const target = (e.target as HTMLElement)?.closest?.(
+          config.selector || "[data-tooltip]",
+        ) as HTMLElement | null;
+        if (target) showTooltip(target, config);
+      },
+      true,
+    );
+
+    root.addEventListener(
+      "focusout",
       (e: Event) => {
         const target = (e.target as HTMLElement)?.closest?.(
           config.selector || "[data-tooltip]",
