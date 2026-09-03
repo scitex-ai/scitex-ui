@@ -193,9 +193,18 @@ jobs:
           # NOTHING here guarantees python3, and a coverage assertion that
           # crashes on a missing interpreter fails the job for a reason that
           # has nothing to do with the code.
-          linted=$(grep -o '"filePath"' lint-report.json | wc -l)
+          #
+          # RESTRICTED TO THE SAME TWO DIRECTORIES `on_disk` counts. Counting
+          # every filePath eslint reported compares two DIFFERENT POPULATIONS:
+          # eslint also lints eslint.config.mjs and anything else its globs
+          # match, so the totals were 272 on disk against 376 linted. That
+          # margin would have absorbed eslint silently dropping an entire
+          # directory — the assertion would still pass, for the wrong reason,
+          # which is precisely the vacuity this step exists to prevent.
+          linted=$(grep -o '"filePath":"[^"]*"' lint-report.json \
+                   | grep -cE 'static/scitex_ui/(ts|react)/' || true)
           rm -f lint-report.json
-          echo "source files on disk: $on_disk / linted by eslint: $linted"
+          echo "source files on disk: $on_disk / linted in those dirs: $linted"
           if [ "$on_disk" -eq 0 ] || [ "$linted" -lt "$on_disk" ]; then
             echo "::error::eslint covered $linted files against $on_disk on disk."
             echo "Fix the \`files\` globs in eslint.config.mjs so every shipped .ts/.tsx is linted."
