@@ -164,6 +164,25 @@ def shell_context(
     composer owns the DESTINATION. A standalone app supplies nothing and
     correctly gets no link, because there is nowhere to go back to.
 
+    **THE SHELL PROVIDES NO ROUTE BACK ON ITS OWN, AND CANNOT CHECK THAT YOU
+    SUPPLIED ONE.** A MOUNTED app that passes no ``launcher`` and carries no
+    navigation of its own ships a page a visitor cannot leave; nothing here
+    fails, and the page returns 200. This function cannot detect it — it runs in
+    the VIEW, and the mounted app's content does not exist yet, so there is
+    nothing to count.
+
+    Assert it in your own suite instead, where the page HAS rendered::
+
+        from scitex_ui.testing import assert_has_route_away
+
+        def test_storage_page_is_escapable(client):
+            page = client.get("/apps/storage/").content.decode()
+            assert_has_route_away(page, current_path="/apps/storage/")
+
+    Note it checks for a route that LEAVES, not for the presence of an ``<a>``:
+    scitex-hub measured ``/apps/storage/`` with one anchor that went nowhere, so
+    an anchor count reads that dead end as healthy.
+
     Raised by scitex-hub 2026-08-19 after measuring live prod at 390x844:
     ``/apps/storage/`` had ZERO anchor elements — nothing on the page a visitor
     could click to leave. Their control settles that it is this shell's defect
