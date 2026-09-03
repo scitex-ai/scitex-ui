@@ -301,12 +301,61 @@ def test_the_reason_is_exposed_via_aria_describedby() -> None:
     source = _dim_src()
 
     # Act
-    present = 'setAttribute("aria-describedby"' in source
+    present = 'addDescribedBy(el, node.id, "first")' in source
 
     # Assert
     assert present, (
-        "_Dim.ts no longer points aria-describedby at its reason node, so the "
-        "control announces as unavailable with no stated reason."
+        "_Dim.ts no longer adds its reason node to aria-describedby, so the "
+        "control announces as unavailable with no stated reason.\n"
+        "NOTE it must ADD to the list, never setAttribute: aria-describedby "
+        "holds several ids and app/tooltip writes its own. Assigning would "
+        "silently discard the other description — and Chrome computes a "
+        "healthy-looking result either way, so nothing would show it."
+    )
+
+
+def test_dim_never_assigns_the_describedby_attribute_wholesale() -> None:
+    """Assigning would discard a description another component owns.
+
+    `aria-describedby` is a LIST. dim was the only writer until app/tooltip
+    began adding its own id, at which point `setAttribute` became a silent
+    overwrite — and a silent one specifically, because the computed description
+    still resolves cleanly from whatever survives.
+    """
+    # Arrange
+    source = _dim_src()
+
+    # Act
+    offender = 'setAttribute("aria-describedby"' in source
+
+    # Assert
+    assert not offender, (
+        "_Dim.ts assigns aria-describedby wholesale. Use addDescribedBy / "
+        "removeDescribedBy from _base/aria-describedby, which add and remove "
+        "only this component's id and leave every other description intact."
+    )
+
+
+def test_dim_adds_its_reason_first_in_the_description_order() -> None:
+    """The denial must be announced before the description.
+
+    Readers announce the list in IDREF order (measured in Chrome 151), so a
+    reason added "last" would tell the user what the control does and only
+    belatedly that they cannot use it — which removes the information that
+    would make someone decide signing in is worth it.
+    """
+    # Arrange
+    source = _dim_src()
+
+    # Act
+    first = '"first"' in source
+
+    # Assert
+    assert first, (
+        "_Dim.ts no longer adds its reason at position 'first'. A denial is "
+        "ACTIONABLE and a tooltip merely DESCRIBES; the actionable sentence "
+        "has to arrive first, and neither component controls which of them "
+        "runs first, so the position argument is what guarantees the order."
     )
 
 

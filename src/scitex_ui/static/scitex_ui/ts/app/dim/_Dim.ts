@@ -26,6 +26,7 @@
  * difference between them.
  */
 
+import { addDescribedBy, removeDescribedBy } from "../../_base/aria-describedby";
 import {
   ALLOWED,
   DENIED,
@@ -105,9 +106,17 @@ function clear(el: HTMLElement): void {
 
   const node = reasonNodes.get(el);
   if (node) {
-    if (el.getAttribute("aria-describedby") === node.id) {
-      el.removeAttribute("aria-describedby");
-    }
+    // Remove ONLY this component's id. The previous version compared the whole
+    // attribute to our id and cleared it on a match — correct while dim was the
+    // only writer, and wrong the moment app/tooltip began adding its own, since
+    // a control described by both would fail that equality check and keep a
+    // reference to a node about to be removed.
+    //
+    // A dangling reference is the silent case: Chrome computes the description
+    // cleanly from whatever survives, with no marker that an id went missing
+    // (measured by scitex-app, 2026-09-03). So this cannot be caught by
+    // inspecting the computed description — only by asserting on the id list.
+    removeDescribedBy(el, node.id);
     node.remove();
     reasonNodes.delete(el);
   }
@@ -166,7 +175,14 @@ export function applyVerdict(
 
   const node = reasonNodeFor(el);
   node.textContent = reason;
-  el.setAttribute("aria-describedby", node.id);
+
+  // "first" because a denial reason is ACTIONABLE and a tooltip merely
+  // DESCRIBES. Screen readers announce the list in IDREF order (measured in
+  // Chrome 151), so this puts "Sign in to use this." ahead of "Exports the
+  // current figure." — the user learns what they can DO before what the control
+  // WOULD do. Position rather than plain append, because neither component can
+  // control which of them runs first.
+  addDescribedBy(el, node.id, "first");
 
   const route = routeFor(verdict);
   if (route === null) {

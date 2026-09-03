@@ -1,8 +1,36 @@
 /* AUTO-GENERATED from ts/app/tooltip/index.ts via esbuild — do not edit by hand. Rebuild: npx esbuild ts/app/tooltip/index.ts --bundle --format=esm --outfile=js/app/tooltip.js */
 
+// ts/_base/aria-describedby.ts
+var ATTR = "aria-describedby";
+function ids(el) {
+  const raw = el.getAttribute(ATTR);
+  return raw ? raw.split(/\s+/).filter(Boolean) : [];
+}
+function write(el, list) {
+  if (list.length === 0) {
+    el.removeAttribute(ATTR);
+    return;
+  }
+  el.setAttribute(ATTR, list.join(" "));
+}
+function addDescribedBy(el, id, position = "last") {
+  const list = ids(el);
+  if (list.includes(id)) return;
+  write(el, position === "first" ? [id, ...list] : [...list, id]);
+}
+function removeDescribedBy(el, id) {
+  const list = ids(el);
+  if (!list.includes(id)) return;
+  write(
+    el,
+    list.filter((each) => each !== id)
+  );
+}
+
 // ts/app/tooltip/_Tooltip.ts
 var CLS = "stx-app-tooltip";
 var MARGIN = 8;
+var TOOLTIP_ID = "stx-app-tooltip-description";
 var tooltipEl = null;
 var showTimeout = null;
 var currentTarget = null;
@@ -10,6 +38,7 @@ function getOrCreateTooltip() {
   if (!tooltipEl) {
     tooltipEl = document.createElement("div");
     tooltipEl.className = CLS;
+    tooltipEl.id = TOOLTIP_ID;
     tooltipEl.setAttribute("role", "tooltip");
     document.body.appendChild(tooltipEl);
   }
@@ -62,6 +91,7 @@ function showTooltip(target, config) {
   tip.style.display = "block";
   tip.style.opacity = "0";
   currentTarget = target;
+  addDescribedBy(target, TOOLTIP_ID, "last");
   requestAnimationFrame(() => {
     const rect = target.getBoundingClientRect();
     const preferred = target.getAttribute("data-tooltip-position") || config.position || "auto";
@@ -75,6 +105,9 @@ function hideTooltip() {
   if (showTimeout) {
     clearTimeout(showTimeout);
     showTimeout = null;
+  }
+  if (currentTarget) {
+    removeDescribedBy(currentTarget, TOOLTIP_ID);
   }
   if (tooltipEl) {
     tooltipEl.style.display = "none";
@@ -100,6 +133,26 @@ var Tooltip = {
     );
     root.addEventListener(
       "mouseleave",
+      (e) => {
+        const target = e.target?.closest?.(
+          config.selector || "[data-tooltip]"
+        );
+        if (target) hideTooltip();
+      },
+      true
+    );
+    root.addEventListener(
+      "focusin",
+      (e) => {
+        const target = e.target?.closest?.(
+          config.selector || "[data-tooltip]"
+        );
+        if (target) showTooltip(target, config);
+      },
+      true
+    );
+    root.addEventListener(
+      "focusout",
       (e) => {
         const target = e.target?.closest?.(
           config.selector || "[data-tooltip]"
