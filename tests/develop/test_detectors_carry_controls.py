@@ -115,6 +115,20 @@ _EXEMPT: dict[tuple[str, str], str] = {
     ("test_primitives_define_each_token_once.py", "_CSS_COMMENT"): (
         "comment stripper; same shape"
     ),
+    # Unlike its neighbours, this one HAS both controls the comment above says
+    # are the meaningful ones — test_comment_pattern_matches_a_real_comment and
+    # test_comment_stripper_does_not_eat_code, both against literals. They are
+    # invisible to this checker because a stripper is exercised through
+    # `.sub()`, which returns a string rather than a match, so it is absent from
+    # _MATCH_METHODS by design. The exemption records a gap in the CHECKER, not
+    # a missing control in the subject; widening _MATCH_METHODS to credit
+    # `.sub()` needs its own change, since "did the resulting STRING keep the
+    # code" is a different analysis from "did the pattern match".
+    ("test_effects_utilities_add_only_new_tokens.py", "_CSS_COMMENT"): (
+        "comment stripper; controls exist as .sub() string assertions, which "
+        "this checker cannot see — see scitex-ui-meta-guard-cannot-credit-"
+        "sub-shaped-controls-20260904"
+    ),
     ("test_shell_layout_classes_have_writers.py", "_CSS_COMMENT"): (
         "comment stripper; same shape"
     ),
