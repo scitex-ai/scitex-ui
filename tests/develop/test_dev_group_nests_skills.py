@@ -38,16 +38,89 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 
 import pytest
 from click.testing import CliRunner
+from packaging.version import Version
 
 from scitex_ui._cli import main
+from scitex_ui._dev_group import REMOVED_IN
 
 #: Version the legacy spelling stops working. A compatibility window with no
 #: closing date is the gate-that-cannot-fail in another costume (constitution
 #: §5), so the removal version is written down and asserted.
-REMOVED_IN = "0.20.0"
+#:
+#: IT USED TO BE RE-DECLARED HERE AS A LITERAL, and that is half of why the
+#: window expired unnoticed: the value lived in three hand-written places (this
+#: constant, the alias attribute, and the prose inside the alias's help text)
+#: with nothing holding them in agreement. Imported now, so the test cannot
+#: drift from the thing it tests.
+
+_PKG_ROOT = pathlib.Path(__file__).resolve().parents[2]
+_PYPROJECT = _PKG_ROOT / "pyproject.toml"
+
+
+@pytest.fixture
+def shipped_version() -> str:
+    """The released version, read from the file the release ritual bumps."""
+    if not _PYPROJECT.is_file():
+        pytest.skip(f"no pyproject.toml at {_PYPROJECT} (installed layout)")
+    match = re.search(
+        r'^version\s*=\s*"([^"]+)"', _PYPROJECT.read_text(), flags=re.MULTILINE
+    )
+    assert match, "pyproject.toml declares no top-level version"
+    return match.group(1)
+
+
+def test_probe_reads_a_plausible_shipped_version(shipped_version: str) -> None:
+    """POSITIVE CONTROL: a misread version makes the expiry check vacuous.
+
+    If the regex stopped matching and this returned something like `0.0.0`, the
+    guard below would pass forever no matter how stale the window got — the
+    exact shape of failure it exists to catch.
+    """
+    # Arrange
+    parsed = Version(shipped_version)
+    # Act
+    plausible = parsed > Version("0.0.0")
+    # Assert
+    assert plausible, f"read an implausible shipped version: {shipped_version!r}"
+
+
+def test_the_removal_version_has_not_already_passed(shipped_version: str) -> None:
+    """The stated removal version must still be in the FUTURE.
+
+    THIS IS THE GUARD THAT WAS MISSING, and its absence shipped a false
+    statement to every user of 0.20.0. `_removed_in` said "0.20.0" while
+    pyproject said "0.20.0", so `scitex-ui skills` told people the spelling
+    "is removed in scitex-ui 0.20.0" — on 0.20.0, where it worked fine.
+
+    The pre-existing check asserted the warning CONTAINS the version string. A
+    message can contain a version and still be false; containment is not
+    validity. That is the same defect as a guard counting occurrences when the
+    bug is placement, and it is why this file's own §5 comment about
+    gate-that-cannot-fail did not save it: the rule was quoted correctly and
+    then enforced by a check that could not fail.
+
+    IF YOU ARE HERE BECAUSE THIS WENT RED, do not reflexively bump
+    `REMOVED_IN`. Bumping is a treadmill unless the §1a/§13 collision at the
+    top of this file has actually been resolved — §1a requires `<cli> skills`
+    to EXIST while `_skills/` ships, so the spelling may never be removable,
+    which would make "removed in X" false in principle rather than early.
+    Decide that, then set the value.
+    """
+    # Arrange
+    stated, shipped = Version(REMOVED_IN), Version(shipped_version)
+    # Act
+    still_future = stated > shipped
+    # Assert
+    assert still_future, (
+        f"the deprecation window has expired: it promises removal in "
+        f"{REMOVED_IN} but {shipped_version} is already shipped, so the "
+        f"warning users see is false. Resolve the §1a/§13 question and set a "
+        f"real date — do not simply bump the number."
+    )
 
 
 @pytest.fixture
