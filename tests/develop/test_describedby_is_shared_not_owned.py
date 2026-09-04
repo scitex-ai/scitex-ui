@@ -56,6 +56,42 @@ _ASSIGNS = re.compile(r'setAttribute\(\s*["\']aria-describedby["\']')
 #: `removeAttribute("aria-describedby")` — clearing, which discards just as much.
 _CLEARS = re.compile(r'removeAttribute\(\s*["\']aria-describedby["\']')
 
+#: `= "aria-describedby"` — BINDING the literal to a name.
+#:
+#: WHY THIS EXISTS: `_ASSIGNS` and `_CLEARS` are anchored on the LITERAL inside
+#: the call, which is deliberate — it is what lets the helper assign through its
+#: own `ATTR` constant without tripping its own guard. scitex-app read that,
+#: confirmed the design is right, and then named the gap it leaves:
+#:
+#:     const A = "aria-describedby";
+#:     el.setAttribute(A, ...);        <- invisible to _ASSIGNS
+#:
+#: A component that declares its OWN constant evades the literal anchor and can
+#: clobber the shared list. Measured 2026-09-04: no file does this today, and
+#: `setAttribute(CONST, ...)` has exactly two sites in ts/ — the helper (correct)
+#: and `_Dim.ts:196` writing a DIFFERENT attribute through `ATTR_SIGN_IN_URL`.
+#: So the evading SHAPE is already idiomatic inside a guarded file. Proximity,
+#: not abuse — which is the argument for closing it while it is still cheap.
+#:
+#: THE ANCHOR IS THE ASSIGNMENT, NOT THE MENTION, and that is what makes this
+#: affordable. scitex-app first proposed asserting ZERO literal occurrences
+#: inside _WRITERS and measured it failing on arrival — `_Dim.ts` has 4 and
+#: `_Tooltip.ts` 3, every one legitimate (the import path, and prose). Excluding
+#: those needs comment-stripping and import-anchoring, i.e. re-importing the
+#: hardest problem in this repo's guards to close a narrow gap.
+#:
+#: Requiring `=` before the string sidesteps all of it:
+#:     from "../../_base/aria-describedby"    no `=`  -> ignored
+#:     // aria-describedby is the a11y path   no `=`  -> ignored
+#:     const A = "aria-describedby";                  -> MATCHED
+#:
+#: WHAT IT DOES NOT CATCH, stated so a pass is not read as more than it is:
+#: deliberate construction (`"aria-" + "describedby"`, a template literal, a
+#: computed key). This raises the floor against the ACCIDENTAL path — someone
+#: reaching for setAttribute naturally — and does not claim to defeat a
+#: determined bypass. A guard that claimed the latter would be lying.
+_BINDS = re.compile(r'=\s*["\']aria-describedby["\']')
+
 #: The shared helpers every writer must go through.
 #:
 #: THE TRAILING PAREN IS LOad-BEARING and was added because a probe caught its
@@ -356,4 +392,111 @@ def test_the_clear_pattern_ignores_a_different_attribute() -> None:
     assert matched is None, (
         "_CLEARS matched the removal of an unrelated attribute, so it would "
         "forbid the ordinary teardown both components must perform."
+    )
+
+
+def test_the_bind_pattern_matches_a_private_constant() -> None:
+    """POSITIVE CONTROL: the exact evasion scitex-app named must be caught.
+
+    Without this, an over-tightened pattern reports a clean tree forever while
+    the hole it was written for stays open.
+    """
+    # Arrange
+    sample = 'const A = "aria-describedby";'
+
+    # Act
+    matched = _BINDS.search(sample)
+
+    # Assert
+    assert matched is not None, (
+        "_BINDS missed a private constant binding the attribute name, which is "
+        "the one thing it exists to catch."
+    )
+
+
+def test_the_bind_pattern_ignores_the_import_path() -> None:
+    """NEGATIVE CONTROL: the module path is not a binding.
+
+    Every writer imports from `_base/aria-describedby`, so a pattern that fired
+    on the path would flag correct code in every file it guards — which is
+    precisely how the zero-occurrences proposal died.
+    """
+    # Arrange
+    sample = 'import { addDescribedBy } from "../../_base/aria-describedby";'
+
+    # Act
+    matched = _BINDS.search(sample)
+
+    # Assert
+    assert matched is None, (
+        f"_BINDS matched an import path: {sample!r}. Every guarded file "
+        "contains one, so this would be a permanent false positive."
+    )
+
+
+def test_the_bind_pattern_ignores_prose() -> None:
+    """NEGATIVE CONTROL: a comment naming the attribute is not a binding.
+
+    This file's own docstring names it many times. A detector that ate its own
+    documentation would be unusable.
+    """
+    # Arrange
+    sample = "// aria-describedby holds a space-separated list of ids"
+
+    # Act
+    matched = _BINDS.search(sample)
+
+    # Assert
+    assert matched is None, (
+        f"_BINDS matched prose: {sample!r}. Mentioning the attribute must "
+        "never be an offence; only binding it to a name is."
+    )
+
+
+def test_only_the_helper_binds_the_attribute_name() -> None:
+    """No component may declare its own constant for the shared attribute.
+
+    The helper binds it once, at `_base/aria-describedby.ts`, and that single
+    binding is what makes the helper the only writer. A component with its own
+    constant can call `setAttribute` through it and clobber the shared list
+    without tripping `_ASSIGNS`, which anchors on the literal.
+    """
+    # Arrange
+    offenders = sorted(
+        str(path.relative_to(_TS))
+        for path in _TS.rglob("*.ts")
+        if path != _HELPER and _BINDS.search(path.read_text())
+    )
+
+    # Act
+    guilty = offenders
+
+    # Assert
+    assert not guilty, (
+        "These modules bind the literal \"aria-describedby\" to a name of their "
+        f"own: {', '.join(guilty)}. A private constant evades _ASSIGNS and lets "
+        "the module assign the attribute directly, discarding every other "
+        "component's description id. Import addDescribedBy/removeDescribedBy "
+        "from _base/aria-describedby instead — it owns the only binding."
+    )
+
+
+def test_the_helper_still_binds_it() -> None:
+    """Anti-vacuity: the guard above is meaningless if nothing binds it at all.
+
+    If the helper stopped declaring the constant — renamed, inlined, moved —
+    `test_only_the_helper_binds_the_attribute_name` would pass over an empty
+    world and report a clean tree while the shared-writer design had dissolved.
+    """
+    # Arrange
+    source = _HELPER.read_text()
+
+    # Act
+    matched = _BINDS.search(source)
+
+    # Assert
+    assert matched is not None, (
+        f"{_HELPER.name} no longer binds \"aria-describedby\" to a name. Either "
+        "it was renamed or the helper stopped owning the attribute, and the "
+        "sole-binding guard is now asserting nothing."
     )
