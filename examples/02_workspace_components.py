@@ -7,7 +7,7 @@ Usage:
 
 from pathlib import Path
 
-import scitex as stx
+import scitex_session as stx
 
 import scitex_ui
 
@@ -21,8 +21,8 @@ WORKSPACE_COMPONENTS = [
 
 @stx.session
 def main(
-    CONFIG=stx.session.INJECTED,
-    logger=stx.session.INJECTED,
+    CONFIG=stx.INJECTED,
+    logger=stx.INJECTED,
 ) -> int:
     """Inspect the workspace frame component subset and persist a summary."""
     OUT = Path(CONFIG.SDIR_RUN)
