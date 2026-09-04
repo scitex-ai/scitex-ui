@@ -43,7 +43,7 @@ concurrency:
 jobs:
   typecheck:
     name: typecheck
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-org-cpu"]') }}
     timeout-minutes: 15
     steps:
       # FORK GUARD — MUST BE THE FIRST STEP, AHEAD OF actions/checkout, which is
@@ -137,7 +137,7 @@ jobs:
   # ==========================================================================
   lint:
     name: lint
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-org-cpu"]') }}
     timeout-minutes: 10
     steps:
       # FORK GUARD — MUST BE FIRST, ahead of actions/checkout, for the same

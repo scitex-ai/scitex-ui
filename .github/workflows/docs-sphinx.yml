@@ -46,7 +46,7 @@ jobs:
     # never runs. A variable does not make that impossible, so whoever sets
     # CI_RUNS_ON owns checking the label has live runners. That check now
     # happens ONCE, for the repo, instead of once per file someone remembers.
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-org-cpu"]') }}
     permissions:
       contents: write
     steps:
