@@ -24,23 +24,37 @@ EXAMPLES = sorted(Path(__file__).resolve().parents[2].joinpath("examples").glob(
 def _scitex_session_works() -> bool:
     """Return True iff a no-op `@stx.session` runs end-to-end.
 
-    `import scitex` alone isn't enough — the session lifecycle pulls in
+    Importing the package alone isn't enough — the session lifecycle pulls in
     `scitex_repro.RandomStateManager`, which probes optional ML libs
     (tensorflow / jax). In environments where those libs are partially
     installed but broken (protobuf version skew, jax circular imports),
     every `@stx.session` example would fail for reasons unrelated to
     scitex-ui. Skip in that case so the smoke test doesn't mask its
     own real signal.
+
+    THIS PROBE USED TO IMPORT THE UMBRELLA, AND THAT MADE IT USELESS — measured
+    2026-09-04. It ran `import scitex as stx`, so in a normal agent container
+    (where the umbrella is deliberately absent) it returned False, and the
+    caller then reported "the session framework is unavailable here".
+
+    The session framework was NOT unavailable. `scitex_session` was installed
+    and working the whole time; only the umbrella was missing. Meanwhile
+    `01_list_components.py` and `02_workspace_components.py` were themselves
+    failing because THEY imported the umbrella — a scitex-ui defect. So this
+    probe shared the exact defect it was supposed to control for, agreed with
+    it, and certified our bug as somebody else's environment problem. A control
+    that fails the same way as its subject confirms nothing.
+
+    It now probes what the examples actually use.
     """
     r = subprocess.run(
         [
             sys.executable,
             "-c",
             (
-                "import scitex as stx\n"
+                "import scitex_session as stx\n"
                 "@stx.session\n"
-                "def main(CONFIG=stx.session.INJECTED, "
-                "logger=stx.session.INJECTED):\n"
+                "def main(CONFIG=stx.INJECTED, logger=stx.INJECTED):\n"
                 "    return 0\n"
                 "main()\n"
             ),
@@ -65,14 +79,23 @@ def test_examples_directory_is_non_empty():
 #: framework", not "this example is broken". Kept NARROW and named: anything
 #: outside this set is a real failure and is reported as one.
 #:
-#: Two distinct causes, both legitimate and both unrelated to scitex-ui:
-#:   - the umbrella is simply absent (a normal agent container; installing it
-#:     is actively harmful, since it pins siblings with `==` and downgrades
-#:     scitex-ui out from under you)
-#:   - the umbrella is present but its ML stack is broken (protobuf skew, jax
-#:     circular imports), which is the case the original author guarded for
+#: The one legitimate cause left: the session framework is present but its ML
+#: stack is broken (protobuf skew, jax circular imports), which is the case the
+#: original author guarded for.
+#:
+#: `"No module named 'scitex'"` WAS IN THIS SET AND HAD TO COME OUT — measured
+#: 2026-09-04. It was listed on the reasoning that the umbrella is deliberately
+#: absent from a normal agent container, which is true, and that its absence is
+#: therefore unrelated to scitex-ui, which is NOT. An example that cannot run
+#: without the umbrella is an example with the wrong dependency, and that is our
+#: defect to fix, not the environment's to supply. Keeping the string here made
+#: exactly that defect unreportable: `01_list_components.py` and
+#: `02_workspace_components.py` imported the umbrella, failed, matched this
+#: entry, and were skipped — for as long as it took someone to run them by hand.
+#:
+#: An example that genuinely wants the umbrella guards the import (see
+#: `03_self_explanatory_demo.py`) and does not fail this way at all.
 _UNRELATED_ENV_FAILURE = (
-    "No module named 'scitex'",
     "scitex_repro",
     "tensorflow",
     "jax",
