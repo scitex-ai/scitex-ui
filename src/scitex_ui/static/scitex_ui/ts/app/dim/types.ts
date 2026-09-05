@@ -22,18 +22,55 @@
  * breakage would appear here, but the cause is there, so a check nearest the
  * rename prevents rather than detects. Their caveat, recorded because it is
  * load-bearing: that leg is currently a RECORD, not a required context.
+ *
+ * EACH KIND RECORDS THE RELEASE IT FIRST SHIPPED IN, and that is not
+ * decoration. A consumer comparing its own kind set against this file cannot
+ * otherwise tell two different situations apart:
+ *
+ *     installed scitex-ui predates the kind   the contract cannot be evaluated
+ *     installed scitex-ui postdates it        the contract is VIOLATED
+ *
+ * Without the version those collapse into one red, and the honest answer to the
+ * first is "unknown" rather than "no" — the three-valued rule, applied to a
+ * cross-package check. scitex-app hit exactly this on 2026-09-05: their CI
+ * installs scitex-ui unpinned, so a propagation-window install of an older
+ * wheel reported a contract violation that was true of the installation and
+ * false of the contract.
+ *
+ * These are HISTORICAL facts, which is why they are safe to write here when a
+ * claim about scitex-app's current implementation would not be. "unresolved
+ * ships from 0.20.2" cannot stop being true; "scitex-app parses this union"
+ * stops being true the day they change it, silently, with nothing to catch it.
+ * Measured from the published wheels rather than recalled — 0.19.1 has no
+ * types.ts at all, 0.20.0 and 0.20.1 carry four kinds, 0.20.2 carries five.
  */
 
-/** Permitted. The only kind that is not a denial. */
+/**
+ * Permitted. The only kind that is not a denial.
+ *
+ * Ships from scitex-ui 0.20.0.
+ */
 export const ALLOWED = "allowed";
 
-/** Refused, with no further recourse to offer. */
+/**
+ * Refused, with no further recourse to offer.
+ *
+ * Ships from scitex-ui 0.20.0.
+ */
 export const DENIED = "denied";
 
-/** Refused because nobody is signed in. Carries a route. */
+/**
+ * Refused because nobody is signed in. Carries a route.
+ *
+ * Ships from scitex-ui 0.20.0.
+ */
 export const DENIED_NOT_SIGNED_IN = "denied-because-not-signed-in";
 
-/** Refused because the signed-in account lacks the entitlement. */
+/**
+ * Refused because the signed-in account lacks the entitlement.
+ *
+ * Ships from scitex-ui 0.20.0.
+ */
 export const DENIED_NOT_ENTITLED = "denied-because-not-entitled";
 
 /**
@@ -53,6 +90,8 @@ export const DENIED_NOT_ENTITLED = "denied-because-not-entitled";
  *
  * ONE kind, not one per axis. Per-axis variants would multiply with every new
  * axis and leak which axis failed, which is system-internal structure.
+ *
+ * Ships from scitex-ui 0.20.2.
  */
 export const UNRESOLVED = "unresolved";
 
