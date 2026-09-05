@@ -7,6 +7,24 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.20.2] - 2026-09-05
+
+- **FIX: a path quoted inside a CSS comment is a live reference to Django, and 0.20.1 shipped one.** `css/utils/effects.css` opened with a comment quoting the at-import line scitex-hub's `variables.css` carries. Quoting it verbatim was deliberate — an explanation that matches the real thing character-for-character is easier to trust — and it sat inside `/* … */`, so it looked inert. Django's staticfiles post-processor rewrites asset references BY REGEX, and below 6.1 it does not know what a comment is: it reads the quoted path as live, fails to resolve `utils/../utilities/effects.css`, and fails `collectstatic` for the entire consuming project. Every open scitex-hub PR went red on `MissingFileError`, gating a production rebuild.
+
+  The boundary was measured from both sides, because one side alone would have been a guess: Django 6.1.1 HAS `_css_ignored_re` and does NOT reproduce it; Django 6.0.8, which hub's CI resolves to, lacks it and does. The failure needs both halves — a quoted path here and a pre-6.1 reader there. Upgrading Django is an independent second remedy; this package cannot choose its consumers' Django version, so the line was fixed here regardless.
+
+  The comment is now prose. The new guard, `test_shipped_css_references_all_resolve.py`, is **deliberately comment-blind**: it scans the raw bytes of every shipped stylesheet with Django's own two CSS patterns, copied verbatim rather than paraphrased. Matching 6.1.1's comment-awareness would have left it green on precisely the file that broke hub, so it is stricter than any single reader — the only setting that is safe for all of them. Verified in both directions: green on the fixed tree, and RED on the restored 0.20.1 bytes, naming `utils/effects.css:11`.
+
+  **The guard that existed did not fail; it was pointed elsewhere.** `test_no_import_points_at_a_missing_file` is named for exactly this failure, but its scope is the two generated bundles and their comment-stripped imports — `utils/effects.css` is not a bundle, so it was never in view. A green run from it said nothing at all about this file, which is worse than a weak check, because it read as coverage.
+
+- **A fifth authorization verdict kind, `unresolved`.** Authorization could not be DETERMINED — resolution was attempted and failed. Distinct from `denied` in the way that matters to a person: `denied` is an answer, this is the absence of one. Collapsing it into `denied` would tell a user "no" when the truth is "we could not ask"; collapsing it into `allowed` would open a control on a permission nobody verified.
+
+  It carries NO PAYLOAD, by agreement with scitex-app: a failure reason ("timeout", "5xx") discloses service availability the way an axis name discloses gate structure. `routeFor` returns null because there is nothing to route TO, and the control renders inert. The default reason string names no cause for the same reason — a wording that names today's single cause becomes silently false the moment a second cause appears. Consumers holding real context may override it via `labels`.
+
+  Added only because a concrete case demanded it — the tri-state resolve in scitex-app's A/B decomposition, where an ATTEMPTED-AND-FAILED resolution has no true member among the previous four — not because a fifth kind seemed tidy. Both guards fired as designed: `assertNever` refused to compile until `reasonTextFor` handled the case, and the union-size test went red having predicted this exact event in its own docstring.
+
+- The comment counting the kind strings no longer states a count. It said "THE FOUR" and went stale on the very first addition, silently. The number now lives only in the test that asserts it, where growing the union turns it red instead of leaving a comment quietly lying to the next reader.
+
 ## [0.20.1] - 2026-09-04
 
 - **`--border-width: 1px`, in the new `css/utils/effects.css`.** Cut as a PATCH on scitex-hub's signal: their production runs an editable clone of `develop`, so they already had this — but their CI installs from PyPI, and a test of theirs references the token. Released so that reference resolves, not because six PRs had accumulated.
