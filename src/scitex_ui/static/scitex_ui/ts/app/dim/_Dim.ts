@@ -26,12 +26,16 @@
  * difference between them.
  */
 
-import { addDescribedBy, removeDescribedBy } from "../../_base/aria-describedby";
+import {
+  addDescribedBy,
+  removeDescribedBy,
+} from "../../_base/aria-describedby";
 import {
   ALLOWED,
   DENIED,
   DENIED_NOT_ENTITLED,
   DENIED_NOT_SIGNED_IN,
+  UNRESOLVED,
 } from "./types";
 import type { DimConfig, DimLabels, Verdict } from "./types";
 
@@ -46,6 +50,9 @@ const DEFAULT_LABELS: DimLabels = {
   denied: "Not available.",
   deniedNotSignedIn: "Sign in to use this.",
   deniedNotEntitled: "Requires {entitlement}.",
+  // Says the ANSWER is missing, not that the answer is no, and names no cause.
+  // "Could not check" invites a retry; "Not available" ends the interaction.
+  unresolved: "Could not check availability right now.",
 };
 
 let seq = 0;
@@ -70,10 +77,19 @@ function reasonTextFor(verdict: Verdict, labels: DimLabels): string | null {
         "{entitlement}",
         verdict.entitlement,
       );
+    case UNRESOLVED:
+      // The answer is MISSING, not negative. Falling through to `denied` here
+      // would be the two-valued collapse this component exists to refuse: it
+      // would tell a user "no" when the truth is "we could not ask".
+      return labels.unresolved;
     default:
       // Unreachable while the union is exhaustive. It is written as an
-      // assignment to `never` rather than a thrown error so that a FIFTH KIND
+      // assignment to `never` rather than a thrown error so that a SIXTH KIND
       // added upstream fails at COMPILE time here, not at runtime on a page.
+      //
+      // It did its job on 2026-09-05: adding `unresolved` to the union broke
+      // this compile until the case above existed, which is the entire reason
+      // the default is written this way rather than as a thrown Error.
       return assertNever(verdict);
   }
 }
@@ -93,6 +109,13 @@ function assertNever(value: never): never {
  * upgrade surface it arrives as an `upgrade_url` PAYLOAD on the not-entitled
  * kind rather than as a fifth kind, so this function grows a case and the
  * switch above is untouched.
+ *
+ * `unresolved` returns null for a DIFFERENT reason, worth separating because the
+ * two look identical here. Not-entitled has no route because we do not yet know
+ * whether a destination exists. Unresolved has no route because there is nothing
+ * to route TO: the failure is that authorization could not be determined, and no
+ * URL fixes that from the user's side. It renders inert and offers nothing,
+ * which is the honest shape of "we could not ask".
  */
 function routeFor(verdict: Verdict): string | null {
   return verdict.kind === DENIED_NOT_SIGNED_IN ? verdict.sign_in_url : null;
