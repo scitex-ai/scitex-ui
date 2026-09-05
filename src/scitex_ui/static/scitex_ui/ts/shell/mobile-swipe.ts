@@ -157,7 +157,7 @@ let vResNextStartH = 0;
 
 function findPaneWrapper(el: HTMLElement): HTMLElement | null {
   return el.closest<HTMLElement>(
-    ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane, .ws-module-pane",
+    ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-module-pane",
   );
 }
 
@@ -176,7 +176,6 @@ function findAdjacentPanes(
     el.classList.contains("ws-ai-pane") ||
     el.classList.contains("ws-worktree-pane") ||
     el.classList.contains("ws-viewer-pane") ||
-    el.classList.contains("ws-apps-pane") ||
     el.classList.contains("ws-module-pane");
 
   let prevPane = pane.previousElementSibling as HTMLElement | null;
@@ -319,7 +318,7 @@ function enableMobile(): void {
   // Pane wrappers get inline flex/height from mobile drag — clear on re-init.
   // Do NOT touch sidebar inline styles — desktop resizer depends on them.
   const paneSelectors =
-    ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane, .ws-module-pane";
+    ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-module-pane";
   container.querySelectorAll<HTMLElement>(paneSelectors).forEach((pane) => {
     pane.style.removeProperty("flex");
     pane.style.removeProperty("height");
@@ -402,7 +401,7 @@ function disableMobile(): void {
 
   // Clear mobile inline styles from pane wrappers
   const paneSelectors =
-    ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-apps-pane, .ws-module-pane";
+    ".ws-ai-pane, .ws-worktree-pane, .ws-viewer-pane, .ws-module-pane";
   container.querySelectorAll<HTMLElement>(paneSelectors).forEach((pane) => {
     pane.style.removeProperty("flex");
     pane.style.removeProperty("height");

@@ -74,17 +74,16 @@ and the deletion audit differ only in which way you point it.
 
 from __future__ import annotations
 
-import pathlib
 import re
 
 import pytest
 
-import scitex_ui
+from tests._checkout import static_dir, templates_dir
 
-_STATIC = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui"
+_STATIC = static_dir()
 _SHELL_TS = _STATIC / "ts" / "shell"
 _JS_SHELL = _STATIC / "js" / "shell"
-_TEMPLATES = pathlib.Path(scitex_ui.__file__).parent / "templates"
+_TEMPLATES = templates_dir()
 
 # Structural, not orphans: the barrel itself and its type-only companion.
 _NOT_MODULES = {"index.ts", "types.ts"}
@@ -175,6 +174,42 @@ class TestShellModulesAreReachable:
         modules = _shell_modules()
         # Assert
         assert modules, "no shell modules discovered; the guard would be vacuous"
+
+    def test_the_allowlist_is_empty(self):
+        """An emptied allowlist must ASSERT its emptiness, not fall silent.
+
+        ``test_allowlist_has_no_stale_entries`` is parametrised over
+        ``_ALLOWED_ORPHANS``. Now that the allowlist is empty it has nothing to
+        iterate, so pytest reports
+
+            SKIPPED [1] ... got empty parameter set for (module)
+
+        and a skip is indistinguishable from a test that broke. The class
+        already guards the other vacuity — ``test_guard_covers_something``
+        checks the module POPULATION is non-empty — but nothing covered the
+        allowlist reaching zero, which is the state it is supposed to end in.
+
+        Added 2026-08-23 alongside the identical fix in
+        test_app_css_tokens_resolve.py, whose ceiling had the same shape and
+        cited THIS file's allowlist as the precedent for emptying it. The
+        precedent had the same hole.
+
+        IF THIS FAILED, an orphan was allow-listed again. That is permitted but
+        deliberate: an orphaned module ships code no browser can reach. Export
+        it from the barrel, bundle it per ADR 0002, or delete it — and if it
+        genuinely must wait, amend this test with the reason and the card.
+        """
+        # Arrange
+        allowed = _ALLOWED_ORPHANS
+        # Act
+        listed = sorted(allowed)
+        # Assert
+        assert not listed, (
+            f"{len(listed)} module(s) re-added to _ALLOWED_ORPHANS: "
+            f"{', '.join(listed)}. Each ships in the package while reaching no "
+            "browser and no consumer. Export, bundle, or delete it — or amend "
+            "this test with the reason and the card that owns it."
+        )
 
 
 class TestMobileSwipeReachesTheShell:

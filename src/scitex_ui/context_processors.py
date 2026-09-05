@@ -10,6 +10,12 @@ Install in Django settings to expose scitex-ui flags to every template::
 
 from django.conf import settings
 
+#: This module's public surface. Declared rather than inferred, because
+#: `from django.conf import settings` puts a LazySettings in module scope and
+#: autodoc cannot introspect one before Django is configured — so without this
+#: the docs build tries to document Django's settings object as ours and warns.
+__all__ = ["element_inspector", "element_inspector_enabled"]
+
 
 def element_inspector_enabled(request=None) -> bool:
     """Return whether the element inspector should load for this request.

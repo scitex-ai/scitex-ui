@@ -2,15 +2,23 @@
  * @component Mobile Workspace Layout
  * @description Single source of truth for mobile (<=768px) workspace layout.
  *
- *   NEW architecture (workspace-layout):
- *     Single-pane mode — only one .workspace-pane is visible at a time.
- *     The workspace sidebar JS (switchPane) toggles .active class.
- *     CSS here ensures panes fill the viewport and inner panels expand.
+ *   workspace-three-col — THE LAYOUT THIS PACKAGE SHIPS:
+ *     Below 768px the three columns become a vertical STACK. Every pane
+ *     stays on the page; none is hidden and none needs to be switched to,
+ *     so there is no pane-switcher, no JS and no state class involved.
+ *     An app hides a pane it does not use by DECLARING it:
+ *     `shell_context(panes={"ai": "unused"})` emits `ws-pane-unused`.
  *
- *   LEGACY architecture (workspace-three-col):
- *     Single-pane mode — hide all sidebar panes, show only the one
- *     with .mobile-active-pane class.  The workspace sidebar icons
- *     switch between panes.
+ *     It was single-pane until 2026-08-19, revealed by `.mobile-active-pane`
+ *     — a class nothing in this package ever wrote, so all three panes were
+ *     unreachable rather than collapsed. Measured at 390x844 before the fix:
+ *     zero visible clickable elements on the page. Pinned by
+ *     tests/develop/test_mobile_panes_stay_reachable.py.
+ *
+ *   workspace-layout — NOT this package's markup:
+ *     Rules for the hub's shell, which nothing here renders. They are inert
+ *     in scitex-ui and are kept only so a hub page loading this stylesheet
+ *     gets its mobile layout.
  *
  * @category Layouts
  * @darkmode true
@@ -124,12 +132,18 @@
 
   /* Container: full viewport */
   .workspace-three-col {
+    /* STACKED, not a fixed viewport box. The old rules pinned this to the
+       viewport with overflow:hidden because exactly one pane was ever visible
+       and it was absolutely positioned on top. Stacking means the content is
+       taller than the screen by design, so the page must be allowed to scroll
+       -- overflow:hidden here would clip every pane below the first. */
     position: relative !important;
-    height: calc(100vh - 44px - env(safe-area-inset-bottom, 0px)) !important;
-    max-height: calc(
-      100vh - 44px - env(safe-area-inset-bottom, 0px)
-    ) !important;
-    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: calc(100vh - 44px - env(safe-area-inset-bottom, 0px)) !important;
+    overflow: visible !important;
   }
 
   .global-header.collapsed ~ .workspace-three-col {
@@ -137,44 +151,60 @@
     max-height: calc(100vh - 6px - env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  /* Hide ALL sidebar panes by default */
-  .workspace-three-col > .ws-ai-pane,
-  .workspace-three-col > .ws-worktree-pane,
-  .workspace-three-col > .ws-viewer-pane,
-  .workspace-three-col > .ws-apps-pane {
-    display: none !important;
-  }
-
-  /* Show the active pane (JS adds .mobile-active-pane) */
-  .workspace-three-col > .mobile-active-pane {
+  /* STACK the panes instead of hiding them.
+   *
+   * These three were `display: none !important` here, revealed by a
+   * `.mobile-active-pane` class that appears in exactly one file -- this one --
+   * and that no template, js or ts in this package ever writes. The destructive
+   * half shipped and the restorative half never ran, so Console/Chat and Viewer
+   * were UNREACHABLE below 768px rather than collapsed, with the resizers that
+   * might have dragged them back hidden by the same block.
+   *
+   * Measured in chromium at 390x844 before this change: zero visible clickable
+   * elements on the entire page.
+   *
+   * A pane an app does not use is already handled, and by a DECLARED contract
+   * rather than a guess: `shell_context(panes={"ai": "unused"})` adds
+   * `ws-pane-unused`, which hides it. So an app that declares its panes gets a
+   * short stack; one that declares nothing gets all of them, which is the
+   * desktop behaviour and a safe default.
+   *
+   * `:not(.ws-pane-unused)` IS LOAD-BEARING, not decoration. That contract is
+   * enforced by `.workspace-three-col > .ws-pane-unused { display: none }` in
+   * workspace-three-col.css, which carries NO `!important` -- so a bare
+   * `display: flex !important` here would outrank it and drag every declared-
+   * unused pane back on screen at exactly the width where space is scarcest.
+   * Pinned by test_mobile_panes_stay_reachable.py::
+   * test_stacking_does_not_override_a_declared_unused_pane. */
+  .workspace-three-col > .ws-ai-pane:not(.ws-pane-unused),
+  .workspace-three-col > .ws-worktree-pane:not(.ws-pane-unused),
+  .workspace-three-col > .ws-viewer-pane:not(.ws-pane-unused) {
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
-    height: 100% !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    z-index: 1 !important;
-    overflow: hidden !important;
+    max-width: 100% !important;
+    flex: 0 0 auto !important;
+    /* Bounded so no single pane can push the rest off the page, but scrollable
+       within itself. Without a cap, a long file tree buries the app content. */
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
+
 
   /* Module pane: always visible as the default, fills space */
   .workspace-three-col > .ws-module-pane {
+    /* The app's own content leads the stack and takes the remaining height.
+       No longer `height: 100%` -- it shares the column now rather than being
+       the only thing on screen. */
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
-    height: 100% !important;
-    flex: 1 1 0% !important;
-    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    min-height: 50vh !important;
     overflow: auto !important;
   }
 
-  /* When a sidebar pane is active, hide the module pane */
-  .workspace-three-col:has(> .mobile-active-pane) > .ws-module-pane {
-    display: none !important;
-  }
 
   /* Sidebars inside active panes: full width + height */
   .workspace-three-col .stx-shell-sidebar,
@@ -190,19 +220,7 @@
     flex-direction: column !important;
   }
 
-  /* Force-remove collapsed state in single-pane mode */
-  .workspace-three-col .mobile-active-pane .stx-shell-sidebar.collapsed {
-    width: 100% !important;
-    min-width: 100% !important;
-    height: 100% !important;
-  }
 
-  .workspace-three-col
-    .mobile-active-pane
-    .stx-shell-sidebar.collapsed
-    .stx-shell-sidebar__content {
-    display: flex !important;
-  }
 
   /* Sidebar content: scrollable */
   .workspace-three-col .stx-shell-sidebar__content {
@@ -226,7 +244,6 @@
 
   /* Touch targets (Apple HIG: 44px) */
   .stx-shell-sidebar__header button,
-  .mobile-tab-bar button,
   a.selector-nav-item {
     min-height: 44px;
   }
@@ -274,12 +291,4 @@
   #footer-collapse-toggle {
     display: none !important;
   }
-}
-
-/* ============================================================================
- * Bottom Tab Bar — hidden by default
- * ========================================================================== */
-
-.mobile-tab-bar {
-  display: none;
 }

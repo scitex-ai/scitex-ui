@@ -60,7 +60,26 @@ _FALLBACK = re.compile(
 #: The jobs that are SUPPOSED to follow the variable. Named rather than counted,
 #: so a job silently leaving the expression form fails here instead of shrinking
 #: the parametrisation to nothing and passing.
-_EXPECTED_WORKFLOWS = {"docs-sphinx.yml", "typecheck.yml"}
+#:
+#: `pypi-publish-and-github-release-on-tag.yml` JOINED 2026-08-22, and the reason
+#: is the whole point of this set being a decision rather than a side effect.
+#: Its four jobs were pinned to `spartan-cpu` deliberately, because they run
+#: inside `ci-cpu.sif` and the pooled machines did not have that SIF. On
+#: 2026-08-22 every `spartan-cpu` runner was OFFLINE, so the release could not
+#: start at all — it sat `queued`, and a job that never runs never fails, so
+#: nothing reported it. The pin had become the thing preventing releases.
+#: The workflow's own precondition for unpinning was discharged first, the way
+#: its header demanded — by READING ci-cpu.sif on each machine rather than
+#: assuming: present on compute-01/03/04 (all online, 1221599232 bytes each);
+#: compute-02 unreadable and offline, so it cannot take a job today.
+#: See the workflow header for the residual risk if compute-02 rejoins without
+#: the SIF (answer: it hard-fails, loudly, which is recoverable — unlike the
+#: silent stall this replaced).
+_EXPECTED_WORKFLOWS = {
+    "docs-sphinx.yml",
+    "typecheck.yml",
+    "pypi-publish-and-github-release-on-tag.yml",
+}
 
 #: A destination is self-hosted iff it carries this label. GitHub-hosted images
 #: are named (ubuntu-*, windows-*, macos-*) and never carry it.

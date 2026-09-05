@@ -7,15 +7,15 @@ Usage:
 
 from pathlib import Path
 
-import scitex as stx
+import scitex_session as stx
 
 import scitex_ui
 
 
 @stx.session
 def main(
-    CONFIG=stx.session.INJECTED,
-    logger=stx.session.INJECTED,
+    CONFIG=stx.INJECTED,
+    logger=stx.INJECTED,
 ) -> int:
     """List every registered component and dump a summary to SDIR_RUN."""
     OUT = Path(CONFIG.SDIR_RUN)

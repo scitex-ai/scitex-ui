@@ -236,7 +236,7 @@
    * fails AA on the DEFAULT theme — pinning it would codify that. #a371f7 is
    * 5.16:1 and is already this palette's purple (--color-done-fg). */
   --danger-color: #f85149; /* 5.16:1 */
-  --accent: #a371f7; /* 5.16:1 — CHANGED from #6d4cad (2.71:1) */
+  --accent: #a371f7; /* 5.16:1 on --bg-surface — CHANGED from #6d4cad (2.71:1 there) */
   --workspace-text-muted: #888888; /* 4.88:1 */
   --border-primary: #30363d;
   --bg-hover: rgba(255, 255, 255, 0.08);

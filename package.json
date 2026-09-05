@@ -1,7 +1,7 @@
 {
   "name": "@scitex/ui",
   "private": true,
-  "version": "0.16.0",
+  "version": "0.20.2",
   "description": "Shared React UI components for the SciTeX ecosystem",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
@@ -35,6 +35,7 @@
     "./ts/app/confirm-modal": "./src/scitex_ui/static/scitex_ui/ts/app/confirm-modal/index.ts",
     "./ts/app/context-menu": "./src/scitex_ui/static/scitex_ui/ts/app/context-menu/index.ts",
     "./ts/app/data-table": "./src/scitex_ui/static/scitex_ui/ts/app/data-table/index.ts",
+    "./ts/app/dim": "./src/scitex_ui/static/scitex_ui/ts/app/dim/index.ts",
     "./ts/app/drawer": "./src/scitex_ui/static/scitex_ui/ts/app/drawer/index.ts",
     "./ts/app/dropdown": "./src/scitex_ui/static/scitex_ui/ts/app/dropdown/index.ts",
     "./ts/app/empty": "./src/scitex_ui/static/scitex_ui/ts/app/empty/index.ts",
@@ -76,7 +77,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint ."
   },
   "publishConfig": {
     "access": "public"
@@ -94,9 +96,12 @@
   "devDependencies": {
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "monaco-editor": "^0.45.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.69.0"
   }
 }

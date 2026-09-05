@@ -16,48 +16,149 @@ stylesheet too, not just the two that were found by an adopter.
 
 Mirrors `_build-index.ts`: files starting with `_` are skipped, the three
 generated bundles never import themselves, paths are `./`-prefixed and sorted.
+
+WHAT THE ORIGINAL VERSION COULD NOT SEE, added 2026-09-04 after I walked into it.
+
+The checks below were one-directional — `missing = expected - imported`. That
+catches a stylesheet nobody imports, which is the defect they were written for,
+and it is blind to everything else: import ORDER, EXTRA imports, and a missing
+AUTO-GENERATED header.
+
+So when PR #198 added `utils/effects.css`, the failing check told me a file was
+unimported and I fixed it by HAND-EDITING `all.css` — a file whose own header
+says "Do not edit manually. Regenerate with: npx tsx css/_build-index.ts". The
+suite went green and it merged. The line happened to land in the right sorted
+position (verified afterwards: regenerating produces a zero diff), but nothing
+in the suite knew that. A hand-edit one line out of place would have been just
+as green, shipped, and then silently reverted inside somebody's unrelated PR.
+
+That is the same trap this repo records about the GENERATED `ci.yml`: a
+consumer-side hand edit "would pass CI, read as done, and be silently reverted
+on the next apply, with the revert being intended behaviour."
+
+MODELLING THE GENERATOR EXACTLY, because approximating it is what hid this.
+`buildIndex(name, subdirs, prepend)` emits `prepend`, then each subdir's own
+recursively-collected, sorted list, concatenated IN SUBDIR ORDER:
+
+    shell.css   subdirs ("shell", "primitives")   -> shell/* sorted, then primitives/* sorted
+    app.css     subdirs ("app",) + a PREPEND of three token-only primitives
+    all.css     one globally sorted list over the whole tree
+
+The old `_BUNDLES` table said `app.css: ("app",)` and omitted the prepend
+entirely, so the recomputed set was three files short of the truth. A
+one-directional check cannot notice being short; an ordered comparison fails
+immediately. That omission is why the table is replaced rather than extended.
 """
 
 from __future__ import annotations
 
-import pathlib
 import re
 
 import pytest
 
-import scitex_ui
+from tests._checkout import css_dir
 
-_CSS_DIR = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
+_CSS_DIR = css_dir()
 _GENERATED = ("all.css", "shell.css", "app.css")
 
-# name -> subdirectories scanned, matching buildIndex(...) calls in _build-index.ts
-_BUNDLES = {
+#: An `@import "..."` line as the generator writes it.
+_IMPORT = re.compile(r'@import\s+"([^"]+)"')
+
+#: The `APP_TOKEN_PRIMITIVES` array in _build-index.ts.
+#:
+#: PARSED rather than duplicated. The generator is the single source of truth
+#: for which primitives app.css prepends, and hard-coding a second copy here
+#: would go stale exactly when someone edits the generator — the drift this
+#: whole file exists to detect, reintroduced by the detector.
+_APP_PREPEND_BLOCK = re.compile(
+    r"const\s+APP_TOKEN_PRIMITIVES\s*=\s*\[(.*?)\]", re.S
+)
+
+#: The AUTO-GENERATED marker every bundle header carries.
+_HEADER_MARK = "AUTO-GENERATED"
+
+_BUILD_SCRIPT = _CSS_DIR / "_build-index.ts"
+
+
+def _app_prepend() -> list[str]:
+    """The prepended token primitives, read from the generator itself."""
+    block = _APP_PREPEND_BLOCK.search(_BUILD_SCRIPT.read_text())
+    if block is None:
+        return []
+    return re.findall(r'"([^"]+)"', block.group(1))
+
+
+#: name -> (prepend, subdirs). `None` subdirs means the whole tree, one sorted
+#: list, which is how all.css is built.
+_BUNDLES: dict[str, tuple[str, ...] | None] = {
     "shell.css": ("shell", "primitives"),
     "app.css": ("app",),
-    "all.css": None,  # whole tree
+    "all.css": None,
 }
+
+
+def _sorted_under(root) -> list[str]:
+    """`findCssFiles(root, CSS_DIR)` — recursive, `_`-pruned, sorted."""
+    d = _CSS_DIR if root is None else _CSS_DIR / root
+    if not d.is_dir():
+        return []
+    found = []
+    for path in d.rglob("*.css"):
+        if path.name in _GENERATED:
+            continue
+        rel = path.relative_to(_CSS_DIR)
+        if any(part.startswith("_") for part in rel.parts):
+            continue
+        found.append("./" + rel.as_posix())
+    return sorted(found)
 
 
 def _shipped_css(roots) -> set[str]:
     """Every stylesheet a bundle should import, as './'-prefixed relpaths."""
-    dirs = [_CSS_DIR] if roots is None else [_CSS_DIR / r for r in roots]
-    found: set[str] = set()
-    for d in dirs:
-        if not d.is_dir():
-            continue
-        for path in d.rglob("*.css"):
-            if path.name in _GENERATED:
-                continue
-            rel = path.relative_to(_CSS_DIR)
-            if any(part.startswith("_") for part in rel.parts):
-                continue
-            found.add("./" + rel.as_posix())
-    return found
+    if roots is None:
+        return set(_sorted_under(None))
+    return {rel for root in roots for rel in _sorted_under(root)}
+
+
+def _expected_in_order(bundle: str) -> list[str]:
+    """Exactly what `_build-index.ts` would write, in emission order."""
+    roots = _BUNDLES[bundle]
+    if roots is None:
+        return _sorted_under(None)
+    prepend = _app_prepend() if bundle == "app.css" else []
+    return [*prepend, *(rel for root in roots for rel in _sorted_under(root))]
+
+
+def _imported_in_order(bundle: str) -> list[str]:
+    return _IMPORT.findall((_CSS_DIR / bundle).read_text())
 
 
 def _imported_by(bundle: str) -> set[str]:
-    text = (_CSS_DIR / bundle).read_text()
-    return set(re.findall(r'@import\s+"([^"]+)"', text))
+    return set(_imported_in_order(bundle))
+
+
+def _explain_drift(bundle: str, actual: list[str], expected: list[str]) -> str:
+    """Name the first divergence and the ONLY correct way to fix it.
+
+    Built in a helper rather than inline so the assertion stays a single
+    expression. Python evaluates an assert's message only when the assertion
+    fails, so this costs nothing on the green path.
+    """
+    first = next(
+        (i for i, (a, e) in enumerate(zip(actual, expected)) if a != e),
+        min(len(actual), len(expected)),
+    )
+    return (
+        f"{bundle} is not what `npx tsx css/_build-index.ts` would write.\n"
+        f"  imports: {len(actual)}   expected: {len(expected)}\n"
+        f"  first difference at index {first}:\n"
+        f"    file says: {actual[first:first + 1]}\n"
+        f"    generator: {expected[first:first + 1]}\n\n"
+        "Do NOT fix this by editing the bundle. It carries an AUTO-GENERATED "
+        "header and a hand edit is reverted on the next regeneration — that "
+        "revert is intended behaviour, and it lands in an unrelated PR. "
+        "Run: npx tsx css/_build-index.ts"
+    )
 
 
 class TestGeneratedBundlesAreCurrent:
@@ -92,3 +193,140 @@ class TestGeneratedBundlesAreCurrent:
         count = len(_imported_by(bundle))
         # Assert
         assert count > 0, f"{bundle} imports nothing; guard would be vacuous"
+
+    @pytest.mark.parametrize("bundle", sorted(_BUNDLES))
+    def test_bundle_matches_what_the_generator_would_write(self, bundle):
+        """ORDER and membership, not just membership.
+
+        This is the assertion the other three lack. A hand-edit that inserts a
+        VALID import in the WRONG position satisfies every other check in this
+        file, ships, and is undone the next time anyone runs the generator —
+        surfacing as an unexplained diff in an unrelated PR.
+        """
+        # Arrange
+        expected = _expected_in_order(bundle)
+        # Act
+        actual = _imported_in_order(bundle)
+        # Assert
+        assert actual == expected, _explain_drift(bundle, actual, expected)
+
+    @pytest.mark.parametrize("bundle", sorted(_BUNDLES))
+    def test_bundle_still_declares_itself_generated(self, bundle):
+        """The header is the only warning a hand-editor gets before editing.
+
+        Someone who removes it removes the notice, and every check above still
+        passes on the resulting hand-maintained file.
+        """
+        # Arrange
+        text = (_CSS_DIR / bundle).read_text()
+        # Act
+        marked = _HEADER_MARK in text.split("@import")[0]
+        # Assert
+        assert marked, (
+            f"{bundle} no longer declares {_HEADER_MARK!r} in its header, so "
+            "nothing tells the next editor that this file is generated"
+        )
+
+
+class TestTheGeneratorModelIsRead:
+    """Controls on the two patterns this file depends on.
+
+    Both are read against LITERALS rather than against the tree, because a
+    pattern that silently stops matching turns every check above into a
+    comparison of two empty lists.
+    """
+
+    def test_import_pattern_matches_a_real_import_line(self):
+        # Arrange
+        sample = '@import "./utils/effects.css";'
+        # Act
+        found = _IMPORT.findall(sample)
+        # Assert
+        assert found == ["./utils/effects.css"], (
+            f"_IMPORT failed to read the path out of {sample!r}"
+        )
+
+    def test_import_pattern_ignores_prose_naming_a_stylesheet(self):
+        # Arrange
+        sample = " * see ./utils/effects.css for the border width token"
+        # Act
+        found = _IMPORT.search(sample)
+        # Assert
+        assert found is None, (
+            f"_IMPORT matched {found and found.group(0)!r} in a comment that "
+            "merely NAMES a stylesheet; header prose would count as imports"
+        )
+
+    def test_prepend_pattern_matches_a_real_declaration(self):
+        # Arrange
+        sample = (
+            'const APP_TOKEN_PRIMITIVES = [\n'
+            '  "./primitives/colors.css",\n'
+            '  "./primitives/spacing.css",\n'
+            '];'
+        )
+        # Act
+        found = _APP_PREPEND_BLOCK.search(sample)
+        # Assert
+        assert found is not None and "colors.css" in found.group(1), (
+            f"_APP_PREPEND_BLOCK failed to read the array out of {sample!r}"
+        )
+
+    def test_prepend_pattern_ignores_prose_naming_the_constant(self):
+        """A docstring discussing the constant is not a declaration of it.
+
+        `_build-index.ts` documents APP_TOKEN_PRIMITIVES at length in the
+        comment directly above it, so this is the neighbouring text the pattern
+        actually has to walk past, not an invented sample.
+        """
+        # Arrange
+        sample = " * Only APP_TOKEN_PRIMITIVES is prepended to app.css here."
+        # Act
+        found = _APP_PREPEND_BLOCK.search(sample)
+        # Assert
+        assert found is None, (
+            f"_APP_PREPEND_BLOCK matched prose: {found and found.group(0)!r}"
+        )
+
+    def test_prepend_block_is_read_from_the_generator(self):
+        # Arrange
+        # Act
+        prepend = _app_prepend()
+        # Assert
+        assert prepend, (
+            f"APP_TOKEN_PRIMITIVES was not found in {_BUILD_SCRIPT}. Without "
+            "it app.css's expected list is three files short and "
+            "test_bundle_matches_what_the_generator_would_write compares the "
+            "wrong thing"
+        )
+
+    def test_prepend_block_does_not_swallow_the_rest_of_the_script(self):
+        """NEGATIVE control: `re.S` on a greedy `[...]` would eat the file.
+
+        The pattern spans newlines by necessity. If it were greedy it would run
+        from the first `[` to the LAST `]` in the script, and the extracted
+        "paths" would include every quoted string after it — bundle names,
+        the header text, `node_modules`. That over-match reads as a longer
+        prepend list, so app.css would be expected to import files that do not
+        exist, and the failure would point at the bundle instead of at here.
+        """
+        # Arrange
+        prepend = _app_prepend()
+        # Act
+        strays = [p for p in prepend if not p.startswith("./primitives/")]
+        # Assert
+        assert not strays, (
+            f"_APP_PREPEND_BLOCK captured {strays} beyond the "
+            "APP_TOKEN_PRIMITIVES array; the pattern is over-matching"
+        )
+
+    def test_every_prepended_primitive_exists_on_disk(self):
+        # Arrange
+        prepend = _app_prepend()
+        # Act
+        missing = [p for p in prepend if not (_CSS_DIR / p[2:]).is_file()]
+        # Assert
+        assert not missing, (
+            f"the generator prepends {missing} to app.css but those files do "
+            "not exist; the generator and the tree disagree"
+        )

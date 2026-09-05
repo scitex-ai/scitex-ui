@@ -130,7 +130,7 @@
   justify-content: space-between;
   padding: 8px 12px;
   background: var(--workspace-bg-secondary);
-  border-bottom: 1px solid var(--workspace-border-muted);
+  border-bottom: 1px solid var(--workspace-border-subtle);
   flex-shrink: 0;
   gap: 8px;
 }
@@ -223,7 +223,7 @@
 .toolbar-separator {
   width: 1px;
   height: 20px;
-  background: var(--workspace-border-muted);
+  background: var(--workspace-border-subtle);
   margin: 0 4px;
 }
 
@@ -242,7 +242,7 @@
 
 .csv-table th,
 .csv-table td {
-  border: 1px solid var(--workspace-border-muted);
+  border: 1px solid var(--workspace-border-subtle);
   padding: 6px 10px;
   text-align: left;
   white-space: nowrap;
@@ -251,7 +251,7 @@
 /* Light theme - softer borders */
 [data-theme="light"] .csv-table th,
 [data-theme="light"] .csv-table td {
-  border-color: var(--workspace-border-muted);
+  border-color: var(--workspace-border-subtle);
   color: var(--text-primary);
 }
 
@@ -271,7 +271,7 @@
 /* Dark theme */
 [data-theme="dark"] .csv-table th,
 [data-theme="dark"] .csv-table td {
-  border-color: var(--workspace-border-muted);
+  border-color: var(--workspace-border-subtle);
   color: var(--text-primary);
 }
 
@@ -290,7 +290,7 @@
 /* Dark theme is default for code workspace - these ensure consistency */
 .media-viewer-csv-wrapper .data-table th,
 .media-viewer-csv-wrapper .data-table td {
-  border-color: var(--workspace-border-muted);
+  border-color: var(--workspace-border-subtle);
   color: var(--text-primary);
   background: var(--workspace-bg-primary);
 }
@@ -312,7 +312,7 @@
 
 [data-theme="dark"] .csv-viewer .data-table th,
 [data-theme="dark"] .csv-viewer .data-table td {
-  border-color: var(--workspace-border-muted);
+  border-color: var(--workspace-border-subtle);
   color: var(--text-primary);
 }
 
@@ -327,7 +327,7 @@
 
 [data-theme="dark"] .csv-viewer-toolbar {
   background: var(--workspace-bg-secondary);
-  border-color: var(--workspace-border-muted);
+  border-color: var(--workspace-border-subtle);
 }
 
 /* ========================================
@@ -369,7 +369,7 @@
   gap: 8px;
   padding: 4px 12px;
   background: var(--workspace-bg-secondary);
-  border-top: 1px solid var(--workspace-border-muted);
+  border-top: 1px solid var(--workspace-border-subtle);
   font-size: 11px;
   color: var(--text-muted);
   flex-shrink: 0;

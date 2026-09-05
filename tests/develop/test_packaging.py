@@ -33,6 +33,7 @@ are inside it. Knowing the trap does not route you around it; a check does.
 
 from __future__ import annotations
 
+import importlib.util
 import subprocess
 import sys
 import zipfile
@@ -96,11 +97,39 @@ def wheel_names(tmp_path_factory) -> list[str]:
     the same artifact.
     """
     outdir = tmp_path_factory.mktemp("wheel")
+
+    # THE BUILD TOOL'S ABSENCE AND A BROKEN WHEEL NEED OPPOSITE RESPONSES, so
+    # they must not surface identically. Checked BEFORE running, because
+    # `-m build` exits non-zero for both reasons and `check=True` then raises a
+    # bare CalledProcessError that names neither.
+    #
+    # Measured 2026-08-18 in the agent venv: the two assertions below reported
+    # as ERRORS at fixture setup with `subprocess.CalledProcessError` and no
+    # further detail. The actual cause was `No module named build` — a missing
+    # dev dependency, not a packaging defect. In a summary reading
+    # "282 passed, 2 errors" that is indistinguishable from infrastructure
+    # noise, and it is how the gate stayed dead without anyone noticing.
+    #
+    # This is §2's "a gate that cannot fail is not a gate" in its quieter form:
+    # the gate could not PASS either. It returned the same answer whether the
+    # wheel was perfect or catastrophically wrong.
+    if importlib.util.find_spec("build") is None:
+        pytest.fail(
+            "the packaging gate cannot run: the `build` module is not "
+            f"installed for {sys.executable}.\n\n"
+            "This is an ENVIRONMENT gap, not a packaging defect — the wheel "
+            "has not been examined at all, so treat this as UNKNOWN rather "
+            "than as a pass.\n\n"
+            "Fix:  python -m pip install build\n"
+            "(`build` is a dev dependency precisely so this check stays "
+            "offline and bounded; see the --no-isolation note below.)"
+        )
+
     # --no-isolation deliberately: the default builds in a fresh venv and
     # DOWNLOADS the backend, which turns this into a network-dependent test
     # that hangs rather than fails when the index is slow. hatchling is a dev
     # dependency precisely so this stays offline and bounded.
-    subprocess.run(
+    result = subprocess.run(
         [
             sys.executable,
             "-m",
@@ -111,10 +140,22 @@ def wheel_names(tmp_path_factory) -> list[str]:
             str(outdir),
         ],
         cwd=_REPO_ROOT,
-        check=True,
+        check=False,
         capture_output=True,
+        text=True,
         timeout=300,
     )
+    if result.returncode != 0:
+        # check=False + an explicit failure so the BUILD OUTPUT reaches the
+        # reader. `check=True` raises a CalledProcessError whose str() shows
+        # the command and the exit code and discards stdout/stderr — i.e. it
+        # says a build failed and never says why.
+        pytest.fail(
+            f"wheel build failed (exit {result.returncode}). The build tool IS "
+            "installed, so this is a genuine packaging failure rather than a "
+            f"missing dependency.\n\n--- stdout ---\n{result.stdout}\n"
+            f"--- stderr ---\n{result.stderr}"
+        )
     wheels = list(outdir.glob("*.whl"))
     assert len(wheels) == 1, f"expected one wheel, got {wheels}"
     with zipfile.ZipFile(wheels[0]) as zf:

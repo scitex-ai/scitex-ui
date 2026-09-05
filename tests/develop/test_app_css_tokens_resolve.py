@@ -27,9 +27,9 @@ import re
 
 import pytest
 
-import scitex_ui
+from tests._checkout import css_dir
 
-_CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
+_CSS = css_dir()
 
 # Supplied by the consuming page, legitimately undefined here.
 _CONSUMER_SUPPLIED = {"--app-accent-color", "--app-accent-tint"}
@@ -38,35 +38,58 @@ _CONSUMER_SUPPLIED = {"--app-accent-color", "--app-accent-tint"}
 # CEILING, not a blessing: the list must never grow. Each entry is a
 # `var(--x)` with no fallback that nothing defines, so the declaration is
 # currently inert wherever it appears.
-_KNOWN_BROKEN_IN_ALL = {
-    # --primary-color, --secondary-color and --secondary-dark were RETIRED from
-    # this ceiling on 2026-08-18. They were not renamed on a hunch: what each
-    # one styled was read out of typography.css, and the link pair was measured
-    # rendering in chromium first --
-    #
-    #     before   link rgb(51,51,51) == body rgb(51,51,51), decoration none
-    #     after    link rgb(44,93,143) light / rgb(88,166,255) dark, != body
-    #
-    # -- so a link in body content had NO visual distinction from surrounding
-    # text at all. `a` and `a:hover` now read --text-link / --text-link-hover,
-    # and the six heading rules plus `.text-primary` read --text-primary.
-    "--accent-color",
-    # --text-dark / --text-light STAY, and the reason is sharper than "unknown".
-    # They are LITERAL colour utilities (`.text-light`, `.text-dark`) whose
-    # names describe an absolute colour, while every candidate token in the
-    # palette FLIPS with the theme. Mapping `.text-light` to --text-inverse
-    # would make it render DARK in dark mode -- inverting the one thing its
-    # name promises. Fixing them means deciding whether literal-colour
-    # utilities belong in a themed system at all, which is a design call.
-    "--text-dark",
-    "--text-light",
-    # These two are two drifted copies of one widget rather than a naming
-    # problem; see card
-    # scitex-ui-two-search-css-twins-disagree-and-one-renders-no-background-20260818
-    "--workspace-bg-default",
-    "--workspace-bg-input",
-    "--workspace-border-muted",
-}
+_KNOWN_BROKEN_IN_ALL: set[str] = set()
+# EMPTIED 2026-08-23. Every entry was retired by repair, not by exemption; the
+# history is kept because each retirement records how that class of breakage is
+# meant to be fixed.
+#
+# 2026-08-18 -- --primary-color, --secondary-color, --secondary-dark. Not
+#   renamed on a hunch: what each styled was read out of typography.css, and the
+#   link pair was measured rendering in chromium first --
+#
+#       before   link rgb(51,51,51) == body rgb(51,51,51), decoration none
+#       after    link rgb(44,93,143) light / rgb(88,166,255) dark, != body
+#
+#   -- so a link in body content had NO visual distinction from surrounding
+#   text. `a` / `a:hover` now read --text-link / --text-link-hover.
+#
+# 2026-08-23 -- --accent-color. `.text-accent` now reads --accent, which is
+#   defined in both palettes and carries the WCAG correction (#a371f7 dark,
+#   5.16:1, raised from #6d4cad at 2.71:1). Same repair shape as the 08-18 batch.
+#
+# 2026-08-23 -- --text-dark, --text-light. The previous note called these a
+#   design call: literal-colour utilities whose names promise an absolute colour
+#   in a system where every candidate token FLIPS with the theme, so mapping
+#   `.text-light` to --text-inverse would render it DARK in dark mode. That
+#   reasoning was right and the design call turned out not to be needed, because
+#   a question nobody had asked settles it: NOBODY USES THEM. `.text-light` and
+#   `.text-dark` appear in ZERO html/ts/js/py files in this repo, against a
+#   control of `.text-primary` at 3. Both classes were therefore DELETED rather
+#   than defined. Deletion is behaviour-preserving for adopters: an undefined
+#   custom property and an absent rule both leave the colour inherited, whereas
+#   defining the tokens would have changed rendering on a guess.
+#
+# 2026-08-23 -- --workspace-bg-default, --workspace-bg-input,
+#   --workspace-border-muted. The shell twin
+#   (shell/workspace-files-tree/search.css) consumed the first two with NO
+#   fallback, so its search box rendered with no background at all -- the
+#   literal headline of card
+#   scitex-ui-two-search-css-twins-disagree-and-one-renders-no-background-20260818.
+#   It now reads --workspace-bg-primary / --workspace-bg-elevated, and
+#   media-viewer.css reads --workspace-border-subtle.
+#
+#   THE TWINS ARE NOT YET RECONCILED, and that half is deliberately NOT done
+#   here. The app twin (app/file-browser/search.css) still reads
+#   `var(--workspace-bg-default, #1e1e1e)`. Its fallbacks are ARMOUR, not
+#   sloppiness: app.css does not import the primitives layer, so an adopter
+#   linking app.css alone depends on them. Removing them is gated on the
+#   app.css/primitives decision in card
+#   scitex-ui-app-css-tokens-defined-nowhere-20260728, not on this file.
+#   (The literal is itself a defect -- #1e1e1e is dark in BOTH palettes, the
+#   same single-fallback bug class as --text-link -- and belongs to that card.)
+#
+# The set must stay EMPTY. Re-adding an entry means shipping a rule that is
+# silently inert; repair it or delete it instead.
 
 
 def _strip_comments(text: str) -> str:
@@ -208,6 +231,45 @@ def test_ceiling_entry_is_still_broken(token):
         "all.css — it now resolves, or its call sites are gone. Delete the "
         "entry. Leaving it makes the ceiling describe the past and quietly "
         "removes the pressure to fix what genuinely remains."
+    )
+
+
+def test_the_ceiling_is_empty():
+    """The ceiling reached zero on 2026-08-23 and must stay there.
+
+    THIS TEST EXISTS BECAUSE EMPTYING THE CEILING SILENCED ITS OWN GUARD.
+    ``test_ceiling_entry_is_still_broken`` is parametrised over
+    ``_KNOWN_BROKEN_IN_ALL``; with the set empty pytest reports
+
+        SKIPPED [1] ... got empty parameter set for (token)
+
+    which is the right outcome expressed the wrong way. A skip is
+    indistinguishable from a test that broke, and this file's own reverse-check
+    docstring argues precisely against a guard that decays into a record. So the
+    zero state gets an assertion of its own rather than a silence.
+
+    IF YOU ARE HERE BECAUSE THIS TEST FAILED, someone re-added an entry. That is
+    not forbidden, but it is meant to cost something: an inert `var(--x)` ships a
+    rule that silently does nothing, so the default answer is to repair the call
+    site or delete it. If an entry is genuinely justified — the fix is blocked on
+    a decision recorded elsewhere — then edit THIS test deliberately and say why,
+    naming the card. Do not widen it to "small enough is fine"; that is the
+    blanket flag the constitution rules out, and it hides new breakage of the
+    same class along with the old.
+    """
+    # Arrange
+    ceiling = _KNOWN_BROKEN_IN_ALL
+
+    # Act
+    ceiling = sorted(ceiling)
+
+    # Assert
+    assert not ceiling, (
+        f"{len(ceiling)} token(s) re-added to _KNOWN_BROKEN_IN_ALL: "
+        f"{', '.join(ceiling)}. Each one is a shipped rule that renders as "
+        "nothing. Repair the call site, give it a fallback if it is a "
+        "consumer-supplied hook, or delete the rule — and if it must stay, "
+        "amend this test with the reason and the card that owns it."
     )
 
 

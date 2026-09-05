@@ -7,6 +7,128 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.20.2] - 2026-09-05
+
+- **FIX: a path quoted inside a CSS comment is a live reference to Django, and 0.20.1 shipped one.** `css/utils/effects.css` opened with a comment quoting the at-import line scitex-hub's `variables.css` carries. Quoting it verbatim was deliberate — an explanation that matches the real thing character-for-character is easier to trust — and it sat inside `/* … */`, so it looked inert. Django's staticfiles post-processor rewrites asset references BY REGEX, and below 6.1 it does not know what a comment is: it reads the quoted path as live, fails to resolve `utils/../utilities/effects.css`, and fails `collectstatic` for the entire consuming project. Every open scitex-hub PR went red on `MissingFileError`, gating a production rebuild.
+
+  The boundary was measured from both sides, because one side alone would have been a guess: Django 6.1.1 HAS `_css_ignored_re` and does NOT reproduce it; Django 6.0.8, which hub's CI resolves to, lacks it and does. The failure needs both halves — a quoted path here and a pre-6.1 reader there. Upgrading Django is an independent second remedy; this package cannot choose its consumers' Django version, so the line was fixed here regardless.
+
+  The comment is now prose. The new guard, `test_shipped_css_references_all_resolve.py`, is **deliberately comment-blind**: it scans the raw bytes of every shipped stylesheet with Django's own two CSS patterns, copied verbatim rather than paraphrased. Matching 6.1.1's comment-awareness would have left it green on precisely the file that broke hub, so it is stricter than any single reader — the only setting that is safe for all of them. Verified in both directions: green on the fixed tree, and RED on the restored 0.20.1 bytes, naming `utils/effects.css:11`.
+
+  **The guard that existed did not fail; it was pointed elsewhere.** `test_no_import_points_at_a_missing_file` is named for exactly this failure, but its scope is the two generated bundles and their comment-stripped imports — `utils/effects.css` is not a bundle, so it was never in view. A green run from it said nothing at all about this file, which is worse than a weak check, because it read as coverage.
+
+- **A fifth authorization verdict kind, `unresolved`.** Authorization could not be DETERMINED — resolution was attempted and failed. Distinct from `denied` in the way that matters to a person: `denied` is an answer, this is the absence of one. Collapsing it into `denied` would tell a user "no" when the truth is "we could not ask"; collapsing it into `allowed` would open a control on a permission nobody verified.
+
+  It carries NO PAYLOAD, by agreement with scitex-app: a failure reason ("timeout", "5xx") discloses service availability the way an axis name discloses gate structure. `routeFor` returns null because there is nothing to route TO, and the control renders inert. The default reason string names no cause for the same reason — a wording that names today's single cause becomes silently false the moment a second cause appears. Consumers holding real context may override it via `labels`.
+
+  Added only because a concrete case demanded it — the tri-state resolve in scitex-app's A/B decomposition, where an ATTEMPTED-AND-FAILED resolution has no true member among the previous four — not because a fifth kind seemed tidy. Both guards fired as designed: `assertNever` refused to compile until `reasonTextFor` handled the case, and the union-size test went red having predicted this exact event in its own docstring.
+
+- The comment counting the kind strings no longer states a count. It said "THE FOUR" and went stale on the very first addition, silently. The number now lives only in the test that asserts it, where growing the union turns it red instead of leaving a comment quietly lying to the next reader.
+
+## [0.20.1] - 2026-09-04
+
+- **`--border-width: 1px`, in the new `css/utils/effects.css`.** Cut as a PATCH on scitex-hub's signal: their production runs an editable clone of `develop`, so they already had this — but their CI installs from PyPI, and a test of theirs references the token. Released so that reference resolves, not because six PRs had accumulated.
+
+  It is deliberately ONE token rather than a scale. Measured across the 67 stylesheets that set a literal border width: `1px` ×160, `2px` ×14, `3px` ×6, `4px` ×4. A scale would need names, and every name would compete with the `--border-width` scitex-hub already ships — giving each consumer two spellings of one concept, which is the two-vocabularies defect this convergence exists to remove. The 24 non-1px uses stay literal; they are one-off emphasis, not a scale anyone selects from.
+
+  **`--border-color` is deliberately NOT here.** The plan said scitex-ui "genuinely lacks" it. It does not: `primitives/colors/_light.css` and `_dark.css` both define it, THEME-AWARE, resolving to a different source token per theme. Defining it again in a theme-independent file would flatten it to one value settled by import order, and the side that loses is dark mode. Consumers keep the spelling they have and gain the theming.
+
+  The file lives at `css/utils/effects.css`, not `css/utilities/`. `utils/` already existed — `utils/layout.css` opens "Layout Utilities" — so a second directory would have put two names for one concept inside this package.
+
+- **The CSS bundle guard now asserts generator FIDELITY, not just membership.** `all.css`, `app.css` and `shell.css` are generated by `css/_build-index.ts` and say so in their headers. The previous checks were one-directional (`missing = expected - imported`), which catches a stylesheet nobody imports and is blind to import ORDER, to EXTRA imports, and to a removed AUTO-GENERATED header. A hand-edit inserting a valid import in the wrong position passed all three, shipped, and would be silently reverted by the next regeneration — surfacing as an unexplained diff in an unrelated PR. Mutation-probed: swapping two imports turns the new assertion red while all 21 pre-existing checks stay green.
+
+- Guards only, no runtime change: an AST check that no module imports the `scitex` umbrella; a removal-version check that a deprecation cannot advertise a version already shipped; an `aria-describedby` check that a component cannot bind the attribute name behind a private constant; CI `runs-on` fallbacks repointed off a runner pool whose machines are offline.
+
+## [0.20.0] - 2026-09-03
+
+- **A `dim` primitive that explains itself, and never uses the `disabled` attribute to do it.** `applyVerdict(el, verdict, config)` renders one of four authorization outcomes — allowed, denied, denied-because-not-signed-in, denied-because-not-entitled — as a visual state plus a REASON the user can actually reach. It sets `aria-disabled`, never native `disabled`: a natively disabled control leaves the tab order, taking its own explanation with it, so the person most in need of the reason is the one who cannot get to it.
+
+  The four kind strings are a deliberate SECOND COPY of `scitex_app.authz`'s, because this package must not depend on scitex-app. That copy is the risk the release exists to close: scitex-app now runs a cross-package check that reads `ts/app/dim/types.ts` out of the INSTALLED wheel and compares it to their Python constants as a NAME→VALUE mapping — not as a set, since two constants with swapped values match as sets while meaning the opposite.
+
+- **`--disabled-opacity` consolidated from 16 hardcoded literals into one token.**
+
+- **`assert_has_route_away()` — a contract assertion consumers run in their own suite**, in the new public `scitex_ui.testing` module. `standalone_shell.html` renders a route back to the launcher only when the composer supplies one, which is correct — only a mounting platform knows where its launcher lives — but it means an app can mount, supply nothing, carry no navigation, and ship a page a visitor cannot leave. Nothing fails; the page returns 200.
+
+  `shell_context()` cannot detect this: it runs in the VIEW, and the mounted app's content does not merely belong to someone else at that moment — it does not exist yet. A consumer's test is the first place the rendered page exists as a string.
+
+  **The predicate is "an anchor that navigates away", not "an anchor exists".** scitex-hub measured `/apps/cards/` at 6 anchors (navigable) and `/apps/storage/` at 1 (still a dead end), so `count(<a>) >= 1` is GREEN on the exact page this work exists to catch. In-page fragments, empty href, absent href, non-navigating schemes and self-links are all rejected. An earlier design — warn when no launcher was supplied — was killed by scitex-hub using this card's own control: that condition is TRUE for cards, which works fine, so the guard would have cried on a healthy page and been disbelieved on the broken one.
+
+  Empty input raises `ValueError` rather than asserting: "the fixture fetched nothing" and "this page has no way out" are different answers, and collapsing them lets a broken fixture read as a real finding.
+
+- **The TypeScript surface got its first linter, and then something that runs it.** 272 files had no lint at all — `tsc --noEmit` checks types, not unused bindings, no-op expressions, `this` aliasing, or React hook dependencies. Every rule is ON and gates new code; all 166 existing violations are grandfathered per-rule with written reasons, never by a blanket flag. 98 of the 127 `no-explicit-any` sit in five directories wrapping untyped peer dependencies, where `any` is frequently the honest type.
+
+  Five `eslint-disable react-hooks/exhaustive-deps` comments had been INERT for their entire life, and eslint 9 treats a disable naming an unknown rule as an error — so adding config without the plugin turns five dormant comments into five hard failures.
+
+  CI runs it as a separate job, deliberately NOT a required check: a rule set with an exemption list nobody has exercised should be a RECORD before it is a gate. The job asserts its own coverage first, because a flat config that stops matching lints zero files and still exits 0.
+
+- **Every regex detector in the test suite must now carry controls in BOTH directions.** A guard that fires on a real instance but has never been shown to ignore a mention of one is indistinguishable from a guard that fires on everything. The meta-check parametrises over the detectors and fails any that carries only one direction.
+
+- **Two accessibility repairs found by measurement rather than review.** An icon-only button whose entire accessible name was a `data-tooltip` (screen readers announce "button", and the supported-formats list was unreachable), and tooltips that were mouse-only — now reachable by keyboard via `focusin`/`focusout`, with `aria-describedby` treated as a SHARED LIST where each component adds and removes only its own id, so two components describing one control stop overwriting each other.
+
+## [0.19.1] - 2026-08-23
+
+- **Six `var(--x)` references had no fallback and no definition, so those declarations did nothing at all.** An undefined custom property is invalid at computed-value time, which means the browser discards the declaration rather than falling back to anything — so `.text-accent` set no colour, and the file-tree search box rendered with **no background**. All six are repaired at the CALL SITE rather than exempted, which empties `_KNOWN_BROKEN_IN_ALL` in `test_app_css_tokens_resolve.py` for the first time since that ceiling was created.
+
+  `.text-accent` now reads `--accent`, which is defined in both palettes and carries the WCAG correction (`#a371f7` dark, 5.16:1, raised from `#6d4cad` at 2.71:1). The shell search box reads `--workspace-bg-primary` / `--workspace-bg-elevated`, and `media-viewer.css` reads `--workspace-border-subtle` across nine sites.
+
+  **`.text-light` and `.text-dark` are DELETED rather than defined**, and the reasoning is the reusable part. The previous ceiling note called this a design question: they are literal-colour utilities whose names promise an absolute colour, in a system where every candidate token FLIPS with the theme — so mapping `.text-light` to `--text-inverse` would render it DARK in dark mode, inverting the one thing its name promises. That was correct, and the design call turned out not to be needed, because nobody had asked the cheaper question first: **nothing uses them.** Both classes appear in ZERO html/ts/js/py files, against a control of `.text-primary` at 3. Deletion is behaviour-preserving for adopters — an undefined custom property and an absent rule both leave the colour inherited — whereas defining the tokens would have changed rendering on a guess. A design question can sometimes be dissolved by a usage count instead of answered.
+
+  **Deliberately not fixed:** the app-side twin still reads `var(--workspace-bg-default, #1e1e1e)`. Those fallbacks are ARMOUR, not sloppiness — `app.css` does not import the primitives layer, so an adopter linking `app.css` alone depends on every one of them. (That literal is itself the single-fallback bug class, dark in BOTH palettes, and is tracked with the `app.css`/primitives decision rather than patched here.)
+
+- **Emptying an allowlist silenced the guard that polices it — in two files.** Both reverse-checks are parametrised over their own allowlist, so at zero entries pytest reports `got empty parameter set` and SKIPS. Zero is the state these allowlists are *designed* to reach, so success and breakage look identical exactly when it matters, and a skip is indistinguishable from a test that broke.
+
+  `test_the_ceiling_is_empty` and `test_the_allowlist_is_empty` now assert the zero state directly. The second is in `test_shell_ts_reachability.py`, which had the identical hole and was already at zero — and which the CSS ceiling's own docstring cites as the PRECEDENT for emptying an allowlist. The precedent carried the defect too.
+
+  Mutation-probed rather than assumed: injecting a no-fallback undefined token into `media-viewer.css` turns the inert-token guard RED naming that token, so the emptied ceiling is a live gate and not a decorative one.
+
+## [0.19.0] - 2026-08-23
+
+- **`<html lang>` follows the active language instead of a hardcoded `"en"`.** Reported by scitex-scholar, found in the SHIPPED wheel rather than the source tree. `lang` is where a screen reader takes its PRONUNCIATION rules from, so Japanese served as `lang="en"` is read aloud with English phonetics — closer to unusable than to imperfect. Every leaf running standalone inherited it; hub's own fix covered only hub's `global_base.html`.
+
+  `shell_context(..., lang=None)` now defaults to Django's ACTIVE language via `get_language()`, and an explicit `lang=` overrides for a page whose content is not the UI language. This deliberately breaks the package's declared-not-detected habit: panes and accents are CHOICES an app makes, so a typo raises; the page language is not a choice the shell gets to make, and a second place to state it is a second place to be wrong.
+
+  **The template carries its own default too, and that is the load-bearing half.** scitex-scholar measured that two of the four leaves rendering this shell — scholar itself and figrecipe — never call `shell_context` at all; they build their own context dict and call `render_to_string` directly. Django renders an undefined variable as the empty string, so a bare `{{ shell_lang }}` would have given those two `lang=""`: no rule for a screen reader to apply at all, rather than the wrong rule. The fix would have repaired two leaves and degraded the other two.
+
+  **Why it survived review in two shells independently**, which generalises past this attribute: a rendered-text sweep reads page TEXT and the text was correct Japanese — AN ATTRIBUTE IS NOT TEXT, so the check was structurally blind to it. And a human skim registers "this line is handled" because the line CONTAINS `{{ }}` — the presence of one dynamic thing camouflages the static thing beside it. Someone reached that exact character position, parameterised `data-theme-default`, and left `lang` literal.
+
+  Guard mutation-probed against the literal that shipped in 0.18.0: the parametrised `en` case PASSES BY COINCIDENCE and only `ja`/`fr` fail, which reads as one flake among greens. The test that actually binds asserts two languages render DIFFERENTLY. Served bytes verified over real HTTP, including a route that bypasses `shell_context` entirely.
+
+## [0.18.0] - 2026-08-23
+
+- **A self-explanatory demo page, and the gate that had been switched off by the bug it should have caught.** `examples/03_self_explanatory_demo.py` renders every semantic token as a light/dark swatch pair, every registered component with its description and file path, and a LIVE ACCENT SWITCHER — shipped / teal / green / blue / amber / crimson — so the brand colour can be judged by looking rather than argued about. The shipped purple is presented as one option among several, deliberately not as the answer. The component list is generated from the registry, because a hardcoded gallery would be exactly the second-source-of-truth defect this package spent 0.16.0 removing from its stylesheets.
+
+  It also **could not run**. It had been on its branch five days, dying on its own import line with `ModuleNotFoundError: No module named 'scitex'`, while its test file reported 5 passed — every assertion there is about the SOURCE, and `py_compile` does not execute imports. The umbrella supplied exactly two things (a session directory and a logger), so the work moved into `render(out_dir, log)` and the framework now wraps it where available and is stood in for where it is not. That matters because the example's whole claim is that it is RUNNABLE STANDALONE: requiring the entire ecosystem to see it contradicted its own purpose, and installing that umbrella is actively harmful — it pins its siblings with `==` and was measured downgrading scitex-ui 0.16.0 → 0.6.0 plus ~40 other packages.
+
+  The execution test EXISTED and was disabled by the failure itself: `tests/integration/test_examples_smoke.py` ran every example behind `@pytest.mark.skipif(not _scitex_session_works(), ...)`, and that predicate is False whenever `import scitex` fails — the exact condition that broke the demo. A gate switched off by precisely the thing it exists to detect is a sharper case than a gate that merely cannot fail. The polarity is inverted rather than the guard removed: run everything, skip an individual example only when it actually failed AND the failure names known-broken machinery AND that machinery is independently confirmed broken. Turning it back on immediately found two more broken examples.
+
+- **`skills` is canonical under a `dev` group, and the old spelling still works.** Two doctrines wanted opposite things — §1a requires a package shipping `_skills/` to expose `<cli> skills`, self-contained with no scitex-dev runtime dependency; §13 requires `skills` to nest under `dev`. Resolved the way the fleet already resolves it for `list-python-apis`: canonical at `scitex-ui dev skills`, with the top-level spelling kept as a Phase W warn-forward alias that names its replacement and the version it stops working (0.20.0). The warning goes to stderr so `skills list --json | jq` keeps working. The auditor's suggested `deprecated_alias()` is deliberately not used — it imports scitex-dev, this package's optional `[cli]` extra, which would break the §1a-mandated command for every install without it.
+
+- **The release workflow follows `CI_RUNS_ON` again.** Its four jobs were pinned to `spartan-cpu`, and on 2026-08-22 every runner carrying that label was offline — so the publish could not START, sat `queued`, and never failed, which means nothing reported it. The pin's documented precondition (ci-cpu.sif present at the destination) was discharged first by reading the file on each online runner rather than assuming, and the CI_RUNS_ON ledger records the decision with its reason.
+
+## [0.17.0] - 2026-08-20
+
+- **Below 768px the shell hid the Console/Chat, Files and Viewer panes and nothing could bring them back.** `mobile.css` set `display: none !important` on all three and revealed the active one via `.mobile-active-pane` — a class that appeared in exactly one file, `mobile.css` itself, and that no template, js or ts in this package ever wrote. The destructive half shipped; the restorative half never ran, and the resizers that might have dragged a pane back were hidden by the same media block. On a phone those panes were not collapsed, they were gone.
+
+  Measured in chromium at 390x844 against the rendered shell: before, `ws-ai-pane` and `ws-viewer-pane` at `display:none` with width 0 and **zero** visible clickable elements on the entire page; after, four panes stacked at top 0/462/579/701 and **28 of 33** controls visible, all reachable by scrolling, no horizontal overflow.
+
+  Nothing errored in the broken state. The page was valid, it painted, dark mode was correct, and there was no horizontal overflow — every cheap check passed, which is why it survived. Below 768px the three columns now STACK: no switcher, no JS, no state class. That was already what the rest of the package assumed — `ts/shell/mobile-swipe.ts` opens with *"On mobile (<=768px), workspace panes stack vertically"* and toggles `collapsed`, never `.mobile-active-pane` — so the CSS had been contradicting the shipped JS, and the CSS won. The orphaned reader is DELETED rather than given a writer, along with `.mobile-tab-bar` (styling for a switcher nothing renders); `_KNOWN_ORPHANED` in the layout-writer guard is now empty.
+
+  An app that does not want a pane already has a declared way to say so — `shell_context(panes={"ai": "unused"})` emits `ws-pane-unused` — so the stack is as short as the app declares and full only when it declares nothing. That contract is load-bearing here in a way worth naming: the first draft of the stacking rule wrote `display: flex !important`, and `.ws-pane-unused` hides with a plain `display: none` that any `!important` outranks, so every pane an app had explicitly declared unused would have been dragged back on screen at the width where space is scarcest. `:not(.ws-pane-unused)` is why it is not, and a test pins it.
+
+  Also corrected: `workspace-viewer.css` claimed mobile-swipe.ts *"manages pane visibility via `.mobile-active`"*. It writes no such class. Three files carried three spellings of one idea and none of them had a writer.
+
+- **`standalone_shell.html` gives a mounted app a way back to its launcher.** `shell_context(launcher={"url": ..., "label": ...})` renders a link; omit it and nothing renders, which is correct for a leaf app running standalone at `/` where such a link would point at itself. Validation reports missing AND unknown keys together rather than sending the caller round twice, and refuses an empty value instead of rendering a blank control.
+
+  The link is a direct child of `<body>`, outside `.workspace-three-col`, and a test asserts that placement — a link inside a pane would have been hidden by the very media block the entry above fixes.
+
+- **A guard that fails when a pane-visibility rule has no writer**, carrying a written ceiling for pre-existing debt rather than a blanket exemption, plus tests that fail when a ceiling entry goes stale or stops describing anything real.
+
+- **The packaging gate now says WHY it cannot run.** It had surfaced as a bare `CalledProcessError` naming neither the cause nor the fix; the actual cause was a missing `build` module, and reading `"282 passed, 2 errors"` made that indistinguishable from infrastructure noise.
+
+- **Package assets resolve from the checkout, not `site-packages`.** Nineteen modules derived their paths from `scitex_ui.__file__`, so under a non-editable install a guard asserted about a different tree than the branch under review — passing or failing for one commit depending on which directory pytest ran from.
+
+- **Links rendered identical to body text**, because `primitives/typography.css` read tokens that were never declared. An undefined custom property is invalid at computed-value time, so the property becomes `unset` and INHERITS — it does not fall back to the user-agent default. Anchors therefore took the body colour and lost every visual cue that they were links.
+
 ## [0.16.0] - 2026-08-18
 
 - **`--app-accent-storage` and `--app-accent-comms` existed in one palette layer and not the other, and scitex-hub's comms tile had been rendering with no accent bar.** The accent tokens are declared in BOTH `primitives/colors/` and `shell/theme.css`, and that duplication is the design rather than a defect — `shell/theme.css` is documented as consumable alone (`css/app/context-menu.css`: *"Requires: shell/theme.css — and ONLY that"*), so a page linking it never sees the primitives layer. What had gone wrong is that the duplication was INCOMPLETE: `comms`, `storage` and `todo` lived only in the theme layer, `apps` only in the colors layer. An adopter loading the primitives layer — which is what hub does — silently lost three accents. Nothing errors: `var()` on an undefined custom property resolves to nothing, so the only symptom is an absent 2px bar somebody has to notice, and in July somebody did, for a different app, which is why a test pinning `--app-accent-storage` existed to catch this one.

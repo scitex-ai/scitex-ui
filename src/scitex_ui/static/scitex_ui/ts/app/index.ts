@@ -1,14 +1,8 @@
 /**
  * App components — reusable feature UI (file browser, docs sidebar).
  */
-export {
-  renderImageAttachment,
-  renderFileAttachment,
-} from "./attachment";
-export type {
-  ImageAttachmentConfig,
-  FileAttachmentConfig,
-} from "./attachment";
+export { renderImageAttachment, renderFileAttachment } from "./attachment";
+export type { ImageAttachmentConfig, FileAttachmentConfig } from "./attachment";
 
 export { renderEmptyState } from "./empty";
 export type { EmptyStateConfig } from "./empty";
@@ -41,3 +35,21 @@ export type {
 
 export { ReplyQuote, renderReplyQuote } from "./reply-quote";
 export type { ReplyQuoteConfig } from "./reply-quote";
+
+export {
+  applyVerdict,
+  ALLOWED,
+  DENIED,
+  DENIED_NOT_SIGNED_IN,
+  DENIED_NOT_ENTITLED,
+} from "./dim";
+export type {
+  AllowedVerdict,
+  DeniedVerdict,
+  DeniedNotSignedInVerdict,
+  DeniedNotEntitledVerdict,
+  DimConfig,
+  DimLabels,
+  Verdict,
+  VerdictKind,
+} from "./dim";

@@ -112,10 +112,20 @@ class TestCssImportsResolve:
 
         css_root = scitex_ui.get_static_dir() / "css"
         pattern = re.compile(r"""@import\s+(?:url\()?\s*["']([^"')]+)["']""")
+        # Comments are stripped FIRST, because an @import inside /* */ is not an
+        # import — CSS does not resolve it and no bundler tries. Without this,
+        # the guard reported utils/effects.css as dangling for QUOTING hub's
+        # spelling of the path (`../utilities/effects.css`) in the comment that
+        # explains why this package does not use that spelling. The file
+        # documenting why a path is wrong looked identical to a file still
+        # using it — the same prose-vs-construct confusion recorded in
+        # test_detectors_carry_controls, which has now bitten this repo three
+        # times and scitex-app once.
+        comments = re.compile(r"/\*.*?\*/", re.S)
         broken = []
         # Act
         for css_file in css_root.rglob("*.css"):
-            text = css_file.read_text(encoding="utf-8")
+            text = comments.sub("", css_file.read_text(encoding="utf-8"))
             for raw in pattern.findall(text):
                 target = raw.split("?")[0].split("#")[0]
                 if target.startswith(("http://", "https://", "data:", "//")):
@@ -124,6 +134,37 @@ class TestCssImportsResolve:
                     broken.append(f"{css_file.relative_to(css_root)} -> {target}")
         # Assert
         assert not broken, f"dangling CSS @imports: {broken}"
+
+    def test_the_import_scan_actually_finds_imports(self):
+        """ANTI-VACUITY, added when the test above learned to strip comments.
+
+        "No dangling imports" is what a correct tree reports AND what a scan
+        that read nothing reports. Comment-stripping made that failure newly
+        reachable: an over-greedy stripper would swallow whole stylesheets, the
+        check above would find zero imports, and the suite would call the
+        bundle healthy at the exact moment it stopped being inspected.
+        """
+        # Arrange
+        import re
+
+        css_root = scitex_ui.get_static_dir() / "css"
+        pattern = re.compile(r"""@import\s+(?:url\()?\s*["']([^"')]+)["']""")
+        comments = re.compile(r"/\*.*?\*/", re.S)
+        # Act
+        found = [
+            raw
+            for css_file in css_root.rglob("*.css")
+            for raw in pattern.findall(
+                comments.sub("", css_file.read_text(encoding="utf-8"))
+            )
+        ]
+        # Assert
+        assert len(found) > 50, (
+            f"only {len(found)} @import targets found under {css_root}; this "
+            "package's bundles alone carry far more, so the scan is not "
+            "reading the tree and the dangling-import check above proves "
+            "nothing"
+        )
 
 
 class TestAllComponentsRegistered:

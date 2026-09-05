@@ -403,11 +403,13 @@ try:
 except Exception:
     pass
 
-# audit-cli §1a — packages with _skills/ MUST expose
-# `<cli> skills {list,get,install}`.
-from ._skills import skills_group as _skills_group
+# §13 dev group + the §1a legacy `skills` warn-forward alias. The doctrine
+# collision and the alias mechanics live in _dev_group.py; this module only
+# wires them, which is what an entry point should do.
+from ._dev_group import install_dev_aliases, register_dev_group
 
-main.add_command(_skills_group, name="skills")
+_dev = register_dev_group(main)
+install_dev_aliases(main, _dev)
 
 # UI-101..105 component-usage lint walker — `scitex-ui lint <path>`.
 # Plugin entry-point (`scitex_dev.linter.plugins`) handles RULE registration;

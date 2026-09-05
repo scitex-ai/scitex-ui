@@ -226,7 +226,25 @@
   color: var(--text-primary, #d4e1e8);
 }
 
-.ws-viewer-formats-info-btn[data-tooltip]:hover::after {
+/*
+ * KEYBOARD PARITY, not a nicety. This tooltip is the ONLY place the supported
+ * format list appears, so a `:hover`-only rule made the control's entire
+ * content unreachable without a mouse — the user tabs to it, gets nothing, and
+ * has no way to discover what it would have said.
+ *
+ * `:focus-visible` rather than `:focus`: a plain `:focus` also fires on a MOUSE
+ * click, so the panel would stay pinned open after clicking and only dismiss on
+ * blur. focus-visible fires for keyboard traversal and not for a pointer press,
+ * which is exactly the distinction wanted here.
+ *
+ * NOTE THIS DOES NOT MAKE THE CONTENT ACCESSIBLE, only visible. `content:
+ * attr()` is generated content and is not reliably exposed to assistive
+ * technology, so a screen-reader user still gets nothing from this rule. That
+ * is why the button carries an `aria-label` in the template — the two fixes
+ * serve different users and neither substitutes for the other.
+ */
+.ws-viewer-formats-info-btn[data-tooltip]:hover::after,
+.ws-viewer-formats-info-btn[data-tooltip]:focus-visible::after {
   content: attr(data-tooltip);
   position: absolute;
   top: 100%;
@@ -247,7 +265,15 @@
 }
 
 /* ============================================================
-   Responsive: mobile pane switching handled by mobile.css
-   (Previously hid viewer with display:none — removed because
-    mobile-swipe.ts now manages pane visibility via .mobile-active)
+   Responsive: mobile layout handled by mobile.css, where the three
+   columns become a vertical STACK below 768px.
+
+   The note that stood here was wrong and worth naming, because it is
+   why the viewer stayed hidden for so long: it said mobile-swipe.ts
+   "manages pane visibility via .mobile-active". That module writes no
+   such class -- it toggles `collapsed` on `.stx-shell-sidebar` and
+   nothing else -- so this file correctly stopped hiding the viewer,
+   handed the job to a module that was not doing it, and mobile.css
+   then hid it anyway via `.mobile-active-pane`, a third name no code
+   ever wrote. Three files, three spellings, no writer.
    ============================================================ */
