@@ -74,6 +74,27 @@ _IMPORT = re.compile(r"""@import\s*["']\s*(?P<url>.*?)["']""")
 _EXTERNAL = ("data:", "http:", "https:", "//", "#", "var(")
 
 
+def _path_part(url: str) -> str:
+    """Strip a ``?query`` and/or ``#fragment`` suffix, leaving the file path.
+
+    A cache-busting suffix is ordinary CSS -- `url("logo.svg?v=2")`, and the
+    `?hash#iefix` form every webfont kit emits. Neither belongs to the filename,
+    so resolving the raw capture looks for a file literally named
+    ``logo.svg?v=2`` and reports a correct stylesheet as broken.
+
+    THIS IS A FALSE POSITIVE THIS FILE ONCE PRODUCED. The throwaway script that
+    verified the 0.20.2 wheel had this same omission and reported five broken
+    references in a vendored Sphinx theme; four of the five files were present
+    all along and only the suffix made them look absent.
+
+    Django strips these too, so this makes the guard agree with the reader it
+    protects against rather than merely being stricter than it. Being stricter
+    is right about COMMENTS -- see the header -- and wrong here: a guard that
+    fires on correct code gets exempted, and an exempted guard is not a guard.
+    """
+    return url.split("?", 1)[0].split("#", 1)[0]
+
+
 def _unresolved_in(text: str, base: pathlib.Path) -> list[tuple[int, str]]:
     """Return (line, url) for every reference in ``text`` that does not exist.
 
@@ -85,7 +106,10 @@ def _unresolved_in(text: str, base: pathlib.Path) -> list[tuple[int, str]]:
         url = match.group("url").strip()
         if not url or url.startswith(_EXTERNAL):
             continue
-        if not (base / url).resolve().exists():
+        path = _path_part(url)
+        if not path:
+            continue
+        if not (base / path).resolve().exists():
             out.append((text[: match.start()].count("\n") + 1, url))
     return out
 
@@ -189,6 +213,53 @@ class TestTheScanReadsWhatDjangoReads:
         found = _unresolved_in(text, tmp_path)
         # Assert
         assert found == [], f"an external URL was wrongly reported: {found}"
+
+    def test_a_cache_busted_reference_to_an_existing_file_is_not_reported(
+        self, tmp_path
+    ):
+        """`logo.svg?v=2` names a file that exists; the suffix is not the name."""
+        # Arrange
+        (tmp_path / "logo.svg").write_text("<svg/>\n")
+        text = '.x{background:url("logo.svg?v=2")}\n'
+        # Act
+        found = _unresolved_in(text, tmp_path)
+        # Assert
+        assert found == [], (
+            f"a cache-busted reference to an EXISTING file was reported as "
+            f"broken: {found}. This is the false positive the guard shipped "
+            f"with; a guard that fires on correct code gets exempted."
+        )
+
+    def test_a_cache_busted_reference_to_a_MISSING_file_is_still_reported(
+        self, tmp_path
+    ):
+        """The control that matters: stripping must not stop the checking.
+
+        Suffix handling is the kind of fix that quietly turns a guard off -- the
+        false positives disappear and so does every true positive wearing the
+        same shape. This asserts the second did not happen.
+        """
+        # Arrange
+        text = '.x{background:url("nope/gone.svg?v=2")}\n'
+        # Act
+        found = _unresolved_in(text, tmp_path)
+        # Assert
+        assert found == [(1, "nope/gone.svg?v=2")], (
+            f"a cache-busted reference to a MISSING file was NOT reported: "
+            f"{found}. Stripping the suffix has disabled the check."
+        )
+
+    def test_a_fragment_only_webfont_reference_resolves_to_its_file(
+        self, tmp_path
+    ):
+        """The exact `?hash#iefix` form every webfont kit emits."""
+        # Arrange
+        (tmp_path / "fa.eot").write_text("x\n")
+        text = '@font-face{src:url("fa.eot?abc123#iefix")}\n'
+        # Act
+        found = _unresolved_in(text, tmp_path)
+        # Assert
+        assert found == [], f"a webfont ?hash#iefix reference was reported: {found}"
 
 
 class TestThePatternsSeparateSyntaxFromProse:
