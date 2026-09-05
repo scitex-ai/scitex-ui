@@ -7,13 +7,37 @@
  * Usage:
  * ```typescript
  * import { initRepoMonitor, initMonitorToggle } from "scitex-ui/ts/shell/repo-monitor";
+ * import { apiUrl } from "scitex-ui/ts/_base";
  *
  * initMonitorToggle();
  * initRepoMonitor({
- *   adapter: { fetchRecentFiles: () => fetch("api/files").then(r => r.json()) },
+ *   adapter: { fetchRecentFiles: () => fetch(apiUrl("/api/files")).then(r => r.json()) },
  *   pollIntervalMs: 10000,
  * });
  * ```
+ *
+ * THE `apiUrl()` IN THAT EXAMPLE IS LOAD-BEARING. This example previously
+ * passed a bare relative path straight to fetch, and that is the failure it
+ * now demonstrates the fix for.
+ *
+ * THE OFFENDING FORMS ARE DESCRIBED HERE, NEVER WRITTEN. A checker that scans
+ * source text for unsafe request URLs has no reason to understand comments —
+ * scitex-ui shipped a collectstatic outage on 2026-09-05 for exactly that
+ * reason, where a path quoted inside a CSS comment was read as a live
+ * reference. Writing a specimen of the defect next to its own warning is how
+ * the warning becomes the defect.
+ *
+ * A path with no leading slash resolves against the DOCUMENT's URL, so it
+ * works at `/app/` and 404s at `/app`: it survives a smoke test and breaks on
+ * a redirect or a differently-written link. A path with a leading slash is
+ * wrong in the other direction — it ignores the mount entirely and 404s
+ * everywhere the app is not at the root. `apiUrl()` joins onto the mount
+ * prefix and returns a well-formed path in both cases (root mount yields "").
+ *
+ * An example is copied verbatim; that is what it is for. So an unsafe one does
+ * not merely fail to help — it manufactures the defect in every app that
+ * follows it, and as of scitex-app 0.14.0 those apps fail scitex-hub's
+ * publication gate rather than failing quietly at runtime.
  */
 
 import { RepoMonitorClient } from "./_RepoMonitorClient";
