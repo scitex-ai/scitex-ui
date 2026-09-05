@@ -6,11 +6,29 @@
  * WHY THIS FILE EXISTS AT ALL
  *
  * scitex-hub forked scitex-ui's primitives and its variables.css carries one
- * import mine lacked:
+ * import mine lacked: an at-import of effects.css from their utilities
+ * directory, one level up from the importing file.
  *
- *     @import url("../utilities/effects.css");
+ * THAT IMPORT IS DESCRIBED IN PROSE HERE, NEVER WRITTEN AS CSS SYNTAX, and the
+ * reason is a build break rather than style. This comment first quoted the line
+ * verbatim, because an explanation that matches the real thing character for
+ * character is easier to trust. Django's staticfiles post-processor rewrites
+ * asset references by REGEX, and below 6.1 it does not know what a comment is:
+ * it reads the quoted path as a live reference, tries to resolve
+ * `utils/../utilities/effects.css`, finds nothing, and fails collectstatic for
+ * the whole project. Measured 2026-09-05 — scitex-ui 0.20.1 broke every
+ * scitex-hub PR this way, gating a production rebuild. The boundary was
+ * measured from both sides: Django 6.1.1 HAS `_css_ignored_re`
+ * (contrib/staticfiles/storage.py) and does NOT reproduce it; Django 6.0.8,
+ * which hub's CI resolves to, does not have it and does. The failure needs
+ * both halves — a quoted path here and a pre-6.1 reader there — which is
+ * exactly why the rule is absolute: this package cannot
+ * choose its consumers' Django version, so no shipped stylesheet may contain a
+ * `url(` or quoted `@import` token that does not resolve, comment or not.
+ * Enforced by tests/develop/test_shipped_css_references_all_resolve.py, which
+ * scans the raw bytes without stripping comments.
  *
- * Until that line resolved on both sides, hub could not delete their fork and
+ * Until that import resolved on both sides, hub could not delete their fork and
  * load scitex-ui's primitives: doing so would have dropped 13 actively-used
  * tokens across 96 of their files. The two variables.css files now converge by
  * BOTH CARRYING THE LINE rather than by hub deleting it.
