@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scitex-ui"
-version = "0.16.0"
+version = "0.20.2"
 description = "Shared frontend UI components for the SciTeX ecosystem"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -63,6 +63,12 @@ dev = [
     "hatchling>=1.20",
     "click>=8.0.0",  # tests/scitex_ui/test__cli.py
     "fastmcp>=2.0.0",
+    # tests/develop/test_dev_group_nests_skills.py compares the deprecation
+    # window's removal version against the shipped one. It was importable here
+    # as a transitive dep of pytest/setuptools; declared explicitly because a
+    # test that relies on someone else's dependency fails at COLLECTION, not
+    # with a skip, on the day that changes.
+    "packaging>=23.0",
     "pytest-cov>=4.0.0",
     "pytest>=7.0.0",
     "scitex-dev>=0.11.7",

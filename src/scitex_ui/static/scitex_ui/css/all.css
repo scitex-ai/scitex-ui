@@ -12,6 +12,7 @@
 @import "./app/confirm-modal.css";
 @import "./app/context-menu.css";
 @import "./app/data-table.css";
+@import "./app/dim.css";
 @import "./app/drawer.css";
 @import "./app/dropdown.css";
 @import "./app/empty.css";
@@ -90,5 +91,6 @@
 @import "./shell/workspace-viewer-preview.css";
 @import "./shell/workspace-viewer.css";
 @import "./shell/workspace.css";
+@import "./utils/effects.css";
 @import "./utils/element-inspector.css";
 @import "./utils/layout.css";

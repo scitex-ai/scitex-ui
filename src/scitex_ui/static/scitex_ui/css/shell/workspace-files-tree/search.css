@@ -4,7 +4,7 @@
  */
 
 .wft-search-box {
-  background: var(--workspace-bg-default);
+  background: var(--workspace-bg-primary);
   border-top: 1px solid var(--workspace-border-default);
   padding: 6px 8px;
   flex-shrink: 0;
@@ -17,7 +17,7 @@
 .wft-search-input-wrapper {
   display: flex;
   align-items: center;
-  background: var(--workspace-bg-input);
+  background: var(--workspace-bg-elevated);
   border: 1px solid var(--workspace-border-default);
   border-radius: 4px;
   padding: 3px 8px;

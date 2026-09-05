@@ -87,7 +87,7 @@
 .stx-toast__undo:disabled {
   /* The button disables itself while an async undo is in flight, so this is
      "working", not "unavailable". */
-  opacity: 0.5;
+  opacity: var(--disabled-opacity);
   cursor: wait;
 }
 

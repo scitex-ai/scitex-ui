@@ -70,6 +70,36 @@ _THEME = _CSS / "shell" / "theme.css"
 _CSS_COMMENT = re.compile(r"/\*.*?\*/", re.S)
 _DECL = re.compile(r"^\s*--app-accent-([a-z0-9-]+)\s*:", re.M)
 
+#: The bare brand accent, WITH ITS VALUE. Capturing the value is the whole
+#: correction: the previous guard matched `^\s*--accent\s*:` and counted hits,
+#: which cannot see what a declaration says or which block it sits in.
+_BARE_ACCENT = re.compile(r"^\s*--accent\s*:\s*([^;]+);", re.M)
+
+#: A block opener. Only `[data-theme="dark"]` is treated as dark; everything
+#: else (`:root`, `[data-theme="light"]`) is light, which is this repo's
+#: convention — dark is always explicitly attributed, light is the default.
+_BLOCK_OPEN = re.compile(r"([^{}]*)\{", re.S)
+
+
+def _bare_accent_by_block(text: str) -> dict[str, str]:
+    """Map "light"/"dark" to the ``--accent`` value declared in that block.
+
+    A block that declares it TWICE keeps the last value, matching the cascade.
+    A block that declares it not at all is absent from the mapping, which is
+    what makes "declared in the dark block" assertable rather than inferred
+    from a count.
+    """
+    stripped = _CSS_COMMENT.sub("", text)
+    found: dict[str, str] = {}
+    for match in _BLOCK_OPEN.finditer(stripped):
+        selector = match.group(1)
+        kind = "dark" if 'data-theme="dark"' in selector else "light"
+        end = stripped.find("}", match.end())
+        body = stripped[match.end() : end if end != -1 else len(stripped)]
+        for value in _BARE_ACCENT.findall(body):
+            found[kind] = value.strip()
+    return found
+
 #: Current-app STATE assigned at render time by ``[data-app-accent="x"]``, not
 #: per-app palette entries.
 _STATE = {"color", "tint"}
@@ -171,21 +201,197 @@ def test_the_bare_accent_token_is_in_both_layers() -> None:
     for this test existing rather than the fix being enough: I fixed the family
     I was looking at and left the sibling, and only someone checking a shipped
     artifact for a different reason noticed.
+
+    THE COUNT THIS TEST USED TO DO WAS THE WRONG PREDICATE, and scitex-hub
+    found it by EXECUTING the regex against constructed fixtures rather than
+    reading it. `^\\s*--accent\\s*:` counted >= 2 hits in theme.css, capturing
+    no value and no block context, so all three of these passed GREEN:
+
+        the shipped shape                                 correct
+        dark copied the light literal                     the 2.71:1 regression
+        dark block has NO --accent; light declares twice   a missing token
+
+    And `_dark.css` was never opened at all, so the bare --accent there was
+    guarded by NOTHING.
+
+    The defect being guarded is an AGREEMENT defect — light-to-light and
+    dark-to-dark, across two files. The changelog in the same PR explained that
+    an agreement check fails OPEN while an existence check fails SAFE. I wrote
+    that distinction in prose and then shipped the existence check. This is the
+    agreement check it was documented to be; the assertions live in the
+    per-block tests below, and this one keeps the history.
     """
     # Arrange
     theme = _THEME.read_text(errors="replace")
-    light = (_COLORS / "_light.css").read_text(errors="replace")
-    bare = re.compile(r"^\s*--accent\s*:", re.M)
     # Act
-    in_theme, in_colors = len(bare.findall(theme)), len(bare.findall(light))
-    # Assert
-    assert in_theme >= 2 and in_colors >= 1, (
-        f"--accent is declared {in_colors}x in primitives/colors/_light.css and "
-        f"{in_theme}x in shell/theme.css (expected >=2 there: light and dark). "
-        "theme.css is documented as consumable alone and app/combobox.css reads "
-        "var(--accent), so a token missing here renders as nothing for any app "
-        "that takes that path."
+    blocks = _bare_accent_by_block(theme)
+    # Assert -- both blocks present. Value agreement is asserted separately.
+    assert set(blocks) == {"light", "dark"}, (
+        f"shell/theme.css declares the bare --accent in blocks {sorted(blocks)}; "
+        "expected both light and dark. theme.css is documented as consumable "
+        "alone and app/combobox.css reads var(--accent) at three sites, so a "
+        "token missing from either block renders as nothing for any app taking "
+        "that path."
     )
+
+
+def test_the_dark_primitives_file_declares_the_bare_accent() -> None:
+    """ANTI-VACUITY for the two agreement tests below.
+
+    `_dark.css` was opened by no test in this module before today, so a
+    comparison against it could have been comparing against nothing.
+    """
+    # Arrange
+    dark_text = (_COLORS / "_dark.css").read_text(errors="replace")
+    # Act
+    blocks = _bare_accent_by_block(dark_text)
+    # Assert
+    assert "dark" in blocks
+
+
+def test_theme_light_accent_matches_the_primitives_light_value() -> None:
+    """Same token, two layers, one value — or an app sees a different accent
+    depending on which stylesheet it linked."""
+    # Arrange
+    theme = _bare_accent_by_block(_THEME.read_text(errors="replace"))
+    primitives = _bare_accent_by_block(
+        (_COLORS / "_light.css").read_text(errors="replace")
+    )
+    # Act
+    pair = (theme.get("light"), primitives.get("light"))
+    # Assert
+    assert pair[0] == pair[1], (
+        f"--accent in the light block is {pair[0]!r} in shell/theme.css and "
+        f"{pair[1]!r} in primitives/colors/_light.css. Both are shipped and "
+        "either can be linked alone, so they must agree."
+    )
+
+
+def test_theme_dark_accent_matches_the_primitives_dark_value() -> None:
+    # Arrange
+    theme = _bare_accent_by_block(_THEME.read_text(errors="replace"))
+    primitives = _bare_accent_by_block(
+        (_COLORS / "_dark.css").read_text(errors="replace")
+    )
+    # Act
+    pair = (theme.get("dark"), primitives.get("dark"))
+    # Assert
+    assert pair[0] == pair[1], (
+        f"--accent in the dark block is {pair[0]!r} in shell/theme.css and "
+        f"{pair[1]!r} in primitives/colors/_dark.css."
+    )
+
+
+def test_the_two_palettes_do_not_collapse_onto_one_accent() -> None:
+    """THE 2.71:1 REGRESSION, asserted directly.
+
+    #6d4cad measures 2.71:1 against the dark surface and two of the three
+    `var(--accent)` sites in app/combobox.css are `color:`. So the tidy-up that
+    unifies the palettes onto the light literal reintroduces a WCAG AA failure
+    on the theme the operator actually uses. The old count could not see it.
+    """
+    # Arrange
+    blocks = _bare_accent_by_block(_THEME.read_text(errors="replace"))
+    # Act
+    collapsed = blocks.get("light") == blocks.get("dark")
+    # Assert
+    assert collapsed is False, (
+        f"both palettes declare --accent as {blocks.get('light')!r}. No single "
+        "value clears AA on both surfaces: #6d4cad is 5.97:1 on light and "
+        "2.71:1 on dark; #a371f7 is 5.16:1 on dark."
+    )
+
+
+class TestTheDetectorItself:
+    """Literal-sample controls for `_BARE_ACCENT`, both directions."""
+
+    def test_it_captures_a_value(self):
+        """POSITIVE control: the previous predicate matched without capturing,
+        which is exactly what made it blind."""
+        # Arrange
+        sample = "  --accent: #6d4cad;\n"
+        # Act
+        matched = _BARE_ACCENT.search(sample)
+        # Assert
+        assert matched.group(1).strip() == "#6d4cad"
+
+    def test_it_ignores_a_longer_token_that_starts_the_same(self):
+        """NEGATIVE control: `--accent-color` is a DIFFERENT token, and the
+        bare-accent check must not claim it. A hyphen is a word character, so
+        a `\\b`-based pattern would absorb it — that exact mistake inflated a
+        finding to 55 files on 2026-08-05."""
+        # Arrange
+        sample = "  --accent-color: #f00;\n"
+        # Act
+        matched = _BARE_ACCENT.search(sample)
+        # Assert
+        assert matched is None
+
+    def test_the_block_pattern_captures_a_selector(self):
+        """POSITIVE control for `_BLOCK_OPEN`."""
+        # Arrange
+        sample = '[data-theme="dark"] {\n'
+        # Act
+        matched = _BLOCK_OPEN.search(sample)
+        # Assert
+        assert matched.group(1).strip() == '[data-theme="dark"]'
+
+    def test_the_block_pattern_ignores_a_declaration_with_no_brace(self):
+        """NEGATIVE control: a declaration line is not a block opener.
+
+        Without this, a pattern that matched every line would still satisfy the
+        positive control above and would attribute every declaration to a
+        block of its own — which is the presence-not-placement failure this
+        whole change exists to fix, reintroduced inside its own fix."""
+        # Arrange
+        sample = "  --accent: #6d4cad;\n"
+        # Act
+        matched = _BLOCK_OPEN.search(sample)
+        # Assert
+        assert matched is None
+
+
+class TestHubsFixturesGoRed:
+    """The three shapes that passed the old count must now fail.
+
+    These are hub's constructed fixtures from the PR #156 review, kept verbatim
+    in spirit: they are the specification for this guard, so they are asserted
+    rather than described.
+    """
+
+    def test_dark_copying_the_light_literal_is_rejected(self):
+        # Arrange
+        sample = (
+            '[data-theme="light"] { --accent: #6d4cad; }\n'
+            '[data-theme="dark"] { --accent: #6d4cad; }\n'
+        )
+        # Act
+        blocks = _bare_accent_by_block(sample)
+        # Assert -- identical values, which the collapse test forbids
+        assert blocks["light"] == blocks["dark"]
+
+    def test_two_declarations_in_the_light_block_leave_dark_absent(self):
+        # Arrange
+        sample = (
+            '[data-theme="light"] { --accent: #6d4cad; --accent: #7744aa; }\n'
+            '[data-theme="dark"] { --bg: #000; }\n'
+        )
+        # Act
+        blocks = _bare_accent_by_block(sample)
+        # Assert -- the old count saw 2 and passed; the block map sees no dark
+        assert "dark" not in blocks
+
+    def test_the_shipped_shape_is_accepted(self):
+        """The control that makes the two rejections meaningful."""
+        # Arrange
+        sample = (
+            '[data-theme="light"] { --accent: #6d4cad; }\n'
+            '[data-theme="dark"] { --accent: #a371f7; }\n'
+        )
+        # Act
+        blocks = _bare_accent_by_block(sample)
+        # Assert
+        assert blocks == {"light": "#6d4cad", "dark": "#a371f7"}
 
 
 def test_light_and_dark_declare_the_same_accents() -> None:

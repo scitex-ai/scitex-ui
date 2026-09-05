@@ -36,6 +36,7 @@ one test red.
 
 from __future__ import annotations
 
+import enum
 from pathlib import Path
 
 import pytest
@@ -241,6 +242,33 @@ def test_guard_tells_the_reviewer_what_to_do_instead(
 
 
 _HOSTED_PREFIXES = ("ubuntu-", "macos-", "windows-")
+
+
+class _Destination(enum.Enum):
+    """Where a job runs, as a THREE-valued answer.
+
+    The bug this replaces was two-valued: a destination was either a literal
+    hosted image (caught) or "not that" (passed). Everything the parser could
+    not read — every expression — fell into the second bucket and was reported
+    as fine. §2: collapsing *unknown* into either pole is the most common bug we
+    ship, and here it silently emptied the guard.
+    """
+
+    NONE = "none"  #: no `runs-on`; the destination lives in a called workflow
+    LITERAL = "literal"  #: readable here — prefix check applies
+    CI_RUNS_ON = "ci_runs_on"  #: the sibling ledger guard vouches for it
+    UNVOUCHED = "unvouched"  #: an expression nothing in this repo checks
+
+
+def _classify(job: dict) -> _Destination:
+    """Classify a job's `runs-on`. Unknown forms are UNVOUCHED, never OK."""
+    runs_on = job.get("runs-on")
+    if runs_on is None:
+        return _Destination.NONE
+    text = " ".join(str(x) for x in runs_on) if isinstance(runs_on, list) else str(runs_on)
+    if "${{" not in text:
+        return _Destination.LITERAL
+    return _Destination.CI_RUNS_ON if "CI_RUNS_ON" in text else _Destination.UNVOUCHED
 _ALL_JOBS = [
     (path.name, job_id, job)
     for path in sorted(_WORKFLOW_DIR.glob("*.y*ml"))
@@ -289,16 +317,60 @@ def test_no_job_targets_a_github_hosted_image(
     runs_on = job.get("runs-on", "")
     labels = runs_on if isinstance(runs_on, list) else [str(runs_on)]
     # Act
+    verdict = _classify(job)
     hosted = [
         label for label in labels if str(label).startswith(_HOSTED_PREFIXES)
     ]
     # Assert
-    assert not hosted, (
-        f"{workflow}:{job_id} literally targets {hosted}. This repo runs CI "
-        "self-hosted, so a hardcoded hosted image is usually an accident. If "
-        "it is deliberate it is permitted (PS-169 is advisory since "
-        "2026-08-05; hosted runners are allowed for public repos) — then "
-        "amend this test in the same commit with the reason. Note this check "
-        "only sees LITERAL labels; a destination set via CI_RUNS_ON is not "
-        "covered here."
+    assert verdict is not _Destination.UNVOUCHED and not hosted, (
+        f"{workflow}:{job_id}: "
+        + (
+            f"literally targets {hosted}. This repo runs CI self-hosted, so a "
+            "hardcoded hosted image is usually an accident. If it is "
+            "deliberate it is permitted (PS-169 is advisory since 2026-08-05; "
+            "hosted runners are allowed for public repos) — then amend this "
+            "test in the same commit with the reason."
+            if hosted
+            else f"`runs-on` is the expression {labels[0]!r}, which names "
+            "neither a literal label nor CI_RUNS_ON, so NOTHING in this repo "
+            "can say where this job runs. The sibling ledger "
+            "(test_ci_runs_on_fallback_is_self_hosted.py) vouches only for "
+            "CI_RUNS_ON. Either use CI_RUNS_ON, or use a literal, or add a "
+            "guard for the new variable and list it here with the reason."
+        )
+    )
+
+
+def test_the_guard_can_see_at_least_one_destination() -> None:
+    """ANTI-VACUITY. Without this the check above is green on an empty set.
+
+    Measured 2026-08-23: EVERY `runs-on` in this repo is a CI_RUNS_ON
+    expression — not one literal remains anywhere. So the literal-prefix check
+    had nothing to examine on any job and passed trivially for all of them. It
+    was not "blind to some destinations", which is what its docstring claimed;
+    it was blind to ALL of them, and had been since the last literal left.
+
+    That is §2's gate-that-cannot-fail, and it is invisible to the usual
+    controls: the parametrisation is non-empty (every job is a case), every
+    case passes, and the suite is green. Only asking "could ANY case have
+    failed?" surfaces it.
+
+    This asserts the population the guard can actually reason about is
+    non-empty. A job whose destination lives in the callee (`uses:` a reusable
+    workflow) legitimately has no `runs-on` and is not counted.
+    """
+    # Arrange
+    reasoned = [
+        (workflow, job_id)
+        for workflow, job_id, job in _ALL_JOBS
+        if _classify(job) in (_Destination.LITERAL, _Destination.CI_RUNS_ON)
+    ]
+    # Act
+    count = len(reasoned)
+    # Assert
+    assert count, (
+        "no job in .github/workflows has a destination this file can reason "
+        "about, so test_no_job_targets_a_github_hosted_image passes "
+        "vacuously for every job. Either the workflows stopped declaring "
+        "`runs-on`, or _classify no longer recognises the form they use."
     )

@@ -14,12 +14,11 @@ than one list that does not filter at all, because the user learns the first
 one lied. Hence one matcher, shared.
 """
 
-import pathlib
 import re
 
-import scitex_ui
+from tests._checkout import package_dir
 
-_STATIC = pathlib.Path(scitex_ui.__file__).parent / "static"
+_STATIC = package_dir() / "static"
 _TS = _STATIC / "scitex_ui/ts"
 
 

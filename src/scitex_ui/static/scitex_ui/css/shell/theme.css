@@ -44,7 +44,7 @@
      the combobox accent as nothing. Every other palette token already honoured
      that contract: --text-link, --bg-surface and --text-primary are each
      declared in BOTH layers; --accent was the one that was not. */
-  --accent: #6d4cad; /* 5.97:1 — the historical literal, pinned HERE not dark */
+  --accent: #6d4cad; /* 5.97:1 on --bg-surface — historical literal, pinned HERE not dark */
 
   /* --- Background --- */
   --bg-page: #faf9f7;
@@ -161,7 +161,7 @@
   /* MIRRORS primitives/colors/_dark.css, value unchanged — see the light block.
      The light literal measures 2.71:1 on this surface; this is the value that
      already fixed that, and copying the light one here would reintroduce it. */
-  --accent: #a371f7; /* 5.16:1 — CHANGED from #6d4cad (2.71:1) */
+  --accent: #a371f7; /* 5.16:1 on --bg-surface — CHANGED from #6d4cad (2.71:1 there) */
 
   --bg-page: #0d1117;
   --bg-surface: #161b22;

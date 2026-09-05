@@ -39,9 +39,9 @@ import re
 
 import pytest
 
-import scitex_ui
+from tests._checkout import css_dir
 
-_CSS = pathlib.Path(scitex_ui.__file__).parent / "static" / "scitex_ui" / "css"
+_CSS = css_dir()
 _THEME = _CSS / "shell" / "theme.css"
 _APP = _CSS / "app"
 
@@ -55,12 +55,28 @@ _ADOPTER_OVERRIDES = {"--stx-context-menu-z"}
 _THEME_ONLY = {"context-menu.css", "attachment.css"}
 
 
+def _strip_comments(text: str) -> str:
+    """Drop `/* ... */`, because a token NAMED in prose is not CONSUMED.
+
+    Added 2026-09-03 after this file failed on a comment that said, in as many
+    words, that the file deliberately does NOT use the token it names. The
+    detector read the explanation as the thing being explained.
+
+    That is the documentation inversion the constitution warns about: a
+    substring detector makes the file that best explains why it avoids
+    something look exactly like the file that still does it. The sibling guard
+    in test_app_css_tokens_resolve.py has stripped comments from the start;
+    this one did not, and the two disagreed about the same tree.
+    """
+    return re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+
+
 def _defined_in(text: str) -> set[str]:
-    return set(re.findall(r"(--[a-z0-9-]+)\s*:", text))
+    return set(re.findall(r"(--[a-z0-9-]+)\s*:", _strip_comments(text)))
 
 
 def _consumed_by(path: pathlib.Path) -> set[str]:
-    return set(re.findall(r"var\((--[a-z0-9-]+)", path.read_text()))
+    return set(re.findall(r"var\((--[a-z0-9-]+)", _strip_comments(path.read_text())))
 
 
 def _all_shipped_tokens() -> set[str]:

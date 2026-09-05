@@ -292,7 +292,7 @@
    * palette moves. Rationale and measurements:
    * tests/develop/test_app_css_single_fallback_tokens.py. */
   --danger-color: var(--status-error-text); /* #994444, 6.01:1 */
-  --accent: #6d4cad; /* 5.97:1 — the historical literal, pinned HERE not dark */
+  --accent: #6d4cad; /* 5.97:1 on --bg-surface — historical literal, pinned HERE not dark */
   --workspace-text-muted: var(--workspace-text-secondary); /* #57606a, 5.97:1 */
   --border-primary: var(--border-default); /* a border, no contrast claim */
   --bg-hover: rgba(

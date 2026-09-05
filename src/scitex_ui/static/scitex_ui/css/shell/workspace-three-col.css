@@ -163,12 +163,6 @@
 
 /* --- Apps nav pane (4th column — icon-only, fixed) --- */
 
-.ws-apps-pane {
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-
 #ws-apps-sidebar {
   position: relative;
   height: 100%;
@@ -426,7 +420,6 @@ body.stx-shell-ai-open #workspace-three-col #main-content {
 .workspace-three-col > .ws-ai-pane,
 .workspace-three-col > .ws-worktree-pane,
 .workspace-three-col > .ws-viewer-pane,
-.workspace-three-col > .ws-apps-pane,
 .workspace-three-col > .ws-module-pane {
   height: 100%;
   max-height: 100%;

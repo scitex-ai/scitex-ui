@@ -124,7 +124,6 @@ data/*
 **/*.txt
 **/*.log
 **/*.db
-**/*.sqlite
 **/*.xml
 **/*.JNB
 **/*.jnb
@@ -190,8 +189,6 @@ cover/
 # Django stuff:
 *.log
 local_settings.py
-db.sqlite3
-db.sqlite3-journal
 
 # Flask stuff:
 instance/
@@ -656,7 +653,6 @@ flycheck_*.el
 
 ### Source: /home/ywatanabe/.git-templates/.gitignore-templates/Custom/SQL.gitignore ###
 **/*.db
-**/*.sqlite3
 *.db-shm
 *.db-wal
 
@@ -682,3 +678,17 @@ slurm_logs
 # ignored meant PS-102 flagged the repo as dirty and a stray `git add -A` could
 # have committed a session log. Runtime artifact — regenerable, never shipped.
 /logs/
+
+# Browser console logs written by the playwright MCP server whenever an agent
+# renders a page from this checkout. Same class as /logs/ above, same reason:
+# untracked-but-not-ignored leaves the tree permanently dirty, and a `git add -A`
+# would commit them. Measured 2026-08-23: 8 console-*.log files dating back to
+# 08-18 sitting in the working checkout, unignored, showing up in every
+# `git status` any agent ran. Regenerable debug output, never shipped.
+/.playwright-mcp/
+
+# Output of examples/03_self_explanatory_demo.py when run standalone.
+# The demo writes beside itself so a reader who just ran it can find the
+# page without knowing about session directories -- which means the tree
+# gets dirty on every run unless this is ignored.
+examples/_demo_out/

@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" data-theme-default="{{ shell_theme_default|default:'dark' }}">
+<html lang="{{ shell_lang|default:'en' }}" data-theme-default="{{ shell_theme_default|default:'dark' }}">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -61,6 +61,24 @@
          mirrors the class onto <body> for consumer CSS that selects
          body.dark-theme. -->
     <body class="workspace-page footer-collapsed no-transition">
+        {% if launcher %}
+        <!-- WAY OUT. Rendered only when the composer supplied a destination via
+             shell_context(launcher={"url": ..., "label": ...}). A STANDALONE app
+             supplies none and gets no link, correctly: per the dual-mode
+             contract it is itself mounted at "/", so a link there would be a
+             self-link rather than an escape.
+
+             DELIBERATELY A DIRECT CHILD OF <body>, OUTSIDE .workspace-three-col.
+             Every pane is display:none below 768px, so a link placed inside one
+             would be hidden by the exact media block that causes the defect this
+             fixes: scitex-hub measured /apps/storage/ at 390x844 with ZERO anchor
+             elements — nothing on the page a visitor could click to leave. Put
+             the escape route inside the thing that disappears and it disappears
+             with it. -->
+        <a class="stx-shell-launcher-link" href="{{ launcher.url }}">
+            <span aria-hidden="true">&#8592;</span> {{ launcher.label }}
+        </a>
+        {% endif %}
         <!--
           Standalone shell: vanilla TS layout matching scitex-cloud's global_base.html.
           Structure: Console/Chat | Files | Viewer | App Content
@@ -444,6 +462,7 @@
                             <div id="ws-viewer-tabs" class="ws-viewer-tabs"></div>
                             <button class="ws-viewer-formats-info-btn"
                                     data-tooltip="Supported formats:&#10;Text: .py .js .ts .html .css .json .md .yaml .sh .tex .bib .txt&#10;Image: .png .jpg .jpeg .gif .webp .svg .bmp .ico&#10;PDF: .pdf&#10;Table: .csv .tsv&#10;Diagram: .mmd .mermaid .dot .gv&#10;Audio: .mp3 .wav .ogg .flac .m4a .aac .wma&#10;Video: .mp4 .webm .avi .mov .mkv .ogv"
+                                    aria-label="Supported file formats"
                                     title="">
                                 <i class="fas fa-info-circle"></i>
                             </button>

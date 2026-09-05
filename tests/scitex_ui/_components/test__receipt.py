@@ -3,15 +3,15 @@
 
 """Tests for scitex_ui._components._receipt."""
 
-import pathlib
 import re
 
 import pytest
 
 import scitex_ui
+from tests._checkout import package_dir
 from scitex_ui._components._receipt import Receipt
 
-_STATIC = pathlib.Path(scitex_ui.__file__).parent / "static"
+_STATIC = package_dir() / "static"
 _STATES = ("unknown", "sent", "seen", "failed")
 
 

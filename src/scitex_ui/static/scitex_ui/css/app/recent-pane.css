@@ -101,7 +101,7 @@
 }
 
 .stx-app-recent-pane__btn:disabled {
-  opacity: 0.4;
+  opacity: var(--disabled-opacity);
   cursor: default;
 }
 

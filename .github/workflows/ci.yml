@@ -13,7 +13,7 @@ name: ci
 # (PS-169). Runner selection is the Actions Variable CI_RUNS_ON (repo ->
 # org precedence),
 # resolved from THIS repo's context by the called workflows via
-#   runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+#   runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-org-cpu"]') }}
 # (`vars` in a reusable workflow resolve against the CALLER repo/org, so a
 # per-repo CI_RUNS_ON override still works through the shared bodies).
 #

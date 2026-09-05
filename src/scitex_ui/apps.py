@@ -8,7 +8,8 @@ develop/staging **without** hand-wiring middleware or a context processor.
 
 This closes the copy-paste settings drift that silently left some apps
 (scitex-writer, figrecipe) without Alt+I while others (scitex-todo) had it:
-the shared shell already ``{% include %}``s the inspector partial, but the
+the shared shell already pulls in the inspector partial with ``{% include %}``,
+but the
 partial no-ops unless the flag is produced by the context processor or the
 middleware — a hidden, easy-to-forget per-app opt-in. Auto-wiring makes the
 opt-in the default and template-independent.
