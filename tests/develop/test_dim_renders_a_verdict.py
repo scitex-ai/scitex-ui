@@ -38,12 +38,17 @@ import pytest
 
 from tests._checkout import css_dir, static_dir
 
-#: The four kinds, exactly as `scitex_app.authz` spells them.
+#: The five kinds, exactly as `scitex_app.authz` spells them.
+#:
+#: UNRESOLVED added 2026-09-05, by the route the previous version of this file
+#: prescribed: scitex-app's implementation reached a case with no verdict to
+#: return, they announced it, and the shape was agreed before either side moved.
 _EXPECTED_KINDS = {
     "ALLOWED": "allowed",
     "DENIED": "denied",
     "DENIED_NOT_SIGNED_IN": "denied-because-not-signed-in",
     "DENIED_NOT_ENTITLED": "denied-because-not-entitled",
+    "UNRESOLVED": "unresolved",
 }
 
 #: `export const NAME = "value";`
@@ -154,18 +159,28 @@ def test_each_kind_constant_keeps_the_string_scitex_app_uses(
     )
 
 
-def test_the_verdict_union_has_exactly_four_members() -> None:
-    """A fifth kind must not appear quietly.
+def test_the_verdict_union_has_exactly_five_members() -> None:
+    """A SIXTH kind must not appear quietly.
 
-    Four are complete only for the server-rendered path. The moment anything
-    fetches a verdict client-side, "authorization not yet resolved" needs its own
-    kind — and that is a conversation with scitex-app, not a local edit. Adding a
-    PAYLOAD to an existing kind is the backward compatible way to carry new
-    information and does not trip this (scitex-app confirmed that shape for a
-    future `upgrade_url` on not-entitled).
+    THIS GUARD WORKED, and the count moved for the reason it named. Its previous
+    version said: "Four are complete only for the server-rendered path. The
+    moment anything fetches a verdict client-side, 'authorization not yet
+    resolved' needs its own kind — and that is a conversation with scitex-app,
+    not a local edit."
+
+    That is precisely what happened on 2026-09-05. scitex-app's A/B
+    decomposition needed a tri-state resolve, case B (attempted and failed) had
+    no verdict to return, they ANNOUNCED it rather than shipping it, and the
+    shape — one `unresolved`, not one per axis, no payload — was agreed before
+    either side moved. The number is 5 because a conversation concluded, not
+    because a build was red.
+
+    The bar is unchanged for the next one. Adding a PAYLOAD to an existing kind
+    remains the backward compatible way to carry new information and does not
+    trip this — `upgrade_url` on not-entitled is arriving that way.
     """
     # Arrange
-    expected = 4
+    expected = 5
 
     # Act
     members = _union_members()

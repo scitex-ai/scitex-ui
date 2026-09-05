@@ -9,8 +9,14 @@
  * SDK here would point that arrow backwards and every consumer would inherit it
  * through the presentation layer.
  *
- * THE FOUR KIND STRINGS BELOW ARE A SECOND COPY of scitex_app.authz's, in
- * another repo, and nothing in this file can detect a rename on their side.
+ * THE KIND STRINGS BELOW ARE A SECOND COPY of scitex_app.authz's, in another
+ * repo, and nothing in this file can detect a rename on their side.
+ * Deliberately not numbered here: this sentence said "THE FOUR" until
+ * `unresolved` was added 2026-09-05, so the count went stale on the very first
+ * addition and did so SILENTLY, which is what prose gets wrong that a test gets
+ * right. The count is asserted in
+ * tests/develop/test_dim_renders_a_verdict.py, where growing the union turns it
+ * red instead of leaving a comment quietly lying to the next reader.
  * scitex-app is building the check that can (it reads these constants out of
  * this package's shipped source), and it runs on THEIR side deliberately: the
  * breakage would appear here, but the cause is there, so a check nearest the
@@ -30,11 +36,32 @@ export const DENIED_NOT_SIGNED_IN = "denied-because-not-signed-in";
 /** Refused because the signed-in account lacks the entitlement. */
 export const DENIED_NOT_ENTITLED = "denied-because-not-entitled";
 
+/**
+ * Authorization could not be DETERMINED — resolution was attempted and failed.
+ *
+ * Distinct from `denied` in the way that matters to a person: `denied` is an
+ * answer, this is the absence of one. Collapsing it into `denied` would tell a
+ * user "no" when the truth is "we could not ask", and collapsing it into
+ * `allowed` would open a control on a permission nobody verified.
+ *
+ * ADDED 2026-09-05, and only because the implementation demanded it. The
+ * standing agreement with scitex-app was that a fifth kind arrives when a
+ * concrete case has no verdict to return, decided jointly — not whenever one
+ * seems tidy. That case is the A/B decomposition's tri-state resolve: when
+ * resolution is ATTEMPTED AND FAILS there is no member of the previous four
+ * that is true.
+ *
+ * ONE kind, not one per axis. Per-axis variants would multiply with every new
+ * axis and leak which axis failed, which is system-internal structure.
+ */
+export const UNRESOLVED = "unresolved";
+
 export type VerdictKind =
   | typeof ALLOWED
   | typeof DENIED
   | typeof DENIED_NOT_SIGNED_IN
-  | typeof DENIED_NOT_ENTITLED;
+  | typeof DENIED_NOT_ENTITLED
+  | typeof UNRESOLVED;
 
 export interface AllowedVerdict {
   kind: typeof ALLOWED;
@@ -82,6 +109,27 @@ export interface DeniedNotEntitledVerdict {
    */
 }
 
+export interface UnresolvedVerdict {
+  kind: typeof UNRESOLVED;
+  /**
+   * NO PAYLOAD, and the omission is the decision.
+   *
+   * The obvious field is a reason — network, misconfiguration, timeout. I asked
+   * scitex-app for it; they refused, using the argument I had used on them a day
+   * earlier about axis names: a failure reason is system-internal state, and
+   * "timeout" told to an unauthenticated visitor discloses availability of the
+   * service behind the gate. It is strictly worse than the axis name we already
+   * decided to keep out of the DOM.
+   *
+   * The second reason is Decision 1's: a value that does not change what the UI
+   * does has no business in the page source. The only motive left is debugging
+   * convenience, and that is a server-side log's job.
+   *
+   * Their validator REFUSES a payload on this kind at construction, the same
+   * one-directional way it refuses `sign_in_url` where it does not belong.
+   */
+}
+
 /**
  * A discriminated union, so a `switch` over `kind` is checked for
  * exhaustiveness by the compiler rather than by a reviewer.
@@ -98,7 +146,8 @@ export type Verdict =
   | AllowedVerdict
   | DeniedVerdict
   | DeniedNotSignedInVerdict
-  | DeniedNotEntitledVerdict;
+  | DeniedNotEntitledVerdict
+  | UnresolvedVerdict;
 
 /**
  * Human-readable reason text, one per denial.
@@ -113,6 +162,15 @@ export interface DimLabels {
   deniedNotSignedIn: string;
   /** Receives the entitlement name via `{entitlement}`. */
   deniedNotEntitled: string;
+  /**
+   * Shown when authorization could not be determined.
+   *
+   * Must say that the ANSWER is missing, not that the answer is no. "Could not
+   * check" and "not allowed" send a user to different places — the first
+   * invites a retry, the second ends the interaction — and this component's
+   * whole reason for existing is that a person can act on the difference.
+   */
+  unresolved: string;
 }
 
 export interface DimConfig {
