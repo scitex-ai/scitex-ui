@@ -79,6 +79,29 @@ _MATCH_METHODS = {"search", "match", "fullmatch", "findall", "finditer"}
 #: never a fixed sample, however many string literals (paths) it also contains.
 _READERS = {"read_text", "read_bytes", "open", "read", "readlines"}
 
+#: Substitution methods. These return a STRING, not a match, so "did it match?"
+#: is the wrong question and they are deliberately absent from _MATCH_METHODS.
+#:
+#: A COMMENT STRIPPER IS ONLY EVER EXERCISED THROUGH THESE, so until this was
+#: added the checker could not credit a control on any stripper and _EXEMPT was
+#: the only route to green — six entries, one of which covered a file whose
+#: controls were fully written. An exemption that says "uncontrolled" about a
+#: controlled file is the §2 gate-that-cannot-fail shape in miniature: the next
+#: reader cannot tell it from the entries that are genuinely bare.
+#:
+#: THE DIRECTIONS INVERT relative to a matcher, which is why this is a separate
+#: analysis rather than four more names in a set:
+#:
+#:     matcher    positive = it MATCHED a real instance      (not blind)
+#:                negative = it did NOT match a mere mention (not over-matching)
+#:
+#:     stripper   positive = the comment is GONE from the result   (not blind)
+#:                negative = the code SURVIVES in the result       (not over-reaching)
+#:
+#: Over-stripping is the silent failure a stripper actually has: it empties the
+#: source every other guard reads, and an empty scan reports a clean tree.
+_SUB_METHODS = {"sub", "subn"}
+
 #: Patterns exempted from one or both directions, each with a written reason.
 #:
 #: ONE ENTRY PER (module, pattern), never a blanket flag — §2's grandfathering
@@ -100,7 +123,17 @@ _EXEMPT: dict[tuple[str, str], str] = {
     # oddly against them: a mention is exactly their subject. The direction
     # that means something here is "must not eat CODE" — over-stripping empties
     # the source every other guard reads, which is the silent failure. That is
-    # a real, writable control; it has simply not been written yet.
+    # a real, writable control; for the four entries below it has simply not
+    # been written yet.
+    #
+    # THAT SENTENCE WAS ONCE FALSE OF ONE ENTRY, which is why it now says "the
+    # four below" rather than "these". Until 2026-09-05 this block also held
+    # test_effects_utilities_add_only_new_tokens.py, whose controls WERE
+    # written and were invisible because a stripper is exercised through
+    # `.sub()`. Re-measured with `.sub()` crediting on, exactly one entry went
+    # stale and the remaining four still report pos=False neg=False — so the
+    # claim is true again as written, and it is true because it was checked
+    # rather than because nobody looked.
     ("test_app_accents_agree_across_layers.py", "_CSS_COMMENT"): (
         "comment stripper; needs a does-not-eat-code control, not a "
         "does-not-match-a-mention one"
@@ -115,20 +148,13 @@ _EXEMPT: dict[tuple[str, str], str] = {
     ("test_primitives_define_each_token_once.py", "_CSS_COMMENT"): (
         "comment stripper; same shape"
     ),
-    # Unlike its neighbours, this one HAS both controls the comment above says
-    # are the meaningful ones — test_comment_pattern_matches_a_real_comment and
-    # test_comment_stripper_does_not_eat_code, both against literals. They are
-    # invisible to this checker because a stripper is exercised through
-    # `.sub()`, which returns a string rather than a match, so it is absent from
-    # _MATCH_METHODS by design. The exemption records a gap in the CHECKER, not
-    # a missing control in the subject; widening _MATCH_METHODS to credit
-    # `.sub()` needs its own change, since "did the resulting STRING keep the
-    # code" is a different analysis from "did the pattern match".
-    ("test_effects_utilities_add_only_new_tokens.py", "_CSS_COMMENT"): (
-        "comment stripper; controls exist as .sub() string assertions, which "
-        "this checker cannot see — see scitex-ui-meta-guard-cannot-credit-"
-        "sub-shaped-controls-20260904"
-    ),
+    # test_effects_utilities_add_only_new_tokens.py / _CSS_COMMENT WAS HERE and
+    # is gone as of 2026-09-05. It never lacked controls — it had both, written
+    # as `.sub()` string assertions, and this checker could not see them. The
+    # entry recorded a gap in the CHECKER while reading, to anyone scanning this
+    # list, exactly like the four above that are genuinely bare. Crediting
+    # `.sub()` made the difference visible and `test_every_exemption_is_still_
+    # needed` then demanded the entry's removal, which is the mechanism working.
     ("test_shell_layout_classes_have_writers.py", "_CSS_COMMENT"): (
         "comment stripper; same shape"
     ),
@@ -246,6 +272,66 @@ def _call_info(
     return fn.value.id, literal
 
 
+def _sub_call_info(
+    node: ast.AST, names: set[str], literal_vars: frozenset[str]
+) -> tuple[str, bool] | None:
+    """Return (pattern, sample_is_literal) for `PATTERN.sub(repl, sample)`.
+
+    Same literal/tree-scan rules as `_call_info` — deliberately, because the
+    exclusion that matters is identical: `_P.sub("", path.read_text())` is a
+    tree scan whatever it asserts afterwards, since the test fixes the file's
+    NAME and not its CONTENTS.
+    """
+    if not isinstance(node, ast.Call):
+        return None
+    fn = node.func
+    if not isinstance(fn, ast.Attribute) or fn.attr not in _SUB_METHODS:
+        return None
+    if not isinstance(fn.value, ast.Name) or fn.value.id not in names:
+        return None
+    reads_a_file = any(
+        isinstance(sub, ast.Call)
+        and (
+            (isinstance(sub.func, ast.Attribute) and sub.func.attr in _READERS)
+            or (isinstance(sub.func, ast.Name) and sub.func.id in _READERS)
+        )
+        for a in node.args
+        for sub in ast.walk(a)
+    )
+    literal = not reads_a_file and any(
+        (isinstance(sub, ast.Constant) and isinstance(sub.value, str))
+        or (isinstance(sub, ast.Name) and sub.id in literal_vars)
+        for a in node.args
+        for sub in ast.walk(a)
+    )
+    return fn.value.id, literal
+
+
+def _membership_direction(expr: ast.AST, target_name: str) -> str | None:
+    """Classify `"lit" in RESULT` / `"lit" not in RESULT` for a stripper.
+
+    Returns "positive" when something was REMOVED (`not in` — the stripper is
+    not blind), "negative" when something SURVIVED (`in` — it did not eat code),
+    or None when the comparison is not of that shape.
+
+    The left operand must be a string literal: `assert x in stripped` where `x`
+    came off disk asserts nothing a reader can check.
+    """
+    for sub in ast.walk(expr):
+        if not isinstance(sub, ast.Compare):
+            continue
+        if not (isinstance(sub.left, ast.Constant) and isinstance(sub.left.value, str)):
+            continue
+        for op, comp in zip(sub.ops, sub.comparators):
+            if not (isinstance(comp, ast.Name) and comp.id == target_name):
+                continue
+            if isinstance(op, ast.NotIn):
+                return "positive"
+            if isinstance(op, ast.In):
+                return "negative"
+    return None
+
+
 def _is_negated(expr: ast.AST, target: ast.AST) -> bool:
     """Does `expr` assert that `target` did NOT match?
 
@@ -295,15 +381,33 @@ def _controls(path: pathlib.Path) -> dict[str, dict[str, bool]]:
         frozen = frozenset(literal_vars)
 
         bound: dict[str, tuple[str, bool]] = {}
+        sub_bound: dict[str, tuple[str, bool]] = {}
         for stmt in ast.walk(fn):
             if not isinstance(stmt, ast.Assign):
                 continue
             info = _call_info(stmt.value, names, frozen)
-            if info is None:
+            if info is not None:
+                for tgt in stmt.targets:
+                    if isinstance(tgt, ast.Name):
+                        bound[tgt.id] = info
                 continue
-            for tgt in stmt.targets:
-                if isinstance(tgt, ast.Name):
-                    bound[tgt.id] = info
+            # `stripped = PATTERN.sub("", sample)` — the result is a string, so
+            # the control is asserted with `in` / `not in` further down.
+            sub_info = _sub_call_info(stmt.value, names, frozen)
+            if sub_info is not None:
+                for tgt in stmt.targets:
+                    if isinstance(tgt, ast.Name):
+                        sub_bound[tgt.id] = sub_info
+
+        for stmt in ast.walk(fn):
+            if not isinstance(stmt, ast.Assert):
+                continue
+            for var, (pattern, literal) in sub_bound.items():
+                if not literal:
+                    continue
+                direction = _membership_direction(stmt.test, var)
+                if direction is not None:
+                    found[pattern][direction] = True
 
         for stmt in ast.walk(fn):
             if not isinstance(stmt, ast.Assert):
@@ -543,4 +647,66 @@ def test_a_read_text_call_does_not_count_as_a_negative_control(tmp_path) -> None
         "literal inside the call is not a SAMPLE — it names a file whose "
         "contents the test does not fix, so the assertion is a tree scan "
         "wearing a literal."
+    )
+
+
+def test_a_sub_shaped_control_is_credited_in_both_directions(tmp_path) -> None:
+    """A comment stripper is only ever exercised through `.sub()`.
+
+    Before this, the checker could not credit ANY stripper control, so _EXEMPT
+    was the only route to green and a file with fully-written controls read
+    identically to one with none.
+    """
+    # Arrange
+    module = tmp_path / "test_fixture_sub.py"
+    module.write_text(
+        "import re\n"
+        '_C = re.compile(r"/\\*.*?\\*/", re.S)\n'
+        "def test_removes_comment():\n"
+        '    sample = "/* gone */ kept: 1;"\n'
+        '    stripped = _C.sub("", sample)\n'
+        '    assert "gone" not in stripped\n'
+        "def test_keeps_code():\n"
+        '    sample = "/* a */ kept: 1;"\n'
+        '    stripped = _C.sub("", sample)\n'
+        '    assert "kept" in stripped\n'
+    )
+
+    # Act
+    control = _controls(module)["_C"]
+
+    # Assert
+    assert control["positive"] and control["negative"], (
+        f"a stripper with both `.sub()` controls was not credited: {control}. "
+        f"`not in` means the comment was REMOVED (not blind); `in` means the "
+        f"code SURVIVED (not over-reaching)."
+    )
+
+
+def test_a_sub_over_a_tree_scan_is_not_credited(tmp_path) -> None:
+    """The way this widening would blunt the guard, asserted rather than hoped.
+
+    Crediting `.sub()` must not admit `_C.sub("", path.read_text())`: the test
+    fixes the file's NAME, not its CONTENTS, so whatever it asserts afterwards
+    says nothing about what the pattern can distinguish. Same exclusion the
+    match-shaped analysis already enforces, restated for the new path because a
+    rule that holds on one branch and not the other is the hole.
+    """
+    # Arrange
+    module = tmp_path / "test_fixture_sub_scan.py"
+    module.write_text(
+        "import re, pathlib\n"
+        '_C = re.compile(r"/\\*.*?\\*/", re.S)\n'
+        "def test_scan():\n"
+        '    stripped = _C.sub("", pathlib.Path("x.css").read_text())\n'
+        '    assert "kept" in stripped\n'
+    )
+
+    # Act
+    control = _controls(module)["_C"]
+
+    # Assert
+    assert not (control["positive"] or control["negative"]), (
+        f"a `.sub()` over a file read was credited as a control: {control}. "
+        f"That is the circularity the match-shaped analysis already refuses."
     )
