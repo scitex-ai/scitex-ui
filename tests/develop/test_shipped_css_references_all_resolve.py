@@ -8,10 +8,21 @@ THE BUG THIS EXISTS FOR SHIPPED, AND BROKE A PRODUCTION BUILD. scitex-ui
         (an at-import of effects.css from a utilities directory)
 
 It was inside ``/* ... */``, so it looked inert. Django's staticfiles
-post-processor rewrites asset references by REGEX, and older versions of it do
-not know what a comment is. Every scitex-hub PR went red on 2026-09-05 with
+post-processor rewrites asset references by REGEX, and below 6.1 it does not
+know what a comment is. Every scitex-hub PR went red on 2026-09-05 with
 ``MissingFileError: The file 'scitex_ui/css/utilities/effects.css' could not be
 found``, gating their production rebuild.
+
+THE BOUNDARY IS MEASURED FROM BOTH SIDES, 2026-09-05, because one side alone
+would have been a guess:
+
+    Django 6.1.1 (here)          _css_ignored_re PRESENT   does NOT reproduce
+    Django 6.0.8 (hub CI)        _css_ignored_re ABSENT    reproduces
+
+So "Django ignores comments" is true of 6.1+ and false of 6.0.x, and the
+failure needs BOTH a quoted path here and a pre-6.1 reader there. Naming only
+one cause would send the next reader looking in one repo for a fault that
+takes two.
 
 WHY A GUARD ALREADY EXISTED AND DID NOT CATCH IT. test_css_bundle_index.py has
 ``test_no_import_points_at_a_missing_file``, named for precisely this failure.
