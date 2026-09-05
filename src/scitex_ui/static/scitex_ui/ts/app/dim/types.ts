@@ -9,8 +9,14 @@
  * SDK here would point that arrow backwards and every consumer would inherit it
  * through the presentation layer.
  *
- * THE FOUR KIND STRINGS BELOW ARE A SECOND COPY of scitex_app.authz's, in
- * another repo, and nothing in this file can detect a rename on their side.
+ * THE KIND STRINGS BELOW ARE A SECOND COPY of scitex_app.authz's, in another
+ * repo, and nothing in this file can detect a rename on their side.
+ * Deliberately not numbered here: this sentence said "THE FOUR" until
+ * `unresolved` was added 2026-09-05, so the count went stale on the very first
+ * addition and did so SILENTLY, which is what prose gets wrong that a test gets
+ * right. The count is asserted in
+ * tests/develop/test_dim_renders_a_verdict.py, where growing the union turns it
+ * red instead of leaving a comment quietly lying to the next reader.
  * scitex-app is building the check that can (it reads these constants out of
  * this package's shipped source), and it runs on THEIR side deliberately: the
  * breakage would appear here, but the cause is there, so a check nearest the
