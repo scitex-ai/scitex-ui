@@ -9,6 +9,15 @@ the shell has and the app lacks. The measured instance it cannot see:
 invisible to a token diff because --color-fg-default is used elsewhere under
 app/, so it never enters the app-only set.
 
+WHICH CONSUMER THE APP STYLESHEET SERVES — read this before citing a renderer.
+`css/app/file-browser/` styles the REACT components, which emit
+`stx-app-file-tree` (react/app/file-browser/{FileBrowser,_FileItem,_TreeItems,
+_ContextMenu}.tsx). `ts/app/file-browser/` is a SEPARATE implementation emitting
+`stx-app-file-browser`, a prefix no stylesheet in this repo matches. Measured
+2026-09-06, with a control: react/ emits 8 distinct `stx-app-*` prefixes, so the
+search discriminates. An earlier check reported "0 in ts/" and was true about
+the wrong population, because `react/` was never searched.
+
 METHOD. Strip each twin's DECLARED prefix, then diff normalised selectors.
 Declared, not derived: a derived mapping is the heuristic that produced the
 media-viewer false pair. A wrong prefix collapses LOUDLY (132 unpaired instead
@@ -73,9 +82,12 @@ _TRACKED = {
         ".item.inactive:hover .name":
             "PORT TO APP — same card",
         ".error i":
-            "PORT TO APP — the app renders <i class='fas fa-exclamation-"
-            "triangle'> (_FileTreeRenderer.ts:24) but never styles it; the "
-            "shell sets font-size:16px",
+            "PORT TO APP — the app twin renders <i class='fas fa-exclamation-"
+            "triangle'> inside .stx-app-file-tree__error "
+            "(react/app/file-browser/FileBrowser.tsx:229-230) but never styles "
+            "it; the shell sets font-size:16px. NOT ts/app/file-browser/"
+            "_FileTreeRenderer.ts — that is a SEPARATE implementation emitting "
+            "`stx-app-file-browser`, a prefix this stylesheet never matches",
         '[data-theme="dark"] .target-badge':
             "DELETE FROM SHELL — repeats its own base rule "
             "(.target-badge{display:none}) verbatim; dead CSS",
