@@ -133,6 +133,12 @@ artifacts = [
     # generated figures but also matches packaged assets — the shipped favicon
     # was silently dropped from the 0.7.0 wheel until this line was added.
     "src/scitex_ui/static/**/*.svg",
+    # class-manifest.json — the BEM vocabulary consumers and future native
+    # clients read as DATA. Listed for the same reason as the svg above rather
+    # than because an ignore rule matches it today: this file is worthless to a
+    # consumer if it is absent from the wheel, and "not currently gitignored" is
+    # a fact about today's ignore rules, not a guarantee about tomorrow's.
+    "src/scitex_ui/static/**/*.json",
 ]
 
 [tool.hatch.build.targets.wheel]
