@@ -111,7 +111,7 @@
 }
 
 .ws-worktree-actions .sort-toggle.active {
-  color: var(--accent-color, #58a6ff);
+  color: var(--accent);
 }
 
 /* Empty state when no project is selected */
@@ -401,7 +401,7 @@ body.stx-shell-ai-open #workspace-three-col #main-content {
 }
 
 .ai-settings-links a:hover {
-  color: var(--accent-color, #58a6ff);
+  color: var(--accent);
 }
 
 /* --- Tab-switch fade transition --- */
