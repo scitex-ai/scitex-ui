@@ -13,10 +13,16 @@ header:
 Two copies of one widget with no mechanism noticing when a fix lands on only
 one. Measured 2026-09-03, that has happened twice in this pair:
 
-    search.css   the shell twin was repaired in 0.19.1 to read declared tokens;
-                 the app twin still names --workspace-bg-default and
-                 --workspace-bg-input, DECLARED NOWHERE, so it renders #1e1e1e
-                 in BOTH themes while its twin follows the palette.
+    search.css   FIXED 2026-09-05. The shell twin was repaired in 0.19.1 to read
+                 declared tokens; the app twin still named --workspace-bg-default
+                 and --workspace-bg-input, DECLARED NOWHERE, so it rendered
+                 #1e1e1e in BOTH themes while its twin followed the palette. The
+                 app twin now reads --workspace-bg-primary /
+                 --workspace-bg-elevated, the same two the shell twin uses.
+                 The names were never OURS: the port carried scitex-cloud's
+                 vocabulary, and an unknown token does not error in CSS — it
+                 takes the fallback. That is why the light theme rendered a
+                 black search box and nothing ever failed.
     states.css   the shell brightens a filename on inactive-hover; the app twin
                  has neither rule, though it styles that element elsewhere.
 
@@ -75,23 +81,35 @@ _VAR = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)")
 _DECLARED = re.compile(r"^\s*(--[A-Za-z0-9_-]+)\s*:", re.M)
 
 #: The header that makes a file a PORT rather than a coincidence of naming.
-_PORTED = re.compile(r"Ported verbatim from scitex-cloud stx-app-file-tree/")
+#:
+#: `verbatim` IS OPTIONAL, AND THE REASON IS A TRAP THIS GUARD WALKED INTO.
+#: The marker used to require it, which coupled the guard's POPULATION to a
+#: claim about FIDELITY: repairing a ported file makes it no longer verbatim, so
+#: telling the truth in its header silently removed it from this scan. Measured
+#: 2026-09-05 — search.css was repaired to read declared tokens, its header was
+#: updated to say so, and it vanished from `_ported_files()`. Nothing failed
+#: except `test_a_known_ported_file_is_found`, the anti-vacuity control, which
+#: is the only reason it was noticed rather than shipped as a quietly narrower
+#: guard.
+#:
+#: What this marker must mean is PROVENANCE — "this file began as a port and has
+#: a shell twin to stay in step with" — which stays true forever. Fidelity is
+#: exactly the property that changes when the file is fixed, so it can never be
+#: the thing the population is keyed on.
+_PORTED = re.compile(r"Ported (?:verbatim )?from scitex-cloud stx-app-file-tree/")
 
 #: App-only undeclared tokens that are KNOWN and awaiting a decision, each with
 #: the card that owns it. Per the constitution: exemptions one at a time, in a
 #: reviewable place, with a written reason — never a flag that silences the run.
-_EXEMPT: dict[str, str] = {
-    "--workspace-bg-default": (
-        "search.css. Renders the #1e1e1e fallback in BOTH themes; the shell twin "
-        "reads --workspace-bg-primary. Repointing changes dark rendering too, so "
-        "it is a visual call sitting with the operator — "
-        "scitex-ui-two-search-css-twins-disagree-and-one-renders-no-background-20260818"
-    ),
-    "--workspace-bg-input": (
-        "search.css, same decision as --workspace-bg-default. The shell twin "
-        "reads --workspace-bg-elevated."
-    ),
-}
+#:
+#: EMPTY AS OF 2026-09-05, and the two entries it held were deleted BY THIS
+#: GUARD'S OWN INSTRUCTION rather than by choice: repointing search.css at
+#: --workspace-bg-primary / --workspace-bg-elevated made
+#: `test_each_exempt_token_is_still_used_by_the_app_twin` fail with "its _EXEMPT
+#: entry describes nothing. Delete it." An exemption outliving its subject is a
+#: silent widening of what the guard permits, so the staleness check is the part
+#: that keeps the exemption list honest.
+_EXEMPT: dict[str, str] = {}
 
 
 def _strip(text: str) -> str:
@@ -198,9 +216,27 @@ class TestTheDetectorsThemselves:
         # Assert
         assert matched is not None
 
+    def test_ported_matches_a_repaired_header_that_dropped_verbatim(self):
+        """POSITIVE control for the branch that `verbatim` being optional adds.
+
+        Without this, widening the pattern would be untested on exactly the
+        spelling it was widened for — and the widening exists because a REPAIRED
+        file must stay in the population. A file is a port because of where it
+        CAME FROM, never because it is still byte-identical to it.
+        """
+        # Arrange
+        sample = " * Ported from scitex-cloud stx-app-file-tree/search.css, and\n"
+        # Act
+        matched = _PORTED.search(sample)
+        # Assert
+        assert matched is not None
+
     def test_ported_ignores_prose_about_porting(self):
         """NEGATIVE control. This file and its card both DISCUSS porting; a
-        looser pattern would match the discussion and mint pairs from prose."""
+        looser pattern would match the discussion and mint pairs from prose.
+
+        It guards the widening too: dropping `verbatim` must not loosen the
+        pattern into ordinary sentences about having ported something."""
         # Arrange
         sample = " * This widget was ported from somewhere, see the card.\n"
         # Act
@@ -330,6 +366,29 @@ class TestExemptionsStayHonest:
         assert still_used, (
             f"{token} is no longer referenced under app/file-browser/, so its "
             "_EXEMPT entry describes nothing. Delete it."
+        )
+
+    def test_an_empty_exemption_list_is_stated_not_skipped(self):
+        """The two staleness checks above parametrize over `_EXEMPT`, so an
+        EMPTY list makes both collect nothing and report as SKIPPED — a guard
+        that asserts nothing while still being counted in the suite line.
+
+        Empty is the CORRECT and strongest state here (no token is exempt), but
+        `skipped` cannot distinguish it from the two bad reasons a collection
+        comes back empty: the query broke, or the subject moved. This test is
+        the denominator — it makes "no exemptions" an ASSERTION with a stated
+        expectation rather than an absence, so the good case is visible and the
+        bad ones would still fail above.
+        """
+        # Arrange
+        exempt = _EXEMPT
+        # Act
+        count = len(exempt)
+        # Assert
+        assert count == 0, (
+            f"{sorted(exempt)} are exempt. That is allowed — each entry carries "
+            "a written reason and a card — but this test pins the count so the "
+            "list cannot grow unnoticed. Update the expected count deliberately."
         )
 
     def test_every_exemption_states_a_reason(self):

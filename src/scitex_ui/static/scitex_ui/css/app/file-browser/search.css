@@ -1,10 +1,27 @@
 /**
  * File Browser — Search Box
- * Ported verbatim from scitex-cloud stx-app-file-tree/search.css
+ *
+ * Ported from scitex-cloud stx-app-file-tree/search.css, and NO LONGER
+ * verbatim: the port carried scitex-cloud's token names, which do not exist in
+ * this package. `--workspace-bg-default` and `--workspace-bg-input` were
+ * declared nowhere under css/, so both backgrounds took their `#1e1e1e`
+ * fallback in EVERY theme — a dark surface rendered on the light palette, which
+ * is why this search box was black in light mode while its shell twin was not.
+ *
+ * The names here are now this package's own: --workspace-bg-primary for the box
+ * and --workspace-bg-elevated for the input, which is exactly what the shell
+ * twin (shell/workspace-files-tree/search.css) uses. They are defined in both
+ * palettes, so no fallback is written — a fallback on a defined token is dead
+ * code that would hide the next regression instead of failing on it.
+ *
+ * THE LESSON IS ABOUT PORTING, NOT ABOUT THESE TWO LINES: a verbatim port
+ * carries the SOURCE's vocabulary, and an unknown token name does not error in
+ * CSS — it silently takes the fallback. So a port fails quietly and looks fine
+ * in whichever theme the fallback happened to be written for.
  */
 
 .stx-app-file-tree__search-box {
-  background: var(--workspace-bg-default, #1e1e1e);
+  background: var(--workspace-bg-primary);
   border-top: 1px solid
     var(--workspace-border-default, rgba(110, 118, 129, 0.3));
   padding: 6px 8px;
@@ -14,7 +31,7 @@
 .stx-app-file-tree__search-input-wrapper {
   display: flex;
   align-items: center;
-  background: var(--workspace-bg-input, #1e1e1e);
+  background: var(--workspace-bg-elevated);
   border: 1px solid var(--workspace-border-default, rgba(110, 118, 129, 0.3));
   border-radius: 4px;
   padding: 3px 8px;
