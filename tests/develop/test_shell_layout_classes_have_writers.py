@@ -241,9 +241,11 @@ def test_css_scan_finds_layout_state_classes() -> None:
     # Act
     layout = _layout_state_classes()
     # Assert
-    assert layout, (
-        "no layout-state classes were found at all — the CSS parser matched "
-        "nothing, so this module's other assertions would pass vacuously"
+    # Floor 15 (measured 25, develop @ f62f73f, 2026-09-10).
+    assert len(layout) >= 15, (
+        f"only {len(layout)} layout-state classes found (floor 15) — the CSS "
+        "parser matched nothing or drifted, so this module's other assertions "
+        "would pass vacuously"
     )
 
 
@@ -258,9 +260,10 @@ def test_writer_scan_finds_class_tokens() -> None:
     # Act
     written = _written_tokens()
     # Assert
-    assert written, (
-        "no class-like tokens were found in any template/js/ts — the writer "
-        "scan matched nothing, so every class would look orphaned"
+    # Floor 400 (measured 507, develop @ f62f73f, 2026-09-10).
+    assert len(written) >= 400, (
+        f"only {len(written)} class-like tokens found (floor 400) — the writer "
+        "scan matched nothing or drifted, so every class would look orphaned"
     )
 
 
