@@ -74,6 +74,9 @@ export class ProjectSelector extends BaseComponent<ProjectSelectorConfig> {
     this.panel.appendChild(this.list);
     this.renderList();
 
+    this.container.appendChild(this.trigger);
+    this.container.appendChild(this.panel);
+
     this.trigger.addEventListener("click", () => this.toggle());
 
     this.outsideClickHandler = (e: MouseEvent): void => {

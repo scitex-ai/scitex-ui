@@ -57,6 +57,8 @@ var ProjectSelector = class extends BaseComponent {
     this.list.className = `${CLS}__list`;
     this.panel.appendChild(this.list);
     this.renderList();
+    this.container.appendChild(this.trigger);
+    this.container.appendChild(this.panel);
     this.trigger.addEventListener("click", () => this.toggle());
     this.outsideClickHandler = (e) => {
       if (!this.container.contains(e.target)) {
