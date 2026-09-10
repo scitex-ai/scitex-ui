@@ -89,6 +89,24 @@
         "--dragging"
       ]
     },
+    "stx-app-import-export": {
+      "elements": [
+        "__body",
+        "__confirm-bar",
+        "__confirm-text",
+        "__empty",
+        "__format",
+        "__format-detail",
+        "__format-label",
+        "__list",
+        "__panel",
+        "__title"
+      ],
+      "modifiers": [
+        "--open",
+        "--primary"
+      ]
+    },
     "stx-app-media-viewer": {
       "elements": [
         "__binary-wrapper",
