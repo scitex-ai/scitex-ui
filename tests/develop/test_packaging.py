@@ -75,7 +75,12 @@ def test_static_dir_is_not_empty():
     # Act
     files = _static_files()
     # Assert
-    assert files, f"no static files found under {static} — wrong repo root?"
+    # Floor 400 (measured 493, develop @ f62f73f, 2026-09-10): catches a collector that
+    # drifts to a remnant, not only a wrong root returning 0.
+    assert len(files) >= 400, (
+        f"only {len(files)} static files under {static} (floor 400) — wrong "
+        "repo root, or the file scan is drifting off its population"
+    )
 
 
 def test_no_static_asset_is_gitignored():
