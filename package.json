@@ -46,6 +46,7 @@
     "./ts/app/monaco-editor": "./src/scitex_ui/static/scitex_ui/ts/app/monaco-editor/index.ts",
     "./ts/app/package-docs-sidebar": "./src/scitex_ui/static/scitex_ui/ts/app/package-docs-sidebar/index.ts",
     "./ts/app/pdf-viewer": "./src/scitex_ui/static/scitex_ui/ts/app/pdf-viewer/index.ts",
+    "./ts/app/project-selector": "./src/scitex_ui/static/scitex_ui/ts/app/project-selector/index.ts",
     "./ts/app/receipt": "./src/scitex_ui/static/scitex_ui/ts/app/receipt/index.ts",
     "./ts/app/reply-quote": "./src/scitex_ui/static/scitex_ui/ts/app/reply-quote/index.ts",
     "./ts/app/toast": "./src/scitex_ui/static/scitex_ui/ts/app/toast/index.ts",

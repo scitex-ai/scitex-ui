@@ -60,3 +60,9 @@ export type {
   FormatOption,
   ImportExportDetail,
 } from "./import-export";
+
+export { ProjectSelector, PROJECT_SELECTOR_CHANGE } from "./project-selector";
+export type {
+  ProjectSelectorConfig,
+  ProjectOption,
+} from "./project-selector";
