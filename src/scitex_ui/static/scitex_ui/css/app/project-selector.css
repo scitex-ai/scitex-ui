@@ -1,0 +1,142 @@
+/* Project selector — the standard project-picking pattern (compass L625).
+ *
+ * A dropdown that lists the user's projects, shows the current selection on
+ * the trigger, and emits `stx-project-selector:change`. The DATA comes from
+ * the consuming app; this stylesheet owns the pattern's appearance.
+ *
+ * The trigger carries the same size/shape as the shared form controls so a
+ * selector sitting next to an input reads as a row: the standard button
+ * height (36px) and the shared border/radius/font tokens.
+ */
+
+.stx-app-project-selector {
+  position: relative;
+  display: inline-block;
+  min-width: 200px;
+}
+
+.stx-app-project-selector__trigger {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs, 4px);
+  width: 100%;
+  height: var(--button-height, 36px);
+  padding: 0 12px;
+
+  border: 1px solid var(--border-default, #999);
+  border-radius: var(--radius-md, 4px);
+  background: var(--bg-surface, #f8f7f5);
+  color: var(--text-primary, #333);
+
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.stx-app-project-selector__trigger::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  opacity: 0.6;
+  flex: none;
+}
+
+.stx-app-project-selector__trigger:hover:not(:disabled) {
+  border-color: var(--border-muted, #c0c0c0);
+}
+
+.stx-app-project-selector__current {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stx-app-project-selector__placeholder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted, #777);
+}
+
+.stx-app-project-selector__panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + var(--spacing-xs, 4px));
+  left: 0;
+  right: 0;
+  z-index: 100;
+  max-height: 320px;
+  overflow-y: auto;
+
+  background: var(--bg-surface, #f8f7f5);
+  border: 1px solid var(--border-default, #999);
+  border-radius: var(--radius-md, 4px);
+  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+}
+
+.stx-app-project-selector--open .stx-app-project-selector__panel {
+  display: block;
+}
+
+.stx-app-project-selector__list {
+  padding: var(--spacing-xs, 4px);
+}
+
+/* Real <button> options — platform keyboard operability for free. */
+.stx-app-project-selector__option {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 2px;
+
+  border: none;
+  border-radius: var(--radius-sm, 3px);
+  background: none;
+  color: var(--text-primary, #333);
+
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stx-app-project-selector__option:last-child {
+  margin-bottom: 0;
+}
+
+.stx-app-project-selector__option:hover {
+  background: var(--bg-muted, #e8e7e5);
+}
+
+.stx-app-project-selector__option--current {
+  background: var(--bg-muted, #e8e7e5);
+  font-weight: 600;
+}
+
+.stx-app-project-selector__option-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stx-app-project-selector__option-detail {
+  color: var(--text-muted, #777);
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stx-app-project-selector__empty {
+  padding: 10px;
+  color: var(--text-muted, #777);
+  font-size: 0.85rem;
+}

@@ -53,3 +53,9 @@ export type {
   Verdict,
   VerdictKind,
 } from "./dim";
+
+export { ProjectSelector, PROJECT_SELECTOR_CHANGE } from "./project-selector";
+export type {
+  ProjectSelectorConfig,
+  ProjectOption,
+} from "./project-selector";
