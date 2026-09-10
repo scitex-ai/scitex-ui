@@ -119,6 +119,23 @@
         "--active"
       ]
     },
+    "stx-app-project-selector": {
+      "elements": [
+        "__current",
+        "__empty",
+        "__list",
+        "__option",
+        "__option-detail",
+        "__option-name",
+        "__panel",
+        "__placeholder",
+        "__trigger"
+      ],
+      "modifiers": [
+        "--current",
+        "--open"
+      ]
+    },
     "stx-app-tooltip": {
       "elements": [],
       "modifiers": []
