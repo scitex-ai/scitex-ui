@@ -54,6 +54,13 @@ export type {
   VerdictKind,
 } from "./dim";
 
+export { ImportExport, IMPORT_EXPORT_CONFIRM } from "./import-export";
+export type {
+  ImportExportConfig,
+  FormatOption,
+  ImportExportDetail,
+} from "./import-export";
+
 export { ProjectSelector, PROJECT_SELECTOR_CHANGE } from "./project-selector";
 export type {
   ProjectSelectorConfig,

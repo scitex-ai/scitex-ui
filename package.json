@@ -41,6 +41,7 @@
     "./ts/app/empty": "./src/scitex_ui/static/scitex_ui/ts/app/empty/index.ts",
     "./ts/app/file-browser": "./src/scitex_ui/static/scitex_ui/ts/app/file-browser/index.ts",
     "./ts/app/file-tabs": "./src/scitex_ui/static/scitex_ui/ts/app/file-tabs/index.ts",
+    "./ts/app/import-export": "./src/scitex_ui/static/scitex_ui/ts/app/import-export/index.ts",
     "./ts/app/media-viewer": "./src/scitex_ui/static/scitex_ui/ts/app/media-viewer/index.ts",
     "./ts/app/monaco-editor": "./src/scitex_ui/static/scitex_ui/ts/app/monaco-editor/index.ts",
     "./ts/app/package-docs-sidebar": "./src/scitex_ui/static/scitex_ui/ts/app/package-docs-sidebar/index.ts",
