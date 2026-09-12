@@ -107,6 +107,24 @@
         "--primary"
       ]
     },
+    "stx-app-launcher": {
+      "elements": [
+        "__empty",
+        "__glyph",
+        "__grid",
+        "__label",
+        "__panel",
+        "__tile",
+        "__tile-desc",
+        "__tile-icon",
+        "__tile-label",
+        "__trigger"
+      ],
+      "modifiers": [
+        "--current",
+        "--open"
+      ]
+    },
     "stx-app-media-viewer": {
       "elements": [
         "__binary-wrapper",

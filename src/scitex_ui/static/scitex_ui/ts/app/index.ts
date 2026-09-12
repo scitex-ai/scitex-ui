@@ -54,6 +54,13 @@ export type {
   VerdictKind,
 } from "./dim";
 
+export { AppLauncher, APP_LAUNCHER_SELECT } from "./app-launcher";
+export type {
+  AppLauncherConfig,
+  AppOption,
+  AppLauncherSelectDetail,
+} from "./app-launcher";
+
 export { ImportExport, IMPORT_EXPORT_CONFIRM } from "./import-export";
 export type {
   ImportExportConfig,

@@ -31,6 +31,7 @@
     "./package.json": "./package.json",
     "./ts/app/ajax-loader": "./src/scitex_ui/static/scitex_ui/ts/app/ajax-loader/index.ts",
     "./ts/app/attachment": "./src/scitex_ui/static/scitex_ui/ts/app/attachment/index.ts",
+    "./ts/app/app-launcher": "./src/scitex_ui/static/scitex_ui/ts/app/app-launcher/index.ts",
     "./ts/app/combobox": "./src/scitex_ui/static/scitex_ui/ts/app/combobox/index.ts",
     "./ts/app/confirm-modal": "./src/scitex_ui/static/scitex_ui/ts/app/confirm-modal/index.ts",
     "./ts/app/context-menu": "./src/scitex_ui/static/scitex_ui/ts/app/context-menu/index.ts",
