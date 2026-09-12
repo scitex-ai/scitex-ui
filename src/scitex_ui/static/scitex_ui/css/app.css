@@ -8,6 +8,7 @@
 @import "./primitives/spacing.css";
 @import "./primitives/typography-vars.css";
 @import "./app/alert-banner.css";
+@import "./app/app-launcher.css";
 @import "./app/attachment.css";
 @import "./app/badge.css";
 @import "./app/collapsible-panel.css";

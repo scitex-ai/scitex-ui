@@ -2,6 +2,7 @@
 """Frontend component metadata definitions."""
 
 from ._alert_banner import AlertBanner  # noqa: F401
+from ._app_launcher import AppLauncher  # noqa: F401
 from ._app_shell import AppShell  # noqa: F401
 from ._attachment import Attachment  # noqa: F401
 from ._badge import Badge  # noqa: F401
