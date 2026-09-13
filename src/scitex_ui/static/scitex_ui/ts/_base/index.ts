@@ -10,3 +10,12 @@ export {
   apiUrl,
   mountPrefix,
 } from "./mount";
+export {
+  APP_SCOPE_META_NAME,
+  SCOPE_USER,
+  SCOPE_PROJECT,
+  AppScopeMarkerInvalidError,
+  appScope,
+  mayOfferProjectSelector,
+} from "./scope";
+export type { AppScope } from "./scope";
