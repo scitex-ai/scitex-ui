@@ -307,4 +307,57 @@
   --bg-secondary: var(--bg-surface);
   --bg-tertiary: var(--bg-muted);
   --border-color: var(--border-default);
+
+  /* ===========================================================================
+   * SEMANTIC ROLE COLOR CONTRACT (Primary / Secondary / Danger / Success)
+   * TODO #96 / #120 — unify button/role colors across all apps.
+   *
+   * This is a NAME contract, not a color contract: every --role-* token is a
+   * pure `var()` alias to a token already declared in THIS palette. It introduces
+   * ZERO new brand colors and changes nothing that renders today. Its job is to
+   * give leaf apps ONE stable name per role (so "primary" stops being
+   * --_scitex-02 in one repo, --accent in another, a literal in a third) while
+   * keeping the per-mode value where the brand already decided it.
+   *
+   * DELIBERATELY preserves the primary's mode split: in LIGHT primary is the
+   * brand navy (--_scitex-02); in DARK it is the brand green (--_success).
+   * That divergence is compass Decision C (still an open operator choice), so
+   * the contract aliases whatever the palette decides rather than forcing the
+   * two modes to agree. Do not "unify" primary across modes here — that is the
+   * Decision C call, not the token contract.
+   *
+   * Sub-tokens per role: -bg / -text / -border / -hover-bg, matching the
+   * existing --color-btn-* shape so a migration is a name swap, not a re-derivation.
+   * Migration for a leaf (per role):
+   *   color: var(--color-btn-primary-bg)   ->  color: var(--role-primary-bg)
+   *   background: var(--status-error) ...  ->  background: var(--role-danger-bg)
+   * =========================================================================== */
+
+  /* Primary = the brand fill button (AA text). Light: navy. */
+  --role-primary-bg: var(--color-btn-primary-bg);
+  --role-primary-text: var(--color-btn-primary-text);
+  --role-primary-border: var(--color-btn-primary-border);
+  --role-primary-hover-bg: var(--color-btn-primary-hover-bg);
+
+  /* Secondary = the neutral default button (AA text). */
+  --role-secondary-bg: var(--color-btn-bg);
+  --role-secondary-text: var(--color-btn-text);
+  --role-secondary-border: var(--color-btn-border);
+  --role-secondary-hover-bg: var(--color-btn-hover-bg);
+
+  /* Danger / Success = the existing --status-* family, exposed with a role
+   * shape. The SOLID --status-error/--status-success is the fill; --_white is
+   * the label on that fill (matches --color-btn-primary-text's convention).
+   * Consumers wanting the tinted (badge-like) surface keep using the
+   * --status-*-bg/-text/-border tokens directly — this contract is for the
+   * solid action/role surfaces, not a replacement for state colors. */
+  --role-danger-bg: var(--status-error);
+  --role-danger-text: var(--_white);
+  --role-danger-border: var(--status-error);
+  --role-danger-hover-bg: var(--status-error);
+
+  --role-success-bg: var(--status-success);
+  --role-success-text: var(--_white);
+  --role-success-border: var(--status-success);
+  --role-success-hover-bg: var(--status-success);
 }
