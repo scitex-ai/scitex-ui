@@ -99,6 +99,28 @@
   --ui-nav-icon-size: var(--icon-lg);
   --ui-collapsed-pane-width: 48px;
 
+  /* --- Responsive shell primitives (compass L: shared mobile/PWA tokens) ---
+   * Single source so leaf apps + hub reference the SAME values instead of
+   * re-hardcoding 768px / 44px / env(safe-area-inset-*) per app. These are
+   * the "smallest shared responsive primitives" — tokens only; the narrow
+   * layout rules that consume them live in shell/mobile.css.
+   *
+   * --stx-narrow-breakpoint: the mobile boundary. mobile.css' @media block
+   * uses a literal 768px today (kept for the @media selector, which cannot
+   * take a var()); this token is the documented single value so any JS/inline
+   * or future rule agrees with it. Keep them in sync.
+   * --stx-touch-target-min: WCAG 2.5.5 / Apple HIG 44px minimum tappable size.
+   * --stx-safe-inset-*: PWA-standalone notch / gesture-bar insets. env() with a
+   *   0px fallback so the tokens are safe in non-standalone (browser) contexts
+   *   where env(safe-area-inset-*) is unavailable (resolves to 0, not unset).
+   */
+  --stx-narrow-breakpoint: 768px;
+  --stx-touch-target-min: 44px;
+  --stx-safe-inset-top: env(safe-area-inset-top, 0px);
+  --stx-safe-inset-right: env(safe-area-inset-right, 0px);
+  --stx-safe-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --stx-safe-inset-left: env(safe-area-inset-left, 0px);
+
   /* --- Preset App Accent Colors --- */
   --app-accent-color: transparent;
   --app-accent-tint: transparent;
