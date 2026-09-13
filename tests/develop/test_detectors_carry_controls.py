@@ -141,6 +141,9 @@ _EXEMPT: dict[tuple[str, str], str] = {
     ("test_mobile_panes_stay_reachable.py", "_COMMENT"): (
         "comment stripper; same shape as _CSS_COMMENT above"
     ),
+    ("test_responsive_shell_primitives.py", "_COMMENT"): (
+        "comment stripper; same shape as test_mobile_panes _COMMENT above"
+    ),
     ("test_no_asset_paths_via_installed_package.py", "_PY_COMMENT_OR_DOCSTRING"): (
         "comment/docstring stripper; over-stripping is the hazard, not "
         "over-matching"
