@@ -246,4 +246,36 @@
   --bg-secondary: var(--workspace-bg-secondary);
   --bg-tertiary: var(--workspace-bg-tertiary);
   --border-color: var(--workspace-border-default);
+
+  /* ===========================================================================
+   * SEMANTIC ROLE COLOR CONTRACT (Primary / Secondary / Danger / Success)
+   * TODO #96 / #120 — dark palette. The SAME --role-* names as the light
+   * palette, aliasing THIS palette's values. Keeping the names identical across
+   * modes is the whole point: a leaf references --role-primary-bg and gets the
+   * brand navy in light, the brand green in dark — Decision C's mode split,
+   * resolved per-palette, with the leaf writing nothing theme-specific.
+   * See the light palette's block for the full rationale + migration.
+   * =========================================================================== */
+
+  /* Primary = the brand fill button. Dark: the brand green (--_success). */
+  --role-primary-bg: var(--color-btn-primary-bg);
+  --role-primary-text: var(--color-btn-primary-text);
+  --role-primary-border: var(--color-btn-primary-border);
+  --role-primary-hover-bg: var(--color-btn-primary-hover-bg);
+
+  /* Secondary = the neutral default button. */
+  --role-secondary-bg: var(--color-btn-bg);
+  --role-secondary-text: var(--color-btn-text);
+  --role-secondary-border: var(--color-btn-border);
+  --role-secondary-hover-bg: var(--color-btn-hover-bg);
+
+  --role-danger-bg: var(--status-error);
+  --role-danger-text: var(--_white);
+  --role-danger-border: var(--status-error);
+  --role-danger-hover-bg: var(--status-error);
+
+  --role-success-bg: var(--status-success);
+  --role-success-text: var(--_white);
+  --role-success-border: var(--status-success);
+  --role-success-hover-bg: var(--status-success);
 }
