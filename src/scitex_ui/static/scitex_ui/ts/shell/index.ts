@@ -89,6 +89,11 @@ export type {
   RecentFileEntry,
 } from "./repo-monitor";
 
+// App-scope project-selector consumer (stx-app-scope marker, TODO #48/#144-149):
+// mounts the shared ProjectSelector app-locally, only for project-scoped apps.
+export { mountProjectSelectorByScope, PROJECT_SELECTOR_CHANGE } from "./app-scope-selector";
+export type { AppScopeSelectorOptions } from "./app-scope-selector";
+
 // Unified Resizer system (PointerEvent-based, with cascade and snap)
 export {
   Resizer,
