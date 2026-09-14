@@ -63,7 +63,11 @@ from ._skills import skills_group as _skills_group
 #: which case it is a REQUIRED DUAL SPELLING and "removed in X" is false in
 #: principle rather than merely early. See card
 #: scitex-ui-deprecation-promises-removal-in-the-version-it-ships-in-20260904.
-REMOVED_IN = "0.21.0"
+#:
+#: DECIDED 2026-09-14 (0.21.0 release): §1a wins while `_skills/` ships, so the
+#: legacy spelling cannot be removed in any 0.x release. 1.0.0 is the first
+#: version allowed to break a §1a command; this is a decision, not a bump.
+REMOVED_IN = "1.0.0"
 
 CANONICAL = "scitex-ui dev skills"
 
