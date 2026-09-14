@@ -1,4 +1,6 @@
-// src/scitex_ui/static/scitex_ui/ts/_base/BaseComponent.ts
+/* AUTO-GENERATED from ts/app/app-launcher/index.ts via esbuild — do not edit by hand. Rebuild: npx esbuild ts/app/app-launcher/index.ts --bundle --format=esm --outfile=js/app/app-launcher.js */
+
+// ts/_base/BaseComponent.ts
 var BaseComponent = class {
   container;
   config;
@@ -24,7 +26,33 @@ var BaseComponent = class {
   }
 };
 
-// src/scitex_ui/static/scitex_ui/ts/app/app-launcher/_AppLauncher.ts
+// ts/_base/i18n.ts
+var SHELL_STRINGS = {
+  en: {
+    apps: "Apps",
+    noAppsAvailable: "No apps available",
+    selectProject: "Select project",
+    noProjects: "No projects"
+  },
+  ja: {
+    apps: "\u30A2\u30D7\u30EA",
+    noAppsAvailable: "\u5229\u7528\u53EF\u80FD\u306A\u30A2\u30D7\u30EA\u304C\u3042\u308A\u307E\u305B\u3093",
+    selectProject: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    noProjects: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u304C\u3042\u308A\u307E\u305B\u3093"
+  }
+};
+function normalize(lang) {
+  if (!lang) return "en";
+  const code = lang.trim().toLowerCase();
+  if (code === "ja" || code.startsWith("ja-")) return "ja";
+  return "en";
+}
+function shellTranslate(key, doc = document) {
+  const lang = normalize(doc?.documentElement?.lang);
+  return SHELL_STRINGS[lang][key] ?? SHELL_STRINGS.en[key];
+}
+
+// ts/app/app-launcher/_AppLauncher.ts
 var CLS = "stx-app-launcher";
 var APP_LAUNCHER_SELECT = "stx-app-launcher:select";
 var AppLauncher = class extends BaseComponent {
@@ -49,7 +77,7 @@ var AppLauncher = class extends BaseComponent {
     this.trigger.appendChild(glyph);
     this.label = document.createElement("span");
     this.label.className = `${CLS}__label`;
-    this.label.textContent = config.label ?? "Apps";
+    this.label.textContent = config.label ?? shellTranslate("apps");
     this.trigger.appendChild(this.label);
     this.panel = document.createElement("div");
     this.panel.className = `${CLS}__panel`;
@@ -80,7 +108,7 @@ var AppLauncher = class extends BaseComponent {
     if (this.config.apps.length === 0) {
       const empty = document.createElement("div");
       empty.className = `${CLS}__empty`;
-      empty.textContent = "No apps available";
+      empty.textContent = shellTranslate("noAppsAvailable");
       this.grid.appendChild(empty);
       return;
     }

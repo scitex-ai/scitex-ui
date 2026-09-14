@@ -139,6 +139,12 @@ artifacts = [
     # consumer if it is absent from the wheel, and "not currently gitignored" is
     # a fact about today's ignore rules, not a guarantee about tomorrow's.
     "src/scitex_ui/static/**/*.json",
+    # The shipped JA translation catalog for the shared shell (locale/**/*.mo).
+    # The repo's blanket `*.mo` gitignore targets generated per-venv catalogs;
+    # this is a source asset Django must read at runtime, so it is force-included
+    # exactly like the svg/json above — a missing catalog would ship a shell
+    # that renders English on a Japanese host with no warning.
+    "src/scitex_ui/locale/**/*.mo",
 ]
 
 [tool.hatch.build.targets.wheel]

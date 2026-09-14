@@ -30,6 +30,7 @@
  */
 
 import { BaseComponent } from "../../_base/BaseComponent";
+import { shellTranslate } from "../../_base/i18n";
 import type { ProjectSelectorConfig, ProjectOption } from "./types";
 
 const CLS = "stx-app-project-selector";
@@ -99,7 +100,8 @@ export class ProjectSelector extends BaseComponent<ProjectSelectorConfig> {
       this.label.textContent = this.current.name;
       this.label.className = `${CLS}__current`;
     } else {
-      this.label.textContent = this.config.placeholder ?? "Select project";
+      this.label.textContent =
+        this.config.placeholder ?? shellTranslate("selectProject");
       this.label.className = `${CLS}__placeholder`;
     }
   }
@@ -110,7 +112,7 @@ export class ProjectSelector extends BaseComponent<ProjectSelectorConfig> {
     if (this.config.projects.length === 0) {
       const empty = document.createElement("div");
       empty.className = `${CLS}__empty`;
-      empty.textContent = "No projects";
+      empty.textContent = shellTranslate("noProjects");
       this.list.appendChild(empty);
       return;
     }

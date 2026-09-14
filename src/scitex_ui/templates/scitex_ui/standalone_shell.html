@@ -1,4 +1,4 @@
-{% load static %}
+{% load static i18n %}
 <!DOCTYPE html>
 <html lang="{{ shell_lang|default:'en' }}" data-theme-default="{{ shell_theme_default|default:'dark' }}">
     <head>
@@ -109,13 +109,13 @@
                          id="stx-shell-ai-panel-header">
                         <button class="panel-toggle-btn"
                                 id="stx-shell-ai-toggle"
-                                title="Toggle Console (Alt+A)">
+                                title="{% trans 'Toggle Console (Alt+A)' %}">
                             <i class="fas fa-chevron-right"></i>
                         </button>
                         <span class="stx-shell-sidebar__title"
                               id="stx-shell-ai-collapsed-title"
-                              title="Console">
-                            <i class="fas fa-terminal"></i> Console
+                              title="{% trans 'Console' %}">
+                            <i class="fas fa-terminal"></i> {% trans "Console" %}
                         </span>
                         <!-- Chat is the DEFAULT mode (operator decision, 2026-08-05).
                              The switching JS only handles clicks — nothing sets an
@@ -127,16 +127,16 @@
                         <div class="stx-shell-ai-mode-toggle">
                             <button class="stx-shell-ai-mode-btn"
                                     data-mode="console"
-                                    title="Terminal">
-                                <i class="fas fa-terminal"></i> Console
+                                    title="{% trans 'Terminal' %}">
+                                <i class="fas fa-terminal"></i> {% trans "Console" %}
                             </button>
-                            <button class="stx-shell-ai-mode-btn active" data-mode="chat" title="AI Chat">
-                                <i class="fas fa-robot"></i> Chat
+                            <button class="stx-shell-ai-mode-btn active" data-mode="chat" title="{% trans 'AI Chat' %}">
+                                <i class="fas fa-robot"></i> {% trans "Chat" %}
                             </button>
                         </div>
                         <button class="stx-shell-ai-input-btn stx-shell-shortcuts-btn"
                                 id="stx-shell-shortcuts-btn"
-                                title="Keyboard Shortcuts">
+                                title="{% trans 'Keyboard Shortcuts' %}">
                             <i class="fas fa-keyboard"></i>
                         </button>
                     </div>
@@ -146,24 +146,24 @@
                              state; its partner is the data-mode="chat" button above. -->
                         <div id="stx-shell-ai-chat-view" class="stx-shell-ai-view active">
                             <div class="stx-shell-ai-sessions-bar">
-                                <button class="stx-shell-ai-new-chat" title="New chat">
+                                <button class="stx-shell-ai-new-chat" title="{% trans 'New chat' %}">
                                     <i class="fas fa-plus"></i>
                                 </button>
                                 <div id="stx-shell-ai-sessions-list" class="stx-shell-ai-sessions-list"></div>
                                 <div class="stx-shell-ai-panel-actions">
                                     <button class="stx-shell-ai-action-btn"
                                             id="stx-shell-ai-copy-chat"
-                                            title="Copy chat">
+                                            title="{% trans 'Copy chat' %}">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                     <button class="stx-shell-ai-action-btn"
                                             id="stx-shell-ai-print-chat"
-                                            title="Print chat">
+                                            title="{% trans 'Print chat' %}">
                                         <i class="fas fa-print"></i>
                                     </button>
                                     <button class="stx-shell-ai-action-btn"
                                             id="stx-shell-ai-clear-chat"
-                                            title="Clear chat">
+                                            title="{% trans 'Clear chat' %}">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
@@ -171,8 +171,8 @@
                             <div id="stx-shell-ai-messages" class="stx-shell-ai-messages">
                                 <div class="stx-shell-ai-empty">
                                     <i class="fas fa-robot"></i>
-                                    <span>Ask anything about SciTeX.</span>
-                                    <span>I can take actions: stats, plots, literature, and your current work.</span>
+                                    <span>{% trans "Ask anything about SciTeX." %}</span>
+                                    <span>{% trans "I can take actions: stats, plots, literature, and your current work." %}</span>
                                 </div>
                             </div>
                             <div class="stx-shell-ai-input-area">
@@ -182,16 +182,16 @@
                                     <textarea id="stx-shell-ai-input"
                                               class="stx-shell-ai-input"
                                               rows="1"
-                                              placeholder="Ask anything"
+                                              placeholder="{% trans 'Ask anything' %}"
                                               autocomplete="off"></textarea>
                                     <button id="stx-shell-ai-camera"
                                             class="stx-shell-ai-input-btn"
-                                            title="Attach image">
+                                            title="{% trans 'Attach image' %}">
                                         <i class="fas fa-camera"></i>
                                     </button>
                                     <button id="stx-shell-ai-sketch"
                                             class="stx-shell-ai-input-btn"
-                                            title="Draw sketch">
+                                            title="{% trans 'Draw sketch' %}">
                                         <i class="fas fa-pen"></i>
                                     </button>
                                     <input id="stx-shell-ai-file-input"
@@ -199,12 +199,12 @@
                                            accept="image/*"
                                            multiple
                                            hidden>
-                                    <button id="stx-shell-ai-mic" class="stx-shell-ai-mic" title="Voice input">
+                                    <button id="stx-shell-ai-mic" class="stx-shell-ai-mic" title="{% trans 'Voice input' %}">
                                         <i class="fas fa-microphone"></i>
                                     </button>
                                     <button id="stx-shell-ai-chat-gear"
                                             class="stx-shell-ai-input-btn stx-shell-ai-gear-btn"
-                                            title="Chat settings">
+                                            title="{% trans 'Chat settings' %}">
                                         <i class="fas fa-cog"></i>
                                     </button>
                                 </div>
@@ -228,7 +228,7 @@
                              class="stx-shell-ai-view"
                              data-view="console">
                             <div class="stx-shell-ai-console-tabs-bar">
-                                <button class="stx-shell-ai-console-new-tab" title="New terminal">
+                                <button class="stx-shell-ai-console-new-tab" title="{% trans 'New terminal' %}">
                                     <i class="fas fa-plus"></i>
                                 </button>
                                 <div id="stx-shell-ai-console-tabs-list"
@@ -243,16 +243,16 @@
                             <div class="stx-shell-ai-console-toolbar stx-shell-toolbar-relative">
                                 <span id="stx-shell-ai-console-status" class="stx-shell-ai-console-status"></span>
                                 <div class="stx-shell-ai-console-toolbar-btns">
-                                    <button class="stx-shell-ai-input-btn" title="Webcam">
+                                    <button class="stx-shell-ai-input-btn" title="{% trans 'Webcam' %}">
                                         <i class="fas fa-camera"></i>
                                     </button>
-                                    <button class="stx-shell-ai-input-btn" title="Sketch">
+                                    <button class="stx-shell-ai-input-btn" title="{% trans 'Sketch' %}">
                                         <i class="fas fa-pen"></i>
                                     </button>
-                                    <button class="stx-shell-ai-input-btn" title="Voice">
+                                    <button class="stx-shell-ai-input-btn" title="{% trans 'Voice' %}">
                                         <i class="fas fa-microphone"></i>
                                     </button>
-                                    <button class="stx-shell-ai-input-btn stx-shell-ai-gear-btn" title="Settings">
+                                    <button class="stx-shell-ai-input-btn stx-shell-ai-gear-btn" title="{% trans 'Settings' %}">
                                         <i class="fas fa-cog"></i>
                                     </button>
                                 </div>
@@ -261,81 +261,81 @@
                                      class="stx-shell-ai-config-popover stx-hidden">
                                     <div class="ai-settings-section" id="ai-auto-accept-config">
                                         <label class="scitex-ai-settings-label"
-                                               title="When enabled, automatically accepts Claude Code permission prompts at the configured interval.">
-                                            <i class="fas fa-robot"></i> Claude Code Auto-Accept Mode
+                                               title="{% trans 'When enabled, automatically accepts Claude Code permission prompts at the configured interval.' %}">
+                                            <i class="fas fa-robot"></i> {% trans "Claude Code Auto-Accept Mode" %}
                                         </label>
                                         <div class="ai-settings-row">
                                             <label class="scitex-ai-settings-label"
-                                                   title="How often to check for and accept permission prompts">
-                                                Interval
+                                                   title="{% trans 'How often to check for and accept permission prompts' %}">
+                                                {% trans "Interval" %}
                                             </label>
                                             <select id="ai-auto-accept-interval"
                                                     class="ai-settings-select"
-                                                    title="How often to check for and accept permission prompts">
-                                                <option value="1000">1s (fast)</option>
+                                                    title="{% trans 'How often to check for and accept permission prompts' %}">
+                                                <option value="1000">{% trans "1s (fast)" %}</option>
                                                 <option value="1500" selected>1.5s</option>
-                                                <option value="2000">2s</option>
-                                                <option value="3000">3s (slow)</option>
+                                                <option value="2000">{% trans "2s" %}</option>
+                                                <option value="3000">{% trans "3s (slow)" %}</option>
                                             </select>
                                         </div>
                                         <div class="ai-settings-row">
                                             <label class="scitex-ai-settings-label"
-                                                   title="Controls which commands are auto-accepted">Safety</label>
+                                                   title="{% trans 'Controls which commands are auto-accepted' %}">{% trans "Safety" %}</label>
                                             <select id="ai-auto-accept-safety"
                                                     class="ai-settings-select"
-                                                    title="Controls which commands are auto-accepted">
-                                                <option value="conservative" title="Only accept safe, read-only commands">Conservative (read-only)</option>
+                                                    title="{% trans 'Controls which commands are auto-accepted' %}">
+                                                <option value="conservative" title="{% trans 'Only accept safe, read-only commands' %}">{% trans "Conservative (read-only)" %}</option>
                                                 <option value="normal"
                                                         selected
-                                                        title="Accept most commands except destructive ones">
-                                                    Normal (most commands)
+                                                        title="{% trans 'Accept most commands except destructive ones' %}">
+                                                    {% trans "Normal (most commands)" %}
                                                 </option>
-                                                <option value="aggressive" title="Accept all commands — use with caution">Aggressive (all commands)</option>
+                                                <option value="aggressive" title="{% trans 'Accept all commands — use with caution' %}">{% trans "Aggressive (all commands)" %}</option>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="ai-settings-section" id="ai-auto-response-config">
                                         <label class="scitex-ai-settings-label"
-                                               title="Commands sent automatically for each Claude state">
-                                            <i class="fas fa-reply"></i> Auto-Response Commands
+                                               title="{% trans 'Commands sent automatically for each Claude state' %}">
+                                            <i class="fas fa-reply"></i> {% trans "Auto-Response Commands" %}
                                         </label>
                                         <div class="ai-settings-row">
                                             <label class="scitex-ai-settings-label"
-                                                   title="Command sent when Claude is thinking or idle">Waiting</label>
+                                                   title="{% trans 'Command sent when Claude is thinking or idle' %}">{% trans "Waiting" %}</label>
                                             <input id="ai-auto-response-waiting"
                                                    class="ai-settings-input"
                                                    type="text"
                                                    placeholder="/speak-signature"
-                                                   title="Command sent when Claude is thinking or idle" />
+                                                   title="{% trans 'Command sent when Claude is thinking or idle' %}" />
                                         </div>
                                         <div class="ai-settings-row">
                                             <label class="scitex-ai-settings-label"
-                                                   title="Response for Y/N permission prompts">Y/N</label>
+                                                   title="{% trans 'Response for Y/N permission prompts' %}">Y/N</label>
                                             <select id="ai-auto-response-yn"
                                                     class="ai-settings-select"
-                                                    title="Response for Y/N permission prompts">
-                                                <option value="1">1 (Allow)</option>
-                                                <option value="2">2 (Deny)</option>
+                                                    title="{% trans 'Response for Y/N permission prompts' %}">
+                                                <option value="1">{% trans "1 (Allow)" %}</option>
+                                                <option value="2">{% trans "2 (Deny)" %}</option>
                                             </select>
                                         </div>
                                         <div class="ai-settings-row">
                                             <label class="scitex-ai-settings-label"
-                                                   title="Response for Y/Y/N permission prompts">Y/Y/N</label>
+                                                   title="{% trans 'Response for Y/Y/N permission prompts' %}">Y/Y/N</label>
                                             <select id="ai-auto-response-yyn"
                                                     class="ai-settings-select"
-                                                    title="Response for Y/Y/N permission prompts">
-                                                <option value="1">1 (Allow once)</option>
-                                                <option value="2" selected>2 (Allow always)</option>
-                                                <option value="3">3 (Deny)</option>
+                                                    title="{% trans 'Response for Y/Y/N permission prompts' %}">
+                                                <option value="1">{% trans "1 (Allow once)" %}</option>
+                                                <option value="2" selected>{% trans "2 (Allow always)" %}</option>
+                                                <option value="3">{% trans "3 (Deny)" %}</option>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="ai-settings-section" id="ai-agent-sources">
                                         <label class="scitex-ai-settings-label">
-                                            <i class="fas fa-sitemap"></i> App Skills
+                                            <i class="fas fa-sitemap"></i> {% trans "App Skills" %}
                                         </label>
                                         <div id="ai-agent-sources-content" class="ai-agent-sources">
-                                            {% block config_agent_sources %}<div class="ai-source-loading">Loading...</div>{% endblock %}
+                                            {% block config_agent_sources %}<div class="ai-source-loading">{% trans "Loading..." %}</div>{% endblock %}
                                         </div>
                                     </div>
                                 </div>
@@ -366,18 +366,18 @@
                     <div class="stx-shell-sidebar__header">
                         <button class="panel-toggle-btn"
                                 id="ws-worktree-toggle"
-                                title="Toggle file tree">
+                                title="{% trans 'Toggle file tree' %}">
                             <i class="fas fa-chevron-right"></i>
                         </button>
-                        <span class="stx-shell-sidebar__title" title="Files"><i class="fas fa-folder"></i> Files</span>
+                        <span class="stx-shell-sidebar__title" title="{% trans 'Files' %}"><i class="fas fa-folder"></i> {% trans "Files" %}</span>
                         <span class="stx-shell-sidebar__title-full">
                             <i class="fas fa-folder-open"></i>
-                            {% block worktree_title_full %}Files{% endblock %}
+                            {% block worktree_title_full %}{% trans "Files" %}{% endblock %}
                         </span>
                         <div class="stx-shell-sidebar__header-actions ws-worktree-actions">
                             {% block worktree_actions %}
                                 <button class="stx-shell-ai-action-btn"
-                                        title="Keyboard Shortcuts"
+                                        title="{% trans 'Keyboard Shortcuts' %}"
                                         onclick="window.showShortcutsModal && window.showShortcutsModal()">
                                     <i class="fas fa-keyboard"></i>
                                 </button>
@@ -407,20 +407,20 @@
                              {% block repo_monitor_data_attrs %}{% endblock %}>
                             <div class="repo-monitor-header" id="repo-monitor-header">
                                 <i class="fas fa-clock-rotate-left"></i>
-                                <span>Recent</span>
+                                <span>{% trans "Recent" %}</span>
                                 <span class="repo-monitor-status" id="repo-monitor-status"></span>
                                 <span class="repo-monitor-toolbar">
                                     <button id="repo-monitor-config-toggle"
                                             class="rm-toolbar-btn"
-                                            title="Filter settings">
+                                            title="{% trans 'Filter settings' %}">
                                         <i class="fas fa-gear"></i>
                                     </button>
                                     <button id="repo-monitor-pause-toggle"
                                             class="rm-toolbar-btn"
-                                            title="Pause/resume monitor">
+                                            title="{% trans 'Pause/resume monitor' %}">
                                         <i class="fas fa-pause"></i>
                                     </button>
-                                    <button id="repo-monitor-clear" class="rm-toolbar-btn" title="Clear feed">
+                                    <button id="repo-monitor-clear" class="rm-toolbar-btn" title="{% trans 'Clear feed' %}">
                                         <i class="fas fa-trash-can"></i>
                                     </button>
                                 </span>
@@ -449,26 +449,26 @@
                          data-collapse-key="ws-viewer-collapsed"
                          data-toggle-btn="ws-viewer-toggle"></div>
                     <div class="stx-shell-sidebar__header">
-                        <button class="panel-toggle-btn" id="ws-viewer-toggle" title="Toggle viewer">
+                        <button class="panel-toggle-btn" id="ws-viewer-toggle" title="{% trans 'Toggle viewer' %}">
                             <i class="fas fa-chevron-right"></i>
                         </button>
                         <span id="ws-viewer-title-short"
                               class="stx-shell-sidebar__title"
-                              title="Viewer"><i class="fas fa-eye"></i> Viewer</span>
+                              title="{% trans 'Viewer' %}"><i class="fas fa-eye"></i> {% trans "Viewer" %}</span>
                         <span id="ws-viewer-mode-toggle"
                               class="stx-shell-sidebar__title-full ws-viewer-mode-toggle-title"
-                              title="Switch to Editor"><i class="fas fa-eye"></i> Viewer</span>
+                              title="{% trans 'Switch to Editor' %}"><i class="fas fa-eye"></i> {% trans "Viewer" %}</span>
                         <div class="stx-shell-sidebar__header-actions ws-viewer-header-actions">
                             <div id="ws-viewer-tabs" class="ws-viewer-tabs"></div>
                             <button class="ws-viewer-formats-info-btn"
                                     data-tooltip="Supported formats:&#10;Text: .py .js .ts .html .css .json .md .yaml .sh .tex .bib .txt&#10;Image: .png .jpg .jpeg .gif .webp .svg .bmp .ico&#10;PDF: .pdf&#10;Table: .csv .tsv&#10;Diagram: .mmd .mermaid .dot .gv&#10;Audio: .mp3 .wav .ogg .flac .m4a .aac .wma&#10;Video: .mp4 .webm .avi .mov .mkv .ogv"
-                                    aria-label="Supported file formats"
+                                    aria-label="{% trans 'Supported file formats' %}"
                                     title="">
                                 <i class="fas fa-info-circle"></i>
                             </button>
                             <button id="ws-viewer-shortcuts-btn"
                                     class="ws-viewer-shortcuts-btn"
-                                    title="Keyboard shortcuts (Alt+/)">
+                                    title="{% trans 'Keyboard shortcuts (Alt+/)' %}">
                                 <i class="fas fa-keyboard"></i>
                             </button>
                         </div>
@@ -480,7 +480,7 @@
                             <div id="ws-viewer-media" class="ws-viewer-media"></div>
                             <div id="ws-viewer-empty" class="ws-viewer-empty">
                                 <i class="fas fa-file-alt"></i>
-                                <span>Click a file to open</span>
+                                <span>{% trans "Click a file to open" %}</span>
                             </div>
                         </div>
                     </div>
