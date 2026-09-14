@@ -7,6 +7,19 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-09-14
+
+### Added — project picker and project scope (#232)
+
+- `{% load scitex_project_picker %}{% scitex_project_picker provider_url=... current=... %}`: renders only when the app scope is `project`; the prebuilt `js/app/project-picker.js` auto-mounts it and a pick navigates to `?project=<id>`.
+- The `ProjectSelector` dropdown gains fuzzy search, full keyboard support, combobox/listbox ARIA and 44px touch targets on narrow or coarse-pointer screens.
+- `ts/app/project-selector/provider.ts`: `ProjectProvider`, `httpProjectProvider(url)`, `staticProjectProvider(list)`.
+- `scitex_ui.project_scope`: `ProjectProvider` protocol, `LocalProjectProvider(root)`, `resolve_project(request, provider, explicit)` (an explicit project wins and never falls back when inaccessible), `project_listing_view(provider)`.
+
+### Changed — shared shell follows the host language (#229, first released as 0.20.4)
+
+- The shared shell is translatable: English default with complete Japanese.
+
 ### Added — client translations from Django's gettext catalogs
 
 - `ts/_base/gettext.ts`: `gettext`, `ngettext`, `pgettext`, `npgettext`, `interpolate`, `gettext_noop`, `pluralidx` with Django's JS names. English passthrough when no catalog is on the page.
