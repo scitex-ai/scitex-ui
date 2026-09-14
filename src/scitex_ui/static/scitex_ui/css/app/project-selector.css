@@ -1,8 +1,7 @@
-/* Project selector — the standard project-picking pattern (compass L625).
+/* Project selector — the SDK project picker (compass L625).
  *
- * A dropdown that lists the user's projects, shows the current selection on
- * the trigger, and emits `stx-project-selector:change`. The DATA comes from
- * the consuming app; this stylesheet owns the pattern's appearance.
+ * A dropdown with fuzzy search over the projects the user can access. The
+ * app places it inside its own UI; the global header never hosts it.
  *
  * The trigger carries the same size/shape as the shared form controls so a
  * selector sitting next to an input reads as a row: the standard button
@@ -83,6 +82,31 @@
   display: block;
 }
 
+.stx-app-project-selector__search {
+  box-sizing: border-box;
+  display: block;
+  width: calc(100% - 2 * var(--spacing-xs, 4px));
+  height: var(--input-height, 36px);
+  margin: var(--spacing-xs, 4px);
+  padding: 0 10px;
+
+  border: 1px solid var(--border-default, #999);
+  border-radius: var(--radius-sm, 3px);
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #333);
+
+  font: inherit;
+  /* 16px stops iOS Safari from zooming the page when the field gains focus. */
+  font-size: 16px;
+}
+
+.stx-app-project-selector__search:focus-visible,
+.stx-app-project-selector__trigger:focus-visible,
+.stx-app-project-selector__option:focus-visible {
+  outline: 2px solid var(--color-primary, #4a6fa5);
+  outline-offset: 1px;
+}
+
 .stx-app-project-selector__list {
   padding: var(--spacing-xs, 4px);
 }
@@ -116,6 +140,11 @@
   background: var(--bg-muted, #e8e7e5);
 }
 
+.stx-app-project-selector__option--active {
+  outline: 1px solid var(--border-default, #999);
+  outline-offset: -1px;
+}
+
 .stx-app-project-selector__option--current {
   background: var(--bg-muted, #e8e7e5);
   font-weight: 600;
@@ -139,4 +168,26 @@
   padding: 10px;
   color: var(--text-muted, #777);
   font-size: 0.85rem;
+}
+
+/* Phones and touch screens: every tap target at least 44px. */
+@media (max-width: 600px), (pointer: coarse) {
+  .stx-app-project-selector {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .stx-app-project-selector__trigger,
+  .stx-app-project-selector__search {
+    height: 44px;
+  }
+
+  .stx-app-project-selector__option {
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .stx-app-project-selector__panel {
+    max-height: min(60vh, 420px);
+  }
 }

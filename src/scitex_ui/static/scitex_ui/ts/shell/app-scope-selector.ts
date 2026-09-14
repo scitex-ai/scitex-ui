@@ -32,7 +32,7 @@
  */
 
 import { ProjectSelector, PROJECT_SELECTOR_CHANGE } from "../app/project-selector";
-import type { ProjectOption } from "../app/project-selector";
+import type { ProjectOption, ProjectProvider } from "../app/project-selector";
 import {
   appScope,
   SCOPE_PROJECT,
@@ -44,7 +44,9 @@ export interface AppScopeSelectorOptions {
   container: string | HTMLElement;
   /** The app's projects, in display order. The DATA is the app's — it knows
    *  its own list and permissions; this module only gates on scope. */
-  projects: ProjectOption[];
+  projects?: ProjectOption[];
+  /** Or a provider that lists the projects the user can access. */
+  provider?: ProjectProvider;
   /** Currently active project id, if any (shown on the trigger). */
   current?: string | null;
   /** Trigger placeholder when nothing is active. */
@@ -73,6 +75,7 @@ export function mountProjectSelectorByScope(
   return new ProjectSelector({
     container: options.container,
     projects: options.projects,
+    provider: options.provider,
     current: options.current,
     placeholder: options.placeholder,
   });

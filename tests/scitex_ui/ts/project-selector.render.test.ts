@@ -71,6 +71,8 @@ function makeElement(tagName) {
 }
 const documentStub = makeEventTarget();
 documentStub.createElement = (t) => makeElement(t);
+// gettext looks for json_script catalogs; the stub page has none.
+documentStub.querySelectorAll = () => [];
 globalThis.document = documentStub;
 globalThis.CustomEvent = class CustomEvent {
   constructor(type, opts) {
@@ -137,7 +139,7 @@ ok("the panel lists one option per project", () => {
     current: null,
   });
   const panel = container.children.find((c) => c.tagName.toLowerCase() === "div");
-  const list = panel.children[0];
+  const list = panel.children.find((c) => c.className.endsWith("__list"));
   assert.equal(list.children.length, 3);
 });
 
@@ -152,7 +154,7 @@ ok("selecting a project emits PROJECT_SELECTOR_CHANGE with its id", () => {
     current: "alpha",
   });
   const panel = container.children.find((c) => c.tagName.toLowerCase() === "div");
-  const list = panel.children[0];
+  const list = panel.children.find((c) => c.className.endsWith("__list"));
   let fired = null;
   container.addEventListener(PROJECT_SELECTOR_CHANGE, (e) => { fired = e.detail; });
   // simulate clicking the second option (its click handler calls select)
@@ -166,7 +168,7 @@ ok("empty project list renders the 'No projects' placeholder", () => {
   const container = makeElement("div");
   new ProjectSelector({ container, projects: [], current: null });
   const panel = container.children.find((c) => c.tagName.toLowerCase() === "div");
-  const list = panel.children[0];
+  const list = panel.children.find((c) => c.className.endsWith("__list"));
   assert.equal(list.children[0].textContent, "No projects");
 });
 

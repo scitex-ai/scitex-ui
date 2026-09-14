@@ -165,9 +165,11 @@
         "__option-name",
         "__panel",
         "__placeholder",
+        "__search",
         "__trigger"
       ],
       "modifiers": [
+        "--active",
         "--current",
         "--open"
       ]

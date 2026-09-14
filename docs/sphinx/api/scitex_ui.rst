@@ -63,6 +63,20 @@ and read in TypeScript by ``gettext`` / ``ngettext`` / ``interpolate`` from ``ts
 .. automodule:: scitex_ui.templatetags.scitex_i18n
    :members:
 
+Project scope
+-------------
+
+The project picker a project-scope app places in its own UI, fed by a provider of
+the projects the user can access. An explicit project always beats the last visited one.
+
+.. automodule:: scitex_ui.project_scope
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scitex_ui.templatetags.scitex_project_picker
+   :members:
+
 Registry
 --------
 
