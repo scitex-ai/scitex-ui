@@ -68,8 +68,18 @@ export type {
   ImportExportDetail,
 } from "./import-export";
 
-export { ProjectSelector, PROJECT_SELECTOR_CHANGE } from "./project-selector";
+export {
+  ProjectSelector,
+  PROJECT_SELECTOR_CHANGE,
+  fuzzyFilter,
+  fuzzyScore,
+  httpProjectProvider,
+  staticProjectProvider,
+  mountProjectPickers,
+} from "./project-selector";
 export type {
   ProjectSelectorConfig,
   ProjectOption,
+  ProjectListing,
+  ProjectProvider,
 } from "./project-selector";

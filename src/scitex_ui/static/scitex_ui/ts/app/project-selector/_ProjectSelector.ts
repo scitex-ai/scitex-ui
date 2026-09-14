@@ -1,36 +1,27 @@
 /**
- * ProjectSelector — the standard project-picking pattern (compass L625).
+ * ProjectSelector — the SDK project picker (compass L625).
  *
- * A dropdown that lists the user's projects, shows the current selection on
- * the trigger, and emits `stx-project-selector:change` (bubbles) when the
- * selection changes.
+ * A dropdown with fuzzy search that lists the projects the user can access,
+ * shows the current one on the trigger, and emits `stx-project-selector:change`
+ * (bubbles, detail `{id, name}`) when the user picks another.
  *
- * Presentational + behavioural: the DATA comes from the app (it knows the
- * user and their project permissions); this component owns the pattern — the
- * markup, the BEM vocabulary, and the event contract.
- *
- * Options are real `<button>`s, so keyboard operability (Tab, Enter, Space)
- * comes from the platform instead of a hand-rolled key handler — the same
- * philosophy as the form-controls checkbox (theme the native control, do not
- * replace it).
+ * The APP places it inside its own UI; the global header never hosts it. The
+ * data comes from `projects` or a `ProjectProvider`, so the component knows
+ * nothing about users or permissions.
  *
  * Usage:
- *   import { ProjectSelector, PROJECT_SELECTOR_CHANGE } from
- *     "scitex_ui/ts/app/project-selector";
- *
  *   const sel = new ProjectSelector({
- *     container: "#project-select",
- *     projects: [{ id: "scitex-ui", name: "scitex-ui" }],
- *     current: "scitex-ui",
+ *     container: "#project-picker",
+ *     provider: httpProjectProvider("/project/api/scope/projects/"),
  *   });
- *   sel.container.addEventListener(PROJECT_SELECTOR_CHANGE, (e) => {
- *     const { id, name } = (e as CustomEvent<{ id: string; name: string }>)
- *       .detail;
- *   });
+ *   sel.container.addEventListener(PROJECT_SELECTOR_CHANGE, (e) => { ... });
  */
 
 import { BaseComponent } from "../../_base/BaseComponent";
+import { gettext } from "../../_base/gettext";
 import { shellTranslate } from "../../_base/i18n";
+import type { ShellStringKey } from "../../_base/i18n";
+import { fuzzyFilter } from "./fuzzy";
 import type { ProjectSelectorConfig, ProjectOption } from "./types";
 
 const CLS = "stx-app-project-selector";
@@ -38,11 +29,28 @@ const CLS = "stx-app-project-selector";
 /** Event emitted on the container when the selection changes. */
 export const PROJECT_SELECTOR_CHANGE = "stx-project-selector:change";
 
+let instanceCount = 0;
+
+/** gettext first; a page without the scitex_ui catalog still gets the built-in shell JA. */
+function translate(msgid: string, shellKey?: ShellStringKey): string {
+  const translated = gettext(msgid);
+  if (translated !== msgid || !shellKey) return translated;
+  return shellTranslate(shellKey);
+}
+
 export class ProjectSelector extends BaseComponent<ProjectSelectorConfig> {
+  /** Settles once the provider's listing has been rendered (immediately without one). */
+  readonly ready: Promise<void>;
+  private projects: ProjectOption[];
   private current: ProjectOption | null;
+  private filtered: ProjectOption[] = [];
+  private activeIndex = 0;
+  private status: "ready" | "loading" | "error" = "ready";
+  private readonly uid: string;
   private trigger: HTMLButtonElement;
   private label: HTMLElement;
   private panel: HTMLElement;
+  private search: HTMLInputElement | null = null;
   private list: HTMLElement;
   private open = false;
   private outsideClickHandler: (e: MouseEvent) => void;
@@ -50,8 +58,9 @@ export class ProjectSelector extends BaseComponent<ProjectSelectorConfig> {
 
   constructor(config: ProjectSelectorConfig) {
     super(config);
-    this.current =
-      config.projects.find((p) => p.id === config.current) ?? null;
+    this.uid = "stx-project-picker-" + ++instanceCount;
+    this.projects = config.projects ?? [];
+    this.current = this.projects.find((p) => p.id === config.current) ?? null;
 
     this.container.className = CLS;
 
@@ -59,126 +68,219 @@ export class ProjectSelector extends BaseComponent<ProjectSelectorConfig> {
     this.trigger.type = "button";
     this.trigger.className = `${CLS}__trigger`;
     this.trigger.setAttribute("aria-haspopup", "listbox");
+    this.trigger.setAttribute("aria-expanded", "false");
 
     this.label = document.createElement("span");
     this.label.className = `${CLS}__current`;
-
     this.trigger.appendChild(this.label);
-    this.renderLabel();
 
     this.panel = document.createElement("div");
     this.panel.className = `${CLS}__panel`;
-    this.panel.setAttribute("role", "listbox");
 
     this.list = document.createElement("div");
     this.list.className = `${CLS}__list`;
+    this.list.id = `${this.uid}-list`;
+    this.list.setAttribute("role", "listbox");
+
+    if (config.searchable !== false) {
+      this.search = document.createElement("input");
+      this.search.type = "search";
+      this.search.className = `${CLS}__search`;
+      this.search.placeholder = gettext("Search projects");
+      this.search.setAttribute("aria-label", gettext("Search projects"));
+      this.search.setAttribute("role", "combobox");
+      this.search.setAttribute("aria-autocomplete", "list");
+      this.search.setAttribute("aria-controls", this.list.id);
+      this.search.setAttribute("autocomplete", "off");
+      this.search.addEventListener("input", () => {
+        this.activeIndex = 0;
+        this.renderList();
+      });
+      this.search.addEventListener("keydown", (e) => this.onSearchKey(e));
+      this.panel.appendChild(this.search);
+    }
     this.panel.appendChild(this.list);
-    this.renderList();
 
     this.container.appendChild(this.trigger);
     this.container.appendChild(this.panel);
 
     this.trigger.addEventListener("click", () => this.toggle());
+    this.trigger.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        this.show();
+      }
+    });
 
     this.outsideClickHandler = (e: MouseEvent): void => {
-      if (!this.container.contains(e.target as Node)) {
-        this.close();
-      }
+      if (!this.container.contains(e.target as Node)) this.close();
     };
     this.keyHandler = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && this.open) {
         this.close();
+        this.trigger.focus?.();
       }
     };
     document.addEventListener("click", this.outsideClickHandler);
     document.addEventListener("keydown", this.keyHandler);
+
+    this.ready = config.provider ? this.load() : Promise.resolve();
+    this.renderLabel();
+    this.renderList();
   }
 
-  /** Render the trigger label (current selection or placeholder). */
+  /** The selected project, or null. */
+  getCurrent(): ProjectOption | null {
+    return this.current;
+  }
+
+  /** Replace the project list, keeping the selection when it is still present. */
+  setProjects(projects: ProjectOption[], currentId?: string | null): void {
+    this.projects = projects;
+    const wanted = currentId === undefined ? this.current?.id : currentId;
+    this.current = projects.find((p) => p.id === wanted) ?? null;
+    this.renderLabel();
+    this.renderList();
+  }
+
+  private async load(): Promise<void> {
+    const provider = this.config.provider;
+    if (!provider) return;
+    this.status = "loading";
+    try {
+      const listing = await provider.listProjects();
+      this.status = "ready";
+      this.setProjects(listing.projects, this.config.current ?? listing.current ?? null);
+    } catch {
+      this.status = "error";
+      this.renderList();
+    }
+  }
+
   private renderLabel(): void {
     if (this.current) {
       this.label.textContent = this.current.name;
       this.label.className = `${CLS}__current`;
     } else {
-      this.label.textContent =
-        this.config.placeholder ?? shellTranslate("selectProject");
+      this.label.textContent = this.config.placeholder ?? translate("Select project", "selectProject");
       this.label.className = `${CLS}__placeholder`;
     }
   }
 
-  /** (Re)build the option list from config.projects. */
   private renderList(): void {
     this.list.innerHTML = "";
-    if (this.config.projects.length === 0) {
+    const query = this.search?.value ?? "";
+    this.filtered = fuzzyFilter(this.projects, query, (p) => `${p.name} ${p.detail ?? ""}`);
+    this.activeIndex = Math.min(this.activeIndex, Math.max(this.filtered.length - 1, 0));
+
+    const emptyText = this.emptyText(query);
+    if (emptyText) {
       const empty = document.createElement("div");
       empty.className = `${CLS}__empty`;
-      empty.textContent = shellTranslate("noProjects");
+      empty.textContent = emptyText;
       this.list.appendChild(empty);
+      this.search?.removeAttribute?.("aria-activedescendant");
       return;
     }
-    for (const project of this.config.projects) {
-      const option = document.createElement("button");
-      option.type = "button";
-      const isCurrent = this.current?.id === project.id;
-      option.className = isCurrent
-        ? `${CLS}__option ${CLS}__option--current`
-        : `${CLS}__option`;
-      if (isCurrent) {
-        option.setAttribute("aria-current", "true");
-      }
-      option.setAttribute("role", "option");
-      option.setAttribute("aria-selected", String(isCurrent));
 
-      const name = document.createElement("span");
-      name.className = `${CLS}__option-name`;
-      name.textContent = project.name;
-      option.appendChild(name);
+    this.filtered.forEach((project, index) => {
+      this.list.appendChild(this.renderOption(project, index));
+    });
+    this.search?.setAttribute("aria-activedescendant", `${this.uid}-opt-${this.activeIndex}`);
+  }
 
-      if (project.detail) {
-        const detail = document.createElement("span");
-        detail.className = `${CLS}__option-detail`;
-        detail.textContent = project.detail;
-        option.appendChild(detail);
-      }
+  private emptyText(query: string): string | null {
+    if (this.status === "loading") return gettext("Loading projects…");
+    if (this.status === "error") return gettext("Could not load projects");
+    if (this.projects.length === 0) return translate("No projects", "noProjects");
+    if (this.filtered.length === 0 && query.trim() !== "") return gettext("No matching projects");
+    return null;
+  }
 
-      option.addEventListener("click", () => this.select(project));
-      this.list.appendChild(option);
+  private renderOption(project: ProjectOption, index: number): HTMLButtonElement {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.id = `${this.uid}-opt-${index}`;
+    const isCurrent = this.current?.id === project.id;
+    const classes = [`${CLS}__option`];
+    if (isCurrent) classes.push(`${CLS}__option--current`);
+    if (index === this.activeIndex) classes.push(`${CLS}__option--active`);
+    option.className = classes.join(" ");
+    if (isCurrent) option.setAttribute("aria-current", "true");
+    option.setAttribute("role", "option");
+    option.setAttribute("aria-selected", String(isCurrent));
+    option.tabIndex = -1;
+
+    const name = document.createElement("span");
+    name.className = `${CLS}__option-name`;
+    name.textContent = project.name;
+    option.appendChild(name);
+
+    if (project.detail) {
+      const detail = document.createElement("span");
+      detail.className = `${CLS}__option-detail`;
+      detail.textContent = project.detail;
+      option.appendChild(detail);
+    }
+
+    option.addEventListener("click", () => this.select(project));
+    return option;
+  }
+
+  private onSearchKey(e: KeyboardEvent): void {
+    const last = this.filtered.length - 1;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const step = e.key === "ArrowDown" ? 1 : -1;
+      this.activeIndex = last < 0 ? 0 : (this.activeIndex + step + last + 1) % (last + 1);
+      this.renderList();
+      this.list.children[this.activeIndex]?.scrollIntoView?.({ block: "nearest" });
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const project = this.filtered[this.activeIndex];
+      if (project) this.select(project);
+    } else if (e.key === "Tab") {
+      this.close();
     }
   }
 
   /** Open or close the option panel. */
   toggle(): void {
-    if (this.open) {
-      this.close();
-    } else {
-      this.open = true;
-      this.container.classList.add(`${CLS}--open`);
-      this.trigger.setAttribute("aria-expanded", "true");
-    }
+    if (this.open) this.close();
+    else this.show();
+  }
+
+  private show(): void {
+    if (this.open) return;
+    this.open = true;
+    if (this.search) this.search.value = "";
+    const currentIndex = this.projects.findIndex((p) => p.id === this.current?.id);
+    this.activeIndex = Math.max(currentIndex, 0);
+    this.renderList();
+    this.container.classList.add(`${CLS}--open`);
+    this.trigger.setAttribute("aria-expanded", "true");
+    this.search?.setAttribute("aria-expanded", "true");
+    this.search?.focus?.();
   }
 
   close(): void {
-    if (!this.open) {
-      return;
-    }
+    if (!this.open) return;
     this.open = false;
     this.container.classList.remove(`${CLS}--open`);
     this.trigger.setAttribute("aria-expanded", "false");
+    this.search?.setAttribute("aria-expanded", "false");
   }
 
-  /** Select a project: update the trigger, close, and emit the change. */
+  /** Select a project: update the trigger, remember it, close, and emit the change. */
   private select(project: ProjectOption): void {
     const changed = this.current?.id !== project.id;
     this.current = project;
     this.renderLabel();
     this.renderList();
     this.close();
-    if (changed) {
-      this.emit(PROJECT_SELECTOR_CHANGE, {
-        id: project.id,
-        name: project.name,
-      });
-    }
+    if (!changed) return;
+    this.config.provider?.rememberProject?.(project.id).catch(() => undefined);
+    this.emit(PROJECT_SELECTOR_CHANGE, { id: project.id, name: project.name });
   }
 
   override destroy(): void {
