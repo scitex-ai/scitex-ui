@@ -33,6 +33,7 @@
  */
 
 import { BaseComponent } from "../../_base/BaseComponent";
+import { shellTranslate } from "../../_base/i18n";
 import type {
   AppLauncherConfig,
   AppOption,
@@ -70,7 +71,7 @@ export class AppLauncher extends BaseComponent<AppLauncherConfig> {
 
     this.label = document.createElement("span");
     this.label.className = `${CLS}__label`;
-    this.label.textContent = config.label ?? "Apps";
+    this.label.textContent = config.label ?? shellTranslate("apps");
     this.trigger.appendChild(this.label);
 
     this.panel = document.createElement("div");
@@ -107,7 +108,7 @@ export class AppLauncher extends BaseComponent<AppLauncherConfig> {
     if (this.config.apps.length === 0) {
       const empty = document.createElement("div");
       empty.className = `${CLS}__empty`;
-      empty.textContent = "No apps available";
+      empty.textContent = shellTranslate("noAppsAvailable");
       this.grid.appendChild(empty);
       return;
     }

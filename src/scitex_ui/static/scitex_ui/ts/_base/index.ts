@@ -19,3 +19,9 @@ export {
   mayOfferProjectSelector,
 } from "./scope";
 export type { AppScope } from "./scope";
+export {
+  I18N_LANGUAGES,
+  SHELL_STRINGS,
+  shellTranslate,
+} from "./i18n";
+export type { I18NLanguage, ShellStringKey } from "./i18n";

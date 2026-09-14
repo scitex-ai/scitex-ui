@@ -26,6 +26,32 @@ var BaseComponent = class {
   }
 };
 
+// ts/_base/i18n.ts
+var SHELL_STRINGS = {
+  en: {
+    apps: "Apps",
+    noAppsAvailable: "No apps available",
+    selectProject: "Select project",
+    noProjects: "No projects"
+  },
+  ja: {
+    apps: "\u30A2\u30D7\u30EA",
+    noAppsAvailable: "\u5229\u7528\u53EF\u80FD\u306A\u30A2\u30D7\u30EA\u304C\u3042\u308A\u307E\u305B\u3093",
+    selectProject: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    noProjects: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u304C\u3042\u308A\u307E\u305B\u3093"
+  }
+};
+function normalize(lang) {
+  if (!lang) return "en";
+  const code = lang.trim().toLowerCase();
+  if (code === "ja" || code.startsWith("ja-")) return "ja";
+  return "en";
+}
+function shellTranslate(key, doc = document) {
+  const lang = normalize(doc?.documentElement?.lang);
+  return SHELL_STRINGS[lang][key] ?? SHELL_STRINGS.en[key];
+}
+
 // ts/app/project-selector/_ProjectSelector.ts
 var CLS = "stx-app-project-selector";
 var PROJECT_SELECTOR_CHANGE = "stx-project-selector:change";
@@ -79,7 +105,7 @@ var ProjectSelector = class extends BaseComponent {
       this.label.textContent = this.current.name;
       this.label.className = `${CLS}__current`;
     } else {
-      this.label.textContent = this.config.placeholder ?? "Select project";
+      this.label.textContent = this.config.placeholder ?? shellTranslate("selectProject");
       this.label.className = `${CLS}__placeholder`;
     }
   }
@@ -89,7 +115,7 @@ var ProjectSelector = class extends BaseComponent {
     if (this.config.projects.length === 0) {
       const empty = document.createElement("div");
       empty.className = `${CLS}__empty`;
-      empty.textContent = "No projects";
+      empty.textContent = shellTranslate("noProjects");
       this.list.appendChild(empty);
       return;
     }

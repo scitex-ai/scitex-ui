@@ -185,6 +185,12 @@ cover/
 # Translations
 *.mo
 *.pot
+# Exception: the SHIPPED JA catalog for the shared shell (operator directive
+# 2026-09-14: EN default + complete JA). The blanket rule above exists for
+# generated per-venv .mo files; this one is a source asset like the svg above,
+# and must reach the wheel (Django reads .mo, not .po, at runtime).
+!src/scitex_ui/locale/**/*.mo
+!src/scitex_ui/locale/**/*.po
 
 # Django stuff:
 *.log
