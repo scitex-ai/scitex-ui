@@ -336,6 +336,10 @@
   --app-accent-color: var(--app-accent-comms);
   --app-accent-tint: var(--app-accent-comms-tint);
 }
+[data-app-accent="agents"] {
+  --app-accent-color: var(--app-accent-agents);
+  --app-accent-tint: var(--app-accent-agents-tint);
+}
 
 /* No fallback needed — accent is always on #main-content::before */
 
