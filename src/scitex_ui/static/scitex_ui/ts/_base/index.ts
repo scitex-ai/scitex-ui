@@ -25,3 +25,18 @@ export {
   shellTranslate,
 } from "./i18n";
 export type { I18NLanguage, ShellStringKey } from "./i18n";
+export {
+  JS_CATALOG_ELEMENT_PREFIX,
+  evaluatePluralExpression,
+  gettext,
+  gettext_noop,
+  installCatalog,
+  interpolate,
+  loadCatalogsFromDocument,
+  ngettext,
+  npgettext,
+  pgettext,
+  pluralidx,
+  resetCatalog,
+} from "./gettext";
+export type { CatalogEntry, JsCatalogPayload } from "./gettext";

@@ -1,4 +1,4 @@
-{% load static i18n %}
+{% load static i18n scitex_i18n %}
 <!DOCTYPE html>
 <html lang="{{ shell_lang|default:'en' }}" data-theme-default="{{ shell_theme_default|default:'dark' }}">
     <head>
@@ -54,6 +54,7 @@
               href="{% static 'scitex_ui/css/shell/media-viewer.css' %}" />
         <link rel="stylesheet"
               href="{% static 'scitex_ui/css/shell/mobile.css' %}" />
+        {% scitex_js_catalog "scitex_ui" %}
         {% block extra_css %}{% endblock %}
     </head>
     <!-- No hardcoded theme class here: the theme boot partial applies the RESOLVED
