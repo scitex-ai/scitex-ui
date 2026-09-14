@@ -166,6 +166,8 @@
   /* Not an rgba like its siblings. Preserved byte-for-byte: this is a MOVE,
      and "tidying" it here would make a visual change hide inside a refactor. */
   --app-accent-todo-tint: #fff7e6;
+  --app-accent-agents: #8a3a3a; /* Deep crimson - agentic orchestration */
+  --app-accent-agents-tint: rgba(138, 58, 58, 0.07);
 
   /* Workspace icon color scheme (TOGGLE: swap _icon-green ↔ _icon-white below) */
   /* Green scheme */
