@@ -49,6 +49,20 @@ Registered in a consumer's ``settings.py`` rather than called directly.
    :undoc-members:
    :show-inheritance:
 
+Translations
+------------
+
+A leaf app's djangojs catalog, embedded with ``{% load scitex_i18n %}{% scitex_js_catalog "<app package>" %}``
+and read in TypeScript by ``gettext`` / ``ngettext`` / ``interpolate`` from ``ts/_base/gettext.ts``.
+
+.. automodule:: scitex_ui.i18n
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scitex_ui.templatetags.scitex_i18n
+   :members:
+
 Registry
 --------
 

@@ -191,6 +191,7 @@ cover/
 # and must reach the wheel (Django reads .mo, not .po, at runtime).
 !src/scitex_ui/locale/**/*.mo
 !src/scitex_ui/locale/**/*.po
+!tests/scitex_ui/i18n_fixture/locale/**/*.mo
 
 # Django stuff:
 *.log

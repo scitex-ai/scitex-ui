@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — client translations from Django's gettext catalogs
+
+- `ts/_base/gettext.ts`: `gettext`, `ngettext`, `pgettext`, `npgettext`, `interpolate`, `gettext_noop`, `pluralidx` with Django's JS names. English passthrough when no catalog is on the page.
+- `scitex_ui.i18n.js_catalog(packages, language=None)` and `{% load scitex_i18n %}{% scitex_js_catalog "<app package>" %}`: the active language's `djangojs` catalog as a json_script element the TS module reads.
+- `scitex_ui.testing.find_untranslated` / `assert_no_untranslated`: a Japanese render shows none of a given list of English strings.
+- The standalone shell embeds scitex-ui's own `djangojs` catalog; the viewer's Viewer/Editor labels are the first strings using it.
+
 ## [0.20.2] - 2026-09-05
 
 - **FIX: a path quoted inside a CSS comment is a live reference to Django, and 0.20.1 shipped one.** `css/utils/effects.css` opened with a comment quoting the at-import line scitex-hub's `variables.css` carries. Quoting it verbatim was deliberate — an explanation that matches the real thing character-for-character is easier to trust — and it sat inside `/* … */`, so it looked inert. Django's staticfiles post-processor rewrites asset references BY REGEX, and below 6.1 it does not know what a comment is: it reads the quoted path as live, fails to resolve `utils/../utilities/effects.css`, and fails `collectstatic` for the entire consuming project. Every open scitex-hub PR went red on `MissingFileError`, gating a production rebuild.
