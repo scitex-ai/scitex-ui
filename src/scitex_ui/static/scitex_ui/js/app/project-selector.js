@@ -354,6 +354,11 @@ function csrfToken() {
   const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : "";
 }
+var PROJECT_PROVIDER_META_NAME = "stx-project-provider";
+function hostProjectProvider(doc = document) {
+  const url = doc.querySelector(`meta[name="${PROJECT_PROVIDER_META_NAME}"]`)?.getAttribute("content");
+  return url ? httpProjectProvider(url) : null;
+}
 function httpProjectProvider(url) {
   return {
     async listProjects() {
@@ -409,10 +414,12 @@ function mountProjectPickers(root = document) {
 }
 export {
   PROJECT_PICKER_ATTRIBUTE,
+  PROJECT_PROVIDER_META_NAME,
   PROJECT_SELECTOR_CHANGE,
   ProjectSelector,
   fuzzyFilter,
   fuzzyScore,
+  hostProjectProvider,
   httpProjectProvider,
   mountProjectPickers,
   projectNavigationUrl,

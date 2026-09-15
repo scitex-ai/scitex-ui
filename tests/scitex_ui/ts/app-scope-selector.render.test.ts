@@ -62,6 +62,7 @@ function makeDoc(metas, theme = null, viewport = "desktop") {
     return metas.find((x) => x.name === m[1]) || null;
   };
   doc.createElement = (t) => makeElement(t);
+  doc.querySelectorAll = () => [];
   doc._viewport = viewport;
   return doc;
 }
@@ -115,7 +116,7 @@ ok("project-scoped -> the mounted selector emits PROJECT_SELECTOR_CHANGE", () =>
   const container = makeElement("div");
   const sel = mountProjectSelectorByScope({ container, projects: PROJECTS, current: null });
   const panel = container.children.find((c) => c.tagName.toLowerCase() === "div");
-  const list = panel.children[0];
+  const list = panel.children.find((c) => c.role === "listbox");
   let fired = null;
   container.addEventListener(PROJECT_SELECTOR_CHANGE, (e) => { fired = e.detail; });
   list.children[1].dispatchEvent({ type: "click" });
@@ -175,6 +176,40 @@ ok("it REUSES ProjectSelector (no fork): the mounted trigger is a stx-app-projec
   // block's element class, not a bespoke app-scope block.
   assert.equal(container.className, "stx-app-project-selector", "container is ProjectSelector's, not a fork");
   assert.ok(trigger, "trigger present (ProjectSelector rendered, not re-implemented)");
+});
+
+ok("the app's own scope mounts without a page marker", () => {
+  globalThis.document = makeDoc([]);
+  const container = makeElement("div");
+  const sel = mountProjectSelectorByScope({ container, projects: PROJECTS, scope: "project" });
+  assert.ok(sel);
+});
+
+ok("without projects or provider -> the host-advertised provider is fetched", async () => {
+  const fetched = [];
+  globalThis.fetch = async (url) => {
+    fetched.push(url);
+    return { ok: true, json: async () => ({ projects: PROJECTS, current: "beta" }) };
+  };
+  globalThis.document = makeDoc([meta("stx-project-provider", "/host/projects/")]);
+  const container = makeElement("div");
+  const sel = mountProjectSelectorByScope({ container, scope: "project" });
+  await sel.ready;
+  assert.deepEqual(fetched, ["/host/projects/"]);
+  assert.equal(sel.getCurrent().id, "beta");
+});
+
+ok("navigate -> a pick goes to the project URL", () => {
+  const visited = [];
+  globalThis.window = { location: { assign: (u) => visited.push(u) } };
+  globalThis.document = makeDoc([]);
+  const container = makeElement("div");
+  mountProjectSelectorByScope({
+    container, projects: PROJECTS, current: "alpha", scope: "project", navigate: "?project={id}",
+  });
+  const panel = container.children.find((c) => c.tagName.toLowerCase() === "div");
+  panel.children.find((c) => c.role === "listbox").children[1].dispatchEvent({ type: "click" });
+  assert.deepEqual(visited, ["?project=beta"]);
 });
 
 console.log("\n" + passed + " assertion-groups passed");
