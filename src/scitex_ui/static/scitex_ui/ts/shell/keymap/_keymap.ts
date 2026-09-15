@@ -30,7 +30,7 @@ import {
   eventToChord,
   chordMatches,
 } from "./_chords";
-import { type CommandRegistry } from "./_registry";
+import { CommandRegistry, globalRegistry } from "./_registry";
 
 /** A single chord-to-command binding. */
 export interface Binding {
@@ -75,7 +75,7 @@ export class Keymap {
   private readonly onKeydown: (event: Event) => void;
 
   constructor(options: KeymapOptions = {}) {
-    this.registry = options.registry ?? (globalThis as any).__stxKeymapRegistry;
+    this.registry = options.registry ?? globalRegistry;
     this.overrideStorage = options.overrideStorage ?? new Map();
     this.bindings.set("global", []);
     this.index.set("global", new Map());
@@ -210,18 +210,18 @@ export class Keymap {
   }
 
   private handleKeydown(event: Event): void {
-    // Duck-type the keyboard fields rather than instanceof KeyboardEvent:
-    // the harnesses (vitest/jsdom, workers, embedded runtimes) do not always
-    // expose a same-realm KeyboardEvent constructor, and the runtime only
-    // needs these four fields + target + preventDefault.
-    const key = (event as any).key;
-    const ctrlKey = Boolean((event as any).ctrlKey);
-    const altKey = Boolean((event as any).altKey);
-    const shiftKey = Boolean((event as any).shiftKey);
-    const metaKey = Boolean((event as any).metaKey);
+    // `as KeyboardEvent` is a type assertion (no runtime cost). The fields are
+    // present on any real keydown event; harnesses (vitest/jsdom) that pass
+    // plain objects still satisfy the read.
+    const ev = event as KeyboardEvent;
+    const key = ev.key;
+    const ctrlKey = ev.ctrlKey;
+    const altKey = ev.altKey;
+    const shiftKey = ev.shiftKey;
+    const metaKey = ev.metaKey;
     if (typeof key !== "string") return;
-    const preventDefault = () => (event as any).preventDefault?.();
-    const target = (event as any).target ?? null;
+    const preventDefault = () => ev.preventDefault();
+    const target = ev.target ?? null;
     const chord: Chord | null = eventToChord({ key, ctrlKey, altKey, shiftKey, metaKey });
     if (chord === null) return;
 
