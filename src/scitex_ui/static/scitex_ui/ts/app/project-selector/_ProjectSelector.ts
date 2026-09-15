@@ -5,9 +5,12 @@
  * shows the current one on the trigger, and emits `stx-project-selector:change`
  * (bubbles, detail `{id, name}`) when the user picks another.
  *
- * The APP places it inside its own UI; the global header never hosts it. The
- * data comes from `projects` or a `ProjectProvider`, so the component knows
- * nothing about users or permissions.
+ * The APP places it canonically in the left of its own header (after app
+ * identity/title, before app-specific actions) via the
+ * `.stx-app-header__slot--project-selector` guard; on non-header surfaces
+ * (the workspace) it is placed app-locally. It never forks a second picker.
+ * The data comes from `projects` or a `ProjectProvider`, so the component
+ * knows nothing about users or permissions.
  *
  * Usage:
  *   const sel = new ProjectSelector({
