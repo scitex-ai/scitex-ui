@@ -178,6 +178,16 @@
       "elements": [],
       "modifiers": []
     },
+    "stx-panes": {
+      "elements": [
+        "__pane",
+        "__tab",
+        "__tab-icon",
+        "__tab-label",
+        "__tabs"
+      ],
+      "modifiers": []
+    },
     "stx-shell-resizer": {
       "elements": [
         "__toggle"

@@ -61,6 +61,16 @@ export type {
   AppLauncherSelectDetail,
 } from "./app-launcher";
 
+export {
+  Panes,
+  PANES_CHANGE,
+  mountPanes,
+  getPanes,
+  showPane,
+  stxPanes,
+} from "./panes";
+export type { PaneInfo, PanesChangeDetail, PanesOptions } from "./panes";
+
 export { ImportExport, IMPORT_EXPORT_CONFIRM } from "./import-export";
 export type {
   ImportExportConfig,
