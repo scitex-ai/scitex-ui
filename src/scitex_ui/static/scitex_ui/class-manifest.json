@@ -89,6 +89,29 @@
         "--dragging"
       ]
     },
+    "stx-app-help": {
+      "elements": [
+        "__button",
+        "__close",
+        "__count",
+        "__footer",
+        "__header",
+        "__nav",
+        "__panel",
+        "__panel-body",
+        "__replay",
+        "__step",
+        "__step-body",
+        "__step-icon",
+        "__step-title",
+        "__title",
+        "__tour",
+        "__tour-bubble",
+        "__tour-highlight",
+        "__tour-meta"
+      ],
+      "modifiers": []
+    },
     "stx-app-import-export": {
       "elements": [
         "__body",
