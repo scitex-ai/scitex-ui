@@ -11,11 +11,9 @@ the existing per-role tokens already resolve to. A contract that added a hex
 literal, or that pointed at a token only one palette has, would be a NEW brand
 decision dressed as a refactor — exactly what this test is there to stop.
 
-PRIMARY'S MODE SPLIT IS DELIBERATE AND PINNED. In LIGHT primary is the brand
-navy (``--color-btn-primary-bg`` -> ``--_scitex-02``); in DARK it is the brand
-green (``--_success``). That divergence is compass Decision C (an open operator
-choice), so the contract aliases whatever the palette decides rather than
-forcing the two modes to agree. ``test_primary_keeps_its_mode_split`` asserts
+PRIMARY'S MODE SPLIT IS PINNED. In LIGHT primary is the SciTeX navy
+(``--color-btn-primary-bg`` -> ``--color-primary``, #1a2a40, operator decision
+2026-09-15); in DARK it is the brand green (``--_success``). ``test_primary_keeps_its_mode_split`` asserts
 both directions — so neither "unify the modes" nor "silently make them the
 same" passes quietly.
 
@@ -166,7 +164,7 @@ def test_primary_keeps_its_mode_split():
     # Arrange
     light, dark = _blocks()
     # Act
-    light_primary = _css_palette.resolve(light, _css_palette.declared(light, "--_scitex-02"))
+    light_primary = _css_palette.resolve(light, _css_palette.declared(light, "--color-primary"))
     dark_primary = _css_palette.resolve(dark, _css_palette.declared(dark, "--_success"))
     role_l = _css_palette.resolve(light, _declared_both("--role-primary-bg")[0])
     role_d = _css_palette.resolve(dark, _declared_both("--role-primary-bg")[1])

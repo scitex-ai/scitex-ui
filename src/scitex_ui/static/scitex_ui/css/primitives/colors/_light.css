@@ -89,6 +89,20 @@
   --text-link-hover: #24507c; /* 7.94:1 on --bg-page #faf9f7; darker
                                 than --text-link's 6.50:1 so hover is a
                                 perceptible change, not just a colour */
+
+  /* Brand primary: SciTeX navy (operator, 2026-09-15). Light only; the dark
+     block resets these to `initial` so its fallbacks render as before.
+     Body links stay --text-link: navy text is too close to --text-primary
+     to read as a link. White on navy 14.5:1 (hover 12.1:1); navy on
+     --bg-surface 13.5:1. */
+  --color-primary: #1a2a40;
+  --color-primary-hover: #243752;
+  --color-primary-active: #121e2e;
+  --color-on-primary: #ffffff;
+  --color-primary-subtle: rgba(26, 42, 64, 0.08);
+  --focus-ring-color: rgba(26, 42, 64, 0.35);
+  --primary-color: var(--color-primary);
+
   /* Background - warm, eye-friendly tones */
   --bg-page: var(--_warm-white); /* Warm off-white page background */
   --bg-surface: var(--_white); /* Warm white for cards/surfaces */
@@ -254,17 +268,17 @@
   --color-canvas-inset: var(--bg-muted);
   --color-border-default: var(--border-default);
   --color-border-muted: var(--border-muted);
-  --color-accent-fg: var(--text-primary);
-  --color-accent-emphasis: var(--text-primary);
+  --color-accent-fg: var(--color-primary);
+  --color-accent-emphasis: var(--color-primary);
   --color-accent-subtle: #eeede8; /* Warm neutral for better visibility */
   --color-danger-fg: var(--status-error);
   --color-danger-emphasis: var(--status-error);
   --color-danger-subtle: var(--status-error);
   --color-success-fg: var(--status-success);
-  --color-btn-primary-bg: var(--_scitex-02);
-  --color-btn-primary-text: var(--_white);
-  --color-btn-primary-border: var(--_scitex-02);
-  --color-btn-primary-hover-bg: var(--_scitex-01);
+  --color-btn-primary-bg: var(--color-primary);
+  --color-btn-primary-text: var(--color-on-primary);
+  --color-btn-primary-border: var(--color-primary);
+  --color-btn-primary-hover-bg: var(--color-primary-hover);
   --color-btn-bg: var(--bg-surface);
   --color-btn-text: var(--text-primary);
   --color-btn-border: var(--border-default);
@@ -294,7 +308,7 @@
    * palette moves. Rationale and measurements:
    * tests/develop/test_app_css_single_fallback_tokens.py. */
   --danger-color: var(--status-error-text); /* #994444, 6.01:1 */
-  --accent: #6d4cad; /* 5.97:1 on --bg-surface — historical literal, pinned HERE not dark */
+  --accent: #1a2a40; /* = --color-primary; literal so shell/theme.css can mirror it */
   --workspace-text-muted: var(--workspace-text-secondary); /* #57606a, 5.97:1 */
   --border-primary: var(--border-default); /* a border, no contrast claim */
   --bg-hover: rgba(
@@ -321,12 +335,9 @@
    * --_scitex-02 in one repo, --accent in another, a literal in a third) while
    * keeping the per-mode value where the brand already decided it.
    *
-   * DELIBERATELY preserves the primary's mode split: in LIGHT primary is the
-   * brand navy (--_scitex-02); in DARK it is the brand green (--_success).
-   * That divergence is compass Decision C (still an open operator choice), so
-   * the contract aliases whatever the palette decides rather than forcing the
-   * two modes to agree. Do not "unify" primary across modes here — that is the
-   * Decision C call, not the token contract.
+   * Primary keeps its mode split: in LIGHT it is the SciTeX navy
+   * (--color-primary, operator decision 2026-09-15); in DARK it is the brand
+   * green (--_success), unchanged.
    *
    * Sub-tokens per role: -bg / -text / -border / -hover-bg, matching the
    * existing --color-btn-* shape so a migration is a name swap, not a re-derivation.

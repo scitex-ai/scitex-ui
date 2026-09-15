@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — light theme primary is the SciTeX navy
+
+- Light palette: new `--color-primary` #1a2a40 (`-hover` #243752, `-active` #121e2e), `--color-on-primary` #ffffff, `--color-primary-subtle`, `--focus-ring-color` (navy at 35%) and `--primary-color`. `--color-btn-primary-*` (and so `--role-primary-*`), `--color-accent-fg/-emphasis` and `--accent` (was purple #6d4cad, also in `shell/theme.css`) now resolve to the navy.
+- Dark palette unchanged: the new tokens are reset to `initial` there, so `var(--x, fallback)` sites keep rendering their fallbacks. Body links stay `--text-link`; semantic status colours and per-app accents are untouched.
+
 ## [0.21.1] - 2026-09-15
 
 ### Added — mobile panes: one column per screen on phones
