@@ -6,5 +6,9 @@ from . import _css_palette
 
 
 def test_light_primary_token_is_scitex_navy():
-    light, _ = _css_palette.palette_blocks(css_dir() / "primitives" / "colors.css")
+    # Arrange
+    colors = css_dir() / "primitives" / "colors.css"
+    # Act
+    light, _ = _css_palette.palette_blocks(colors)
+    # Assert
     assert _css_palette.declared(light, "--color-primary") == "#1a2a40"
