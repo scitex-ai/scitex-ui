@@ -36,6 +36,16 @@ function csrfToken(): string {
   return match ? decodeURIComponent(match[1]) : "";
 }
 
+/** Meta the host stamps to advertise its project provider endpoint.
+ *  Mirrors scitex_ui.project_scope.PROJECT_PROVIDER_META_NAME. */
+export const PROJECT_PROVIDER_META_NAME = "stx-project-provider";
+
+/** The host's project provider (the hub's project list), or null when the page has none. */
+export function hostProjectProvider(doc: Document = document): ProjectProvider | null {
+  const url = doc.querySelector(`meta[name="${PROJECT_PROVIDER_META_NAME}"]`)?.getAttribute("content");
+  return url ? httpProjectProvider(url) : null;
+}
+
 /**
  * The HTTP provider contract, served by the SDK's Django view and by the hub:
  *   GET  <url>            -> {"projects": [{id, name, detail?}], "current": id|null}

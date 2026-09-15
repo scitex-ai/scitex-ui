@@ -119,3 +119,31 @@ INSTALLED_APPS = ["scitex_ui", ...]
     <div id="root"></div>
 {% endblock %}
 ```
+
+## Project picker (host service)
+
+A project-scope app places the picker itself; the host only provides the
+project list (`scitex_ui.project_scope.ProjectProvider`: `list_projects`,
+`last_visited`, `remember`, optional `project_id(project)`).
+
+```python
+# host settings.py
+SCITEX_PROJECT_PROVIDER = "myhost.projects.HostProjectProvider"
+SCITEX_PROJECT_PROVIDER_URL = "api_project_scope"  # URL name or path serving the HTTP contract
+```
+
+```html
+{# host <head>: advertises the provider to client-side pickers #}
+{% load scitex_project_picker %}{% scitex_project_provider_meta %}
+
+{# leaf template: a pick reloads with ?project=<id> #}
+{% scitex_project_picker scope="project" current=current_project %}
+```
+
+```ts
+// leaf JS/React
+import { mountProjectSelectorByScope, hostProjectProvider } from "@scitex/ui/.../ts/shell";
+if (hostProjectProvider()) {
+  mountProjectSelectorByScope({ container, scope: "project", navigate: "?project={id}" });
+}
+```

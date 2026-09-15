@@ -31,12 +31,18 @@
  * that any header element is produced.
  */
 
-import { ProjectSelector, PROJECT_SELECTOR_CHANGE } from "../app/project-selector";
+import {
+  ProjectSelector,
+  PROJECT_SELECTOR_CHANGE,
+  hostProjectProvider,
+  projectNavigationUrl,
+} from "../app/project-selector";
 import type { ProjectOption, ProjectProvider } from "../app/project-selector";
 import {
   appScope,
   SCOPE_PROJECT,
 } from "../_base/scope";
+import type { AppScope } from "../_base/scope";
 
 export interface AppScopeSelectorOptions {
   /** The container to mount into. Caller-supplied, so the caller decides the
@@ -51,7 +57,14 @@ export interface AppScopeSelectorOptions {
   current?: string | null;
   /** Trigger placeholder when nothing is active. */
   placeholder?: string;
+  /** The app's own manifest scope; overrides the page marker when the app knows it. */
+  scope?: AppScope;
+  /** Navigate on pick, e.g. "?project={id}". Omit to only emit the change event. */
+  navigate?: string;
 }
+
+/** The host's project list, when the host advertises a provider. */
+export { hostProjectProvider };
 
 /**
  * If (and only if) this page's app is project-scoped, mount the shared
@@ -66,19 +79,33 @@ export function mountProjectSelectorByScope(
   options: AppScopeSelectorOptions,
   doc: Document = document,
 ): ProjectSelector | null {
-  if (appScope(doc) !== SCOPE_PROJECT) {
+  if ((options.scope ?? appScope(doc)) !== SCOPE_PROJECT) {
     // user-scoped / absent: do not render a selector. The container is left
     // exactly as given — nothing appended — which is what "renders with no
     // switcher" means structurally.
     return null;
   }
-  return new ProjectSelector({
+  const provider =
+    options.provider ?? (options.projects ? undefined : hostProjectProvider(doc) ?? undefined);
+  const selector = new ProjectSelector({
     container: options.container,
     projects: options.projects,
-    provider: options.provider,
+    provider,
     current: options.current,
     placeholder: options.placeholder,
   });
+  const navigate = options.navigate;
+  const container =
+    typeof options.container === "string"
+      ? doc.querySelector<HTMLElement>(options.container)
+      : options.container;
+  if (navigate && container) {
+    container.addEventListener(PROJECT_SELECTOR_CHANGE, (event) => {
+      const url = projectNavigationUrl(navigate, (event as CustomEvent<{ id: string }>).detail.id);
+      if (url) window.location.assign(url);
+    });
+  }
+  return selector;
 }
 
 /** Re-export the change event name so a consumer that only imports from this
