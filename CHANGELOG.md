@@ -7,6 +7,14 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — mobile panes: one column per screen on phones
+
+- `{% load scitex_panes %}{% scitex_panes "<app>" columns=... %}{% scitex_pane "<id>" label=_("…") icon=... order=... %}…{% endscitex_pane %}{% endscitex_panes %}`, or the equivalent `data-stx-panes` / `data-stx-pane` markup. Above 640px the panes sit side by side in a grid (`--stx-panes-columns`, or `layout="app"` to keep the app's own layout).
+- At 640px and below: a sticky tab bar (icon plus short label, 44px targets, scrolls when crowded) above exactly one full-height pane; a horizontal swipe moves to the adjacent tab but never starts inside a horizontal scroller, a text field or `[data-stx-no-swipe]`. The active pane is remembered per app in sessionStorage.
+- `window.stxPanes.show(id[, app])` switches from code; `stx-panes:change` reports each switch. `ts/app/panes` exports `Panes`, `mountPanes`, `stxPanes`; `js/app/panes.js` is the pre-built auto-mounting module.
+- `<details class="stx-acc">` accordion for secondary settings inside a pane.
+- Skill page `42_mobile-panes.md`, demo `examples/04_mobile_panes_demo.py`, and a vitest suite (`npm test`).
+
 ## [0.21.0] - 2026-09-14
 
 ### Added — project picker and project scope (#232)
