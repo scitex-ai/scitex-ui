@@ -44,7 +44,7 @@
      the combobox accent as nothing. Every other palette token already honoured
      that contract: --text-link, --bg-surface and --text-primary are each
      declared in BOTH layers; --accent was the one that was not. */
-  --accent: #6d4cad; /* 5.97:1 on --bg-surface — historical literal, pinned HERE not dark */
+  --accent: #1a2a40; /* SciTeX navy, = --color-primary in primitives */
 
   /* --- Background --- */
   --bg-page: #faf9f7;
