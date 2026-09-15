@@ -1,5 +1,4 @@
-/* AUTO-GENERATED from ts/app/project-selector/index.ts via esbuild — do not edit by hand. Rebuild: npx esbuild ts/app/project-selector/index.ts --bundle --format=esm --outfile=js/app/project-selector.js */
-
+/* AUTO-GENERATED from ts/app/project-selector/auto-mount.ts via esbuild — do not edit by hand. Rebuild: npx esbuild ts/app/project-selector/auto-mount.ts --bundle --format=esm --outfile=js/app/project-selector.js */
 // ts/_base/BaseComponent.ts
 var BaseComponent = class {
   container;
@@ -344,20 +343,10 @@ var ProjectSelector = class extends BaseComponent {
 };
 
 // ts/app/project-selector/provider.ts
-function staticProjectProvider(projects, current = null) {
-  return {
-    listProjects: async () => ({ projects, current })
-  };
-}
 function csrfToken() {
   if (typeof document === "undefined" || typeof document.cookie !== "string") return "";
   const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : "";
-}
-var PROJECT_PROVIDER_META_NAME = "stx-project-provider";
-function hostProjectProvider(doc = document) {
-  const url = doc.querySelector(`meta[name="${PROJECT_PROVIDER_META_NAME}"]`)?.getAttribute("content");
-  return url ? httpProjectProvider(url) : null;
 }
 function httpProjectProvider(url) {
   return {
@@ -412,16 +401,10 @@ function mountProjectPickers(root = document) {
   }
   return mounted;
 }
-export {
-  PROJECT_PICKER_ATTRIBUTE,
-  PROJECT_PROVIDER_META_NAME,
-  PROJECT_SELECTOR_CHANGE,
-  ProjectSelector,
-  fuzzyFilter,
-  fuzzyScore,
-  hostProjectProvider,
-  httpProjectProvider,
-  mountProjectPickers,
-  projectNavigationUrl,
-  staticProjectProvider
-};
+
+// ts/app/project-selector/auto-mount.ts
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => mountProjectPickers());
+} else {
+  mountProjectPickers();
+}

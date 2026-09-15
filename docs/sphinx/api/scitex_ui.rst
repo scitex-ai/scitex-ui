@@ -77,6 +77,20 @@ the projects the user can access. An explicit project always beats the last visi
 .. automodule:: scitex_ui.templatetags.scitex_project_picker
    :members:
 
+Keymap
+------
+
+Emacs major-mode keyboard primitive: a stable named command registry with global
+and per-page/app mode bindings. The framework-neutral TypeScript runtime lives in
+``ts/shell/keymap`` (CommandRegistry + Keymap); this module is the Django-side
+hook — ``render_keymap_init(app_id)`` emits the JSON payload the runtime reads on
+load, and ``keymap_defaults()`` gives the global command set apps inherit.
+
+.. automodule:: scitex_ui.keymap
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Registry
 --------
 

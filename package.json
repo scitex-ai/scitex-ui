@@ -59,6 +59,7 @@
     "./ts/shell/chat": "./src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts",
     "./ts/shell/file-tree": "./src/scitex_ui/static/scitex_ui/ts/shell/file-tree/index.ts",
     "./ts/shell/keyboard-shortcuts": "./src/scitex_ui/static/scitex_ui/ts/shell/keyboard-shortcuts/index.ts",
+    "./ts/shell/keymap": "./src/scitex_ui/static/scitex_ui/ts/shell/keymap/index.ts",
     "./ts/shell/repo-monitor": "./src/scitex_ui/static/scitex_ui/ts/shell/repo-monitor/index.ts",
     "./ts/shell/resizer": "./src/scitex_ui/static/scitex_ui/ts/shell/resizer/index.ts",
     "./ts/shell/status-bar": "./src/scitex_ui/static/scitex_ui/ts/shell/status-bar/index.ts",
