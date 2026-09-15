@@ -33,7 +33,7 @@
 
   /* Status colors - muted, eye-friendly */
   --_success: #5a9a7e;
-  --_warning: #b8956a;
+  --_warning: #c4561a; /* was the brand gold; gold is no longer 'warning' */
   --_error: #a67373;
   --_info: #6b7280;
 
@@ -90,8 +90,7 @@
                                 than --text-link's 6.50:1 so hover is a
                                 perceptible change, not just a colour */
 
-  /* Brand primary: SciTeX navy (operator, 2026-09-15). Light only; the dark
-     block resets these to `initial` so its fallbacks render as before.
+  /* Brand primary: SciTeX navy (operator, 2026-09-15); dark uses the gold.
      Body links stay --text-link: navy text is too close to --text-primary
      to read as a link. White on navy 14.5:1 (hover 12.1:1); navy on
      --bg-surface 13.5:1. */
@@ -102,6 +101,51 @@
   --color-primary-subtle: rgba(26, 42, 64, 0.08);
   --focus-ring-color: rgba(26, 42, 64, 0.35);
   --primary-color: var(--color-primary);
+
+  /* SciTeX brand palette (operator 2026-09-15): navy #1a2a40 + gold #b8956a.
+     Scales are theme-independent; the --stx-* roles below switch per theme.
+     Chrome (buttons, header strip, tabs, dock, badges) uses the roles only. */
+  --stx-navy-50: #f3f6fa;
+  --stx-navy-100: #e1e8f1;
+  --stx-navy-200: #c3d0e0;
+  --stx-navy-300: #98acc6;
+  --stx-navy-400: #6d88aa;
+  --stx-navy-500: #4d6a8f;
+  --stx-navy-600: #3a5475;
+  --stx-navy-700: #2c425e;
+  --stx-navy-800: #22354d;
+  --stx-navy-900: #1a2a40;
+  --stx-navy-950: #0f1826;
+  --stx-gold-50: #faf6f0;
+  --stx-gold-100: #f3eadd;
+  --stx-gold-200: #e8d6be;
+  --stx-gold-300: #d4a87a; /* the dark-theme gold */
+  --stx-gold-400: #c7a67f;
+  --stx-gold-500: #b8956a; /* anchor: pricing FAQ "?" gold */
+  --stx-gold-600: #8c6c44; /* 4.5:1 on light surfaces: gold text/icons */
+  --stx-gold-700: #6f5536;
+  --stx-gold-800: #554129;
+  --stx-gold-900: #3b2d1d;
+  /* App ICON tiles only: an app picks one hue for its launcher icon. Never
+     used for chrome. No purple by design. */
+  --stx-hue-navy: #2c425e;
+  --stx-hue-steel: #34689c;
+  --stx-hue-teal: #1d7a80;
+  --stx-hue-sage: #4c7a57;
+  --stx-hue-gold: #b8956a;
+  --stx-hue-copper: #a65a2e;
+  --stx-hue-brick: #a3423d;
+  --stx-hue-slate: #56606d;
+
+  /* Brand roles, light. --stx-accent is the one chrome accent on every app. */
+  --stx-brand: #1a2a40;
+  --stx-gold: #b8956a;
+  --stx-accent: #8c6c44;
+  --stx-accent-tint: rgba(184, 149, 106, 0.12);
+  --stx-success: #2f7d5b;
+  --stx-warning: #c4561a;
+  --stx-danger: #b3403a;
+  --stx-info: #4d6a8f;
 
   /* Background - warm, eye-friendly tones */
   --bg-page: var(--_warm-white); /* Warm off-white page background */
@@ -135,53 +179,53 @@
      Light mode: deeper/saturated to contrast against warm white backgrounds */
   --app-accent-color: transparent; /* Default: no accent (shared panes) */
   --app-accent-tint: transparent; /* Default: no tint (shared panes) */
-  --app-accent-writer: #a07040; /* Deep amber - manuscripts, writing */
-  --app-accent-writer-tint: rgba(160, 112, 64, 0.07);
-  --app-accent-scholar: #3d7a5e; /* Deep sage - academic, knowledge */
-  --app-accent-scholar-tint: rgba(61, 122, 94, 0.07);
-  --app-accent-visualizer: #2e7070; /* Deep teal - data visualization */
-  --app-accent-visualizer-tint: rgba(46, 112, 112, 0.07);
-  --app-accent-console: #3e6080; /* Deep steel blue - terminal, code */
-  --app-accent-console-tint: rgba(62, 96, 128, 0.07);
-  --app-accent-clew: #8a6a4a; /* Earth brown - pipelines, workflows */
-  --app-accent-clew-tint: rgba(138, 106, 74, 0.07);
-  --app-accent-hub: #6a5a8a; /* Muted purple - dashboard, overview */
-  --app-accent-hub-tint: rgba(106, 90, 138, 0.07);
-  --app-accent-home: #6a5a8a; /* Muted purple - home dashboard */
-  --app-accent-home-tint: rgba(106, 90, 138, 0.07);
-  --app-accent-discovery: #3a6a7a; /* Teal blue - exploration, search */
-  --app-accent-discovery-tint: rgba(58, 106, 122, 0.07);
-  --app-accent-example: #8a6030; /* Warm orange-brown - demos, templates */
-  --app-accent-example-tint: rgba(138, 96, 48, 0.07);
-  --app-accent-tools: #5a7a5a; /* Sage green - utilities, helpers */
-  --app-accent-tools-tint: rgba(90, 122, 90, 0.07);
+  --app-accent-writer: var(--stx-accent);
+  --app-accent-writer-tint: var(--stx-accent-tint);
+  --app-accent-scholar: var(--stx-accent);
+  --app-accent-scholar-tint: var(--stx-accent-tint);
+  --app-accent-visualizer: var(--stx-accent);
+  --app-accent-visualizer-tint: var(--stx-accent-tint);
+  --app-accent-console: var(--stx-accent);
+  --app-accent-console-tint: var(--stx-accent-tint);
+  --app-accent-clew: var(--stx-accent);
+  --app-accent-clew-tint: var(--stx-accent-tint);
+  --app-accent-hub: var(--stx-accent);
+  --app-accent-hub-tint: var(--stx-accent-tint);
+  --app-accent-home: var(--stx-accent);
+  --app-accent-home-tint: var(--stx-accent-tint);
+  --app-accent-discovery: var(--stx-accent);
+  --app-accent-discovery-tint: var(--stx-accent-tint);
+  --app-accent-example: var(--stx-accent);
+  --app-accent-example-tint: var(--stx-accent-tint);
+  --app-accent-tools: var(--stx-accent);
+  --app-accent-tools-tint: var(--stx-accent-tint);
   /* `apps` and `cards` deliberately have NO tokens of their own: their
      selector rows are ALIASES pointing at --app-accent-store /
      --app-accent-todo (see shell/stx-shell-sidebar.css). A token here
      would be unreferenced, and test_every_accent_token_is_referenced_by_
      a_mapping_row fails on dead weight. shell/theme.css says the same. */
-  --app-accent-store: #7a5a6a; /* Muted rose - app store, browsing */
-  --app-accent-store-tint: rgba(122, 90, 106, 0.07);
-  --app-accent-docs: #4a6a9a; /* Deep blue - documentation, reference */
-  --app-accent-docs-tint: rgba(74, 106, 154, 0.07);
-  --app-accent-figrecipe: #7c5cbf; /* Purple - figure editing, creativity */
-  --app-accent-figrecipe-tint: rgba(124, 92, 191, 0.07);
-  --app-accent-notebook: #4a7a3a; /* Deep green - lab notebook, experiments */
-  --app-accent-notebook-tint: rgba(74, 122, 58, 0.07);
+  --app-accent-store: var(--stx-accent);
+  --app-accent-store-tint: var(--stx-accent-tint);
+  --app-accent-docs: var(--stx-accent);
+  --app-accent-docs-tint: var(--stx-accent-tint);
+  --app-accent-figrecipe: var(--stx-accent);
+  --app-accent-figrecipe-tint: var(--stx-accent-tint);
+  --app-accent-notebook: var(--stx-accent);
+  --app-accent-notebook-tint: var(--stx-accent-tint);
   /* Moved here from shell/theme.css, values UNCHANGED. They were defined only
      in the theme layer, which adopters that load the primitives layer alone
      never see — scitex-hub's comms tile has been rendering with no accent bar
      for exactly that reason. See the file header for the full story. */
-  --app-accent-storage: #4a7a8a; /* Deep steel - object storage */
-  --app-accent-storage-tint: rgba(74, 122, 138, 0.07);
-  --app-accent-comms: #5a6a9a; /* Deep indigo - messaging */
-  --app-accent-comms-tint: rgba(90, 106, 154, 0.07);
-  --app-accent-todo: #d99700; /* Amber - task board */
+  --app-accent-storage: var(--stx-accent);
+  --app-accent-storage-tint: var(--stx-accent-tint);
+  --app-accent-comms: var(--stx-accent);
+  --app-accent-comms-tint: var(--stx-accent-tint);
+  --app-accent-todo: var(--stx-accent);
   /* Not an rgba like its siblings. Preserved byte-for-byte: this is a MOVE,
      and "tidying" it here would make a visual change hide inside a refactor. */
-  --app-accent-todo-tint: #fff7e6;
-  --app-accent-agents: #8a3a3a; /* Deep crimson - agentic orchestration */
-  --app-accent-agents-tint: rgba(138, 58, 58, 0.07);
+  --app-accent-todo-tint: var(--stx-accent-tint);
+  --app-accent-agents: var(--stx-accent);
+  --app-accent-agents-tint: var(--stx-accent-tint);
 
   /* Workspace icon color scheme (TOGGLE: swap _icon-green ↔ _icon-white below) */
   /* Green scheme */
@@ -219,9 +263,9 @@
   --status-error-bg: rgba(166, 115, 115, 0.1);
   --status-error-text: #994444;
   --status-error-border: rgba(166, 115, 115, 0.3);
-  --status-warning-bg: rgba(184, 149, 106, 0.1);
-  --status-warning-text: #633c01;
-  --status-warning-border: rgba(184, 149, 106, 0.3);
+  --status-warning-bg: rgba(196, 86, 26, 0.1);
+  --status-warning-text: #8a3a0c;
+  --status-warning-border: rgba(196, 86, 26, 0.3);
   --status-info-bg: rgba(107, 107, 107, 0.08);
   --status-info-text: #5f5f5f;
   --status-info-border: rgba(107, 107, 107, 0.2);
@@ -291,7 +335,7 @@
    * construction and unfixable by any theme. Light therefore takes a palette
    * value that clears AA; dark pins the historical hex exactly, so the default
    * theme is unchanged. */
-  --color-attention-fg: var(--status-warning-text); /* #633c01, 9.01:1 */
+  --color-attention-fg: var(--status-warning-text); /* #8a3a0c */
   --color-done-fg: #7744aa; /* 6.15:1; the palette carries no purple of its own */
   --color-canvas-overlay: var(--bg-surface); /* a surface, not text */
   --color-success-emphasis: var(--status-success-text); /* #2d6a4f, 5.97:1 */

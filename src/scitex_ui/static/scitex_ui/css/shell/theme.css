@@ -83,7 +83,7 @@
 
   /* --- Status --- */
   --status-success: #5a9a7e;
-  --status-warning: #b8956a;
+  --status-warning: #c4561a;
   --status-error: #a67373;
   --status-info: #6b7280;
 
@@ -121,51 +121,96 @@
   --stx-safe-inset-bottom: env(safe-area-inset-bottom, 0px);
   --stx-safe-inset-left: env(safe-area-inset-left, 0px);
 
+  /* SciTeX brand palette (operator 2026-09-15): navy #1a2a40 + gold #b8956a.
+     Scales are theme-independent; the --stx-* roles below switch per theme.
+     Chrome (buttons, header strip, tabs, dock, badges) uses the roles only. */
+  --stx-navy-50: #f3f6fa;
+  --stx-navy-100: #e1e8f1;
+  --stx-navy-200: #c3d0e0;
+  --stx-navy-300: #98acc6;
+  --stx-navy-400: #6d88aa;
+  --stx-navy-500: #4d6a8f;
+  --stx-navy-600: #3a5475;
+  --stx-navy-700: #2c425e;
+  --stx-navy-800: #22354d;
+  --stx-navy-900: #1a2a40;
+  --stx-navy-950: #0f1826;
+  --stx-gold-50: #faf6f0;
+  --stx-gold-100: #f3eadd;
+  --stx-gold-200: #e8d6be;
+  --stx-gold-300: #d4a87a; /* the dark-theme gold */
+  --stx-gold-400: #c7a67f;
+  --stx-gold-500: #b8956a; /* anchor: pricing FAQ "?" gold */
+  --stx-gold-600: #8c6c44; /* 4.5:1 on light surfaces: gold text/icons */
+  --stx-gold-700: #6f5536;
+  --stx-gold-800: #554129;
+  --stx-gold-900: #3b2d1d;
+  /* App ICON tiles only: an app picks one hue for its launcher icon. Never
+     used for chrome. No purple by design. */
+  --stx-hue-navy: #2c425e;
+  --stx-hue-steel: #34689c;
+  --stx-hue-teal: #1d7a80;
+  --stx-hue-sage: #4c7a57;
+  --stx-hue-gold: #b8956a;
+  --stx-hue-copper: #a65a2e;
+  --stx-hue-brick: #a3423d;
+  --stx-hue-slate: #56606d;
+
+  /* Brand roles, light. --stx-accent is the one chrome accent on every app. */
+  --stx-brand: #1a2a40;
+  --stx-gold: #b8956a;
+  --stx-accent: #8c6c44;
+  --stx-accent-tint: rgba(184, 149, 106, 0.12);
+  --stx-success: #2f7d5b;
+  --stx-warning: #c4561a;
+  --stx-danger: #b3403a;
+  --stx-info: #4d6a8f;
+
   /* --- Preset App Accent Colors --- */
   --app-accent-color: transparent;
   --app-accent-tint: transparent;
-  --app-accent-writer: #a07040;
-  --app-accent-writer-tint: rgba(160, 112, 64, 0.07);
-  --app-accent-scholar: #3d7a5e;
-  --app-accent-scholar-tint: rgba(61, 122, 94, 0.07);
-  --app-accent-visualizer: #2e7070;
-  --app-accent-visualizer-tint: rgba(46, 112, 112, 0.07);
-  --app-accent-console: #3e6080;
-  --app-accent-console-tint: rgba(62, 96, 128, 0.07);
-  --app-accent-clew: #8a6a4a;
-  --app-accent-clew-tint: rgba(138, 106, 74, 0.07);
-  --app-accent-figrecipe: #7c5cbf;
-  --app-accent-figrecipe-tint: rgba(124, 92, 191, 0.07);
-  --app-accent-docs: #4a6a9a;
-  --app-accent-docs-tint: rgba(74, 106, 154, 0.07);
-  --app-accent-hub: #6a5a8a;
-  --app-accent-hub-tint: rgba(106, 90, 138, 0.07);
-  --app-accent-tools: #5a7a5a;
-  --app-accent-tools-tint: rgba(90, 122, 90, 0.07);
-  --app-accent-store: #7a5a6a;
-  --app-accent-store-tint: rgba(122, 90, 106, 0.07);
-  --app-accent-home: #6a5a8a;
-  --app-accent-home-tint: rgba(106, 90, 138, 0.07);
-  --app-accent-discovery: #3a6a7a;
-  --app-accent-discovery-tint: rgba(58, 106, 122, 0.07);
-  --app-accent-example: #8a6030;
-  --app-accent-example-tint: rgba(138, 96, 48, 0.07);
-  --app-accent-notebook: #4a7a3a;
-  --app-accent-notebook-tint: rgba(74, 122, 58, 0.07);
+  --app-accent-writer: var(--stx-accent);
+  --app-accent-writer-tint: var(--stx-accent-tint);
+  --app-accent-scholar: var(--stx-accent);
+  --app-accent-scholar-tint: var(--stx-accent-tint);
+  --app-accent-visualizer: var(--stx-accent);
+  --app-accent-visualizer-tint: var(--stx-accent-tint);
+  --app-accent-console: var(--stx-accent);
+  --app-accent-console-tint: var(--stx-accent-tint);
+  --app-accent-clew: var(--stx-accent);
+  --app-accent-clew-tint: var(--stx-accent-tint);
+  --app-accent-figrecipe: var(--stx-accent);
+  --app-accent-figrecipe-tint: var(--stx-accent-tint);
+  --app-accent-docs: var(--stx-accent);
+  --app-accent-docs-tint: var(--stx-accent-tint);
+  --app-accent-hub: var(--stx-accent);
+  --app-accent-hub-tint: var(--stx-accent-tint);
+  --app-accent-tools: var(--stx-accent);
+  --app-accent-tools-tint: var(--stx-accent-tint);
+  --app-accent-store: var(--stx-accent);
+  --app-accent-store-tint: var(--stx-accent-tint);
+  --app-accent-home: var(--stx-accent);
+  --app-accent-home-tint: var(--stx-accent-tint);
+  --app-accent-discovery: var(--stx-accent);
+  --app-accent-discovery-tint: var(--stx-accent-tint);
+  --app-accent-example: var(--stx-accent);
+  --app-accent-example-tint: var(--stx-accent-tint);
+  --app-accent-notebook: var(--stx-accent);
+  --app-accent-notebook-tint: var(--stx-accent-tint);
   /* `apps` and `cards` have no tokens of their own: their selector rows are
      aliases pointing at --app-accent-store / --app-accent-todo. A duplicate
      token here would be dead weight (tests assert every token is referenced). */
-  --app-accent-storage: #4a7a8a;
-  --app-accent-storage-tint: rgba(74, 122, 138, 0.07);
+  --app-accent-storage: var(--stx-accent);
+  --app-accent-storage-tint: var(--stx-accent-tint);
   /* todo/cards: scitex-cards' own board values (2026-07-18), not a colour
      picked here — the board already renders this amber, so mapping to it keeps
      continuity for the operator instead of shifting a familiar UI. */
-  --app-accent-todo: #d99700;
-  --app-accent-todo-tint: #fff7e6;
-  --app-accent-comms: #5a6a9a;
-  --app-accent-comms-tint: rgba(90, 106, 154, 0.07);
-  --app-accent-agents: #8a3a3a;
-  --app-accent-agents-tint: rgba(138, 58, 58, 0.07);
+  --app-accent-todo: var(--stx-accent);
+  --app-accent-todo-tint: var(--stx-accent-tint);
+  --app-accent-comms: var(--stx-accent);
+  --app-accent-comms-tint: var(--stx-accent-tint);
+  --app-accent-agents: var(--stx-accent);
+  --app-accent-agents-tint: var(--stx-accent-tint);
 
   /* --- Custom App Accent (user/creator override) --- */
   --stx-app-accent: var(--app-accent-color);
@@ -179,13 +224,23 @@
   --text-inverse: #161b22;
   /* The existing fallback, so dark mode is unchanged. See colors.css. */
   --text-link: #58a6ff;
+
+  /* Brand roles, dark. */
+  --stx-brand: #d4a87a;
+  --stx-gold: #d4a87a;
+  --stx-accent: #d4a87a;
+  --stx-accent-tint: rgba(212, 168, 122, 0.12);
+  --stx-success: #5cc497;
+  --stx-warning: #f59a52;
+  --stx-danger: #f08a80;
+  --stx-info: #8fb0d8;
   --text-link-hover: #79b8ff; /* 9.11:1 on --bg-page #0d1117; LIGHTER
                                 than --text-link's 7.49:1 -- the light
                                 literal would be near-invisible here */
   /* MIRRORS primitives/colors/_dark.css, value unchanged — see the light block.
      The light literal measures 2.71:1 on this surface; this is the value that
      already fixed that, and copying the light one here would reintroduce it. */
-  --accent: #a371f7; /* 5.16:1 on --bg-surface — CHANGED from #6d4cad (2.71:1 there) */
+  --accent: #d4a87a; /* SciTeX gold, = primitives/colors/_dark.css */
 
   --bg-page: #0d1117;
   --bg-surface: #161b22;
@@ -219,49 +274,49 @@
   --workspace-icon-active: #e6edf3;
 
   --status-success: #6ba89a;
-  --status-warning: #d4a87a;
+  --status-warning: #f59a52;
   --status-error: #c08888;
   --status-info: #9ca3af;
 
-  --app-accent-writer: #d4a87a;
-  --app-accent-writer-tint: rgba(212, 168, 122, 0.08);
-  --app-accent-scholar: #6ba89a;
-  --app-accent-scholar-tint: rgba(107, 168, 154, 0.08);
-  --app-accent-visualizer: #6ab0b0;
-  --app-accent-visualizer-tint: rgba(106, 176, 176, 0.08);
-  --app-accent-console: #7a9ab8;
-  --app-accent-console-tint: rgba(122, 154, 184, 0.08);
-  --app-accent-clew: #b89070;
-  --app-accent-clew-tint: rgba(184, 144, 112, 0.08);
-  --app-accent-figrecipe: #a07ae0;
-  --app-accent-figrecipe-tint: rgba(160, 122, 224, 0.08);
-  --app-accent-docs: #7a9ac8;
-  --app-accent-docs-tint: rgba(122, 154, 200, 0.08);
-  --app-accent-hub: #9a8ab8;
-  --app-accent-hub-tint: rgba(154, 138, 184, 0.08);
-  --app-accent-tools: #8ab88a;
-  --app-accent-tools-tint: rgba(138, 184, 138, 0.08);
-  --app-accent-store: #b88a9a;
-  --app-accent-store-tint: rgba(184, 138, 154, 0.08);
-  --app-accent-home: #9a8ab8;
-  --app-accent-home-tint: rgba(154, 138, 184, 0.08);
-  --app-accent-discovery: #5a9ab8;
-  --app-accent-discovery-tint: rgba(90, 154, 184, 0.08);
-  --app-accent-example: #c08850;
-  --app-accent-example-tint: rgba(192, 136, 80, 0.08);
-  --app-accent-notebook: #7a9a6a;
-  --app-accent-notebook-tint: rgba(122, 154, 106, 0.08);
+  --app-accent-writer: var(--stx-accent);
+  --app-accent-writer-tint: var(--stx-accent-tint);
+  --app-accent-scholar: var(--stx-accent);
+  --app-accent-scholar-tint: var(--stx-accent-tint);
+  --app-accent-visualizer: var(--stx-accent);
+  --app-accent-visualizer-tint: var(--stx-accent-tint);
+  --app-accent-console: var(--stx-accent);
+  --app-accent-console-tint: var(--stx-accent-tint);
+  --app-accent-clew: var(--stx-accent);
+  --app-accent-clew-tint: var(--stx-accent-tint);
+  --app-accent-figrecipe: var(--stx-accent);
+  --app-accent-figrecipe-tint: var(--stx-accent-tint);
+  --app-accent-docs: var(--stx-accent);
+  --app-accent-docs-tint: var(--stx-accent-tint);
+  --app-accent-hub: var(--stx-accent);
+  --app-accent-hub-tint: var(--stx-accent-tint);
+  --app-accent-tools: var(--stx-accent);
+  --app-accent-tools-tint: var(--stx-accent-tint);
+  --app-accent-store: var(--stx-accent);
+  --app-accent-store-tint: var(--stx-accent-tint);
+  --app-accent-home: var(--stx-accent);
+  --app-accent-home-tint: var(--stx-accent-tint);
+  --app-accent-discovery: var(--stx-accent);
+  --app-accent-discovery-tint: var(--stx-accent-tint);
+  --app-accent-example: var(--stx-accent);
+  --app-accent-example-tint: var(--stx-accent-tint);
+  --app-accent-notebook: var(--stx-accent);
+  --app-accent-notebook-tint: var(--stx-accent-tint);
   /* No `apps` / `cards` tokens — see the light block above. */
-  --app-accent-storage: #7ab0c0;
-  --app-accent-storage-tint: rgba(122, 176, 192, 0.08);
+  --app-accent-storage: var(--stx-accent);
+  --app-accent-storage-tint: var(--stx-accent-tint);
   /* todo/cards dark: cards' amber (#d99700) lightened for dark surfaces; their
      #fff7e6 soft is a light-mode wash, so the tint is an alpha of the accent. */
-  --app-accent-todo: #e8ad2e;
-  --app-accent-todo-tint: rgba(232, 173, 46, 0.08);
-  --app-accent-comms: #8a9ad0;
-  --app-accent-comms-tint: rgba(138, 154, 208, 0.08);
-  --app-accent-agents: #d08080;
-  --app-accent-agents-tint: rgba(208, 128, 128, 0.08);
+  --app-accent-todo: var(--stx-accent);
+  --app-accent-todo-tint: var(--stx-accent-tint);
+  --app-accent-comms: var(--stx-accent);
+  --app-accent-comms-tint: var(--stx-accent-tint);
+  --app-accent-agents: var(--stx-accent);
+  --app-accent-agents-tint: var(--stx-accent-tint);
 }
 
 /* --- Custom Accent Override ---

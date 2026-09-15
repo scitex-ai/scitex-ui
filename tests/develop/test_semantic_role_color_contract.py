@@ -13,7 +13,7 @@ decision dressed as a refactor — exactly what this test is there to stop.
 
 PRIMARY'S MODE SPLIT IS PINNED. In LIGHT primary is the SciTeX navy
 (``--color-btn-primary-bg`` -> ``--color-primary``, #1a2a40, operator decision
-2026-09-15); in DARK it is the brand green (``--_success``). ``test_primary_keeps_its_mode_split`` asserts
+2026-09-15); in DARK it is the brand gold (``--color-primary`` #d4a87a, operator 2026-09-15). ``test_primary_keeps_its_mode_split`` asserts
 both directions — so neither "unify the modes" nor "silently make them the
 same" passes quietly.
 
@@ -158,21 +158,21 @@ def test_role_text_token_resolves_to_a_color(role):
 
 
 def test_primary_keeps_its_mode_split():
-    """Light primary resolves to the navy base, dark to the green base. Assert
+    """Light primary resolves to the navy base, dark to the gold base. Assert
     BOTH directions so a future 'simplification' that makes them the same value
     (or swaps them) fails loudly instead of silently ruling Decision C."""
     # Arrange
     light, dark = _blocks()
     # Act
     light_primary = _css_palette.resolve(light, _css_palette.declared(light, "--color-primary"))
-    dark_primary = _css_palette.resolve(dark, _css_palette.declared(dark, "--_success"))
+    dark_primary = _css_palette.resolve(dark, _css_palette.declared(dark, "--color-primary"))
     role_l = _css_palette.resolve(light, _declared_both("--role-primary-bg")[0])
     role_d = _css_palette.resolve(dark, _declared_both("--role-primary-bg")[1])
     # Assert
     assert (role_l, role_d) == (light_primary, dark_primary), (
         f"--role-primary-bg no longer aliases the brand bases: light "
         f"{role_l!r}!={light_primary!r} (navy) / dark {role_d!r}!="
-        f"{dark_primary!r} (green). The primary is the brand fill in each mode."
+        f"{dark_primary!r} (gold). The primary is the brand fill in each mode."
     )
 
 
@@ -187,7 +187,7 @@ def test_primary_is_not_unified_across_modes():
     # Assert
     assert not same, (
         "--role-primary-bg resolves to the SAME color in light and dark — that "
-        "would be deciding compass Decision C (navy vs green primary) in the "
+        "would be deciding compass Decision C (navy vs gold primary) in the "
         "token contract, which is an operator call, not this refactor's scope"
     )
 

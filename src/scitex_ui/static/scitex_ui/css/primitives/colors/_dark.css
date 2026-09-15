@@ -26,6 +26,16 @@
   --_cta: #3b82f6;
   --_cta-hover: #2563eb;
 
+  /* Brand roles, dark. */
+  --stx-brand: #d4a87a;
+  --stx-gold: #d4a87a;
+  --stx-accent: #d4a87a;
+  --stx-accent-tint: rgba(212, 168, 122, 0.12);
+  --stx-success: #5cc497;
+  --stx-warning: #f59a52;
+  --stx-danger: #f08a80;
+  --stx-info: #8fb0d8;
+
   /* Text - flip to light */
   --text-primary: #e6edf3;
   --text-secondary: #c9d1d9;
@@ -77,48 +87,48 @@
   /* Module accent colors - dark mode */
   --app-accent-color: transparent;
   --app-accent-tint: transparent;
-  --app-accent-writer: #d4a87a;
-  --app-accent-writer-tint: rgba(212, 168, 122, 0.08);
-  --app-accent-scholar: #6ba89a;
-  --app-accent-scholar-tint: rgba(107, 168, 154, 0.08);
-  --app-accent-visualizer: #6ab0b0;
-  --app-accent-visualizer-tint: rgba(106, 176, 176, 0.08);
-  --app-accent-console: #7a9ab8;
-  --app-accent-console-tint: rgba(122, 154, 184, 0.08);
-  --app-accent-clew: #b89070; /* Earth brown - pipelines, workflows */
-  --app-accent-clew-tint: rgba(184, 144, 112, 0.08);
-  --app-accent-hub: #9a8ab8; /* Soft purple - dashboard, overview */
-  --app-accent-hub-tint: rgba(154, 138, 184, 0.08);
-  --app-accent-home: #9a8ab8; /* Soft purple - home dashboard */
-  --app-accent-home-tint: rgba(154, 138, 184, 0.08);
-  --app-accent-discovery: #5a9ab8; /* Teal blue - exploration, search */
-  --app-accent-discovery-tint: rgba(90, 154, 184, 0.08);
-  --app-accent-example: #c08850; /* Warm orange - demos, templates */
-  --app-accent-example-tint: rgba(192, 136, 80, 0.08);
-  --app-accent-tools: #8ab88a; /* Sage green - utilities, helpers */
-  --app-accent-tools-tint: rgba(138, 184, 138, 0.08);
+  --app-accent-writer: var(--stx-accent);
+  --app-accent-writer-tint: var(--stx-accent-tint);
+  --app-accent-scholar: var(--stx-accent);
+  --app-accent-scholar-tint: var(--stx-accent-tint);
+  --app-accent-visualizer: var(--stx-accent);
+  --app-accent-visualizer-tint: var(--stx-accent-tint);
+  --app-accent-console: var(--stx-accent);
+  --app-accent-console-tint: var(--stx-accent-tint);
+  --app-accent-clew: var(--stx-accent);
+  --app-accent-clew-tint: var(--stx-accent-tint);
+  --app-accent-hub: var(--stx-accent);
+  --app-accent-hub-tint: var(--stx-accent-tint);
+  --app-accent-home: var(--stx-accent);
+  --app-accent-home-tint: var(--stx-accent-tint);
+  --app-accent-discovery: var(--stx-accent);
+  --app-accent-discovery-tint: var(--stx-accent-tint);
+  --app-accent-example: var(--stx-accent);
+  --app-accent-example-tint: var(--stx-accent-tint);
+  --app-accent-tools: var(--stx-accent);
+  --app-accent-tools-tint: var(--stx-accent-tint);
   /* `apps` and `cards` deliberately have NO tokens of their own: their
      selector rows are ALIASES pointing at --app-accent-store /
      --app-accent-todo (see shell/stx-shell-sidebar.css). A token here
      would be unreferenced, and test_every_accent_token_is_referenced_by_
      a_mapping_row fails on dead weight. shell/theme.css says the same. */
-  --app-accent-store: #b88a9a; /* Soft rose - app store, browsing */
-  --app-accent-store-tint: rgba(184, 138, 154, 0.08);
-  --app-accent-docs: #7a9ac8; /* Soft blue - documentation, reference */
-  --app-accent-docs-tint: rgba(122, 154, 200, 0.08);
-  --app-accent-figrecipe: #a07ae0; /* Soft purple - figure editing, creativity */
-  --app-accent-figrecipe-tint: rgba(160, 122, 224, 0.08);
-  --app-accent-notebook: #7a9a6a; /* Soft green - lab notebook, experiments */
-  --app-accent-notebook-tint: rgba(122, 154, 106, 0.08);
+  --app-accent-store: var(--stx-accent);
+  --app-accent-store-tint: var(--stx-accent-tint);
+  --app-accent-docs: var(--stx-accent);
+  --app-accent-docs-tint: var(--stx-accent-tint);
+  --app-accent-figrecipe: var(--stx-accent);
+  --app-accent-figrecipe-tint: var(--stx-accent-tint);
+  --app-accent-notebook: var(--stx-accent);
+  --app-accent-notebook-tint: var(--stx-accent-tint);
   /* Moved here from shell/theme.css, values UNCHANGED — see _light.css. */
-  --app-accent-storage: #7ab0c0;
-  --app-accent-storage-tint: rgba(122, 176, 192, 0.08);
-  --app-accent-comms: #8a9ad0;
-  --app-accent-comms-tint: rgba(138, 154, 208, 0.08);
-  --app-accent-todo: #e8ad2e;
-  --app-accent-todo-tint: rgba(232, 173, 46, 0.08);
-  --app-accent-agents: #d08080;
-  --app-accent-agents-tint: rgba(208, 128, 128, 0.08);
+  --app-accent-storage: var(--stx-accent);
+  --app-accent-storage-tint: var(--stx-accent-tint);
+  --app-accent-comms: var(--stx-accent);
+  --app-accent-comms-tint: var(--stx-accent-tint);
+  --app-accent-todo: var(--stx-accent);
+  --app-accent-todo-tint: var(--stx-accent-tint);
+  --app-accent-agents: var(--stx-accent);
+  --app-accent-agents-tint: var(--stx-accent-tint);
 
   /* Workspace icon color scheme (TOGGLE: swap _icon-green ↔ _icon-white below) */
   /* Green scheme (dark mode) */
@@ -161,13 +171,13 @@
 
   /* Status colors - adjust for dark mode readability */
   --status-success: #6ba89a;
-  --status-warning: #d4a87a;
+  --status-warning: #f59a52;
   --status-error: #c08888;
   --status-info: #9ca3af;
 
   /* Aliases for forms and other components */
   --success-color: #6ba89a;
-  --warning-color: #d4a87a;
+  --warning-color: #f59a52;
   --error-color: #c08888;
   --info-color: #8fa9cc;
 
@@ -178,9 +188,9 @@
   --status-error-bg: rgba(192, 136, 136, 0.15);
   --status-error-text: #c08888;
   --status-error-border: rgba(192, 136, 136, 0.3);
-  --status-warning-bg: rgba(212, 168, 122, 0.15);
-  --status-warning-text: #d4a87a;
-  --status-warning-border: rgba(212, 168, 122, 0.3);
+  --status-warning-bg: rgba(245, 154, 82, 0.15);
+  --status-warning-text: #f59a52;
+  --status-warning-border: rgba(245, 154, 82, 0.3);
   --status-info-bg: rgba(143, 169, 204, 0.15);
   --status-info-text: #8fa9cc;
   --status-info-border: rgba(143, 169, 204, 0.3);
@@ -212,19 +222,18 @@
   --color-danger-emphasis: var(--status-error);
   --color-danger-subtle: var(--status-error);
   --color-success-fg: var(--status-success);
-  /* Light-only brand primary (see _light.css). `initial` keeps every
-     var(--x, fallback) site rendering its fallback here, as before. */
-  --color-primary: initial;
-  --color-primary-hover: initial;
-  --color-primary-active: initial;
-  --color-on-primary: initial;
-  --color-primary-subtle: initial;
-  --focus-ring-color: initial;
-  --primary-color: initial;
-  --color-btn-primary-bg: var(--_success);
-  --color-btn-primary-text: var(--_white);
-  --color-btn-primary-border: var(--_success);
-  --color-btn-primary-hover-bg: #5aaa8e;
+  /* Brand primary, dark: SciTeX gold with navy text (7.0:1+). */
+  --color-primary: #d4a87a;
+  --color-primary-hover: #e0bb93;
+  --color-primary-active: #c49868;
+  --color-on-primary: #1a2a40;
+  --color-primary-subtle: rgba(212, 168, 122, 0.14);
+  --focus-ring-color: rgba(212, 168, 122, 0.45);
+  --primary-color: var(--color-primary);
+  --color-btn-primary-bg: var(--color-primary);
+  --color-btn-primary-text: var(--color-on-primary);
+  --color-btn-primary-border: var(--color-primary);
+  --color-btn-primary-hover-bg: var(--color-primary-hover);
   --color-btn-bg: var(--bg-surface);
   --color-btn-text: var(--text-primary);
   --color-btn-border: var(--border-default);
@@ -247,7 +256,7 @@
    * fails AA on the DEFAULT theme — pinning it would codify that. #a371f7 is
    * 5.16:1 and is already this palette's purple (--color-done-fg). */
   --danger-color: #f85149; /* 5.16:1 */
-  --accent: #a371f7; /* 5.16:1 on --bg-surface — CHANGED from #6d4cad (2.71:1 there) */
+  --accent: #d4a87a; /* SciTeX gold, 7.97:1 on --bg-surface */
   --workspace-text-muted: #888888; /* 4.88:1 */
   --border-primary: #30363d;
   --bg-hover: rgba(255, 255, 255, 0.08);
@@ -268,7 +277,7 @@
    * See the light palette's block for the full rationale + migration.
    * =========================================================================== */
 
-  /* Primary = the brand fill button. Dark: the brand green (--_success). */
+  /* Primary = the brand fill button. Dark: the brand gold. */
   --role-primary-bg: var(--color-btn-primary-bg);
   --role-primary-text: var(--color-btn-primary-text);
   --role-primary-border: var(--color-btn-primary-border);
