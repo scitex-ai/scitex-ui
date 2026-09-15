@@ -7,6 +7,15 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — SciTeX brand palette (navy + gold), one chrome accent on every app
+
+- Scales `--stx-navy-50…950` (900 = #1a2a40) and `--stx-gold-50…900` (500 = #b8956a, 300 = #d4a87a, 600 = #8c6c44 for gold text), in both `primitives/colors/_light.css` and `shell/theme.css`.
+- Roles `--stx-brand`, `--stx-gold`, `--stx-accent` (+`-tint`; light #8c6c44, dark #d4a87a) and semantic `--stx-success/-warning/-danger/-info`.
+- `--stx-hue-{navy,steel,teal,sage,gold,copper,brick,slate}`: a fixed palette for app ICON tiles only, no purple. Chrome never uses it.
+- Every `--app-accent-*` (and `-tint`) now resolves to `--stx-accent`, so the header strip, tab markers and accent text are the same brand gold on every app.
+- Dark theme: `--color-primary` family is the gold with navy text (`--color-on-primary` #1a2a40); primary buttons and `--accent` (was purple #a371f7) follow.
+- Warning is no longer the gold: `--status-warning`/`--warning-color` #c4561a light, #f59a52 dark.
+
 ### Changed — light theme primary is the SciTeX navy
 
 - Light palette: new `--color-primary` #1a2a40 (`-hover` #243752, `-active` #121e2e), `--color-on-primary` #ffffff, `--color-primary-subtle`, `--focus-ring-color` (navy at 35%) and `--primary-color`. `--color-btn-primary-*` (and so `--role-primary-*`), `--color-accent-fg/-emphasis` and `--accent` (was purple #6d4cad, also in `shell/theme.css`) now resolve to the navy.
