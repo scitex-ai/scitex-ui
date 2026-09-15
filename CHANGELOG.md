@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-09-15
+
 ### Added — mobile panes: one column per screen on phones
 
 - `{% load scitex_panes %}{% scitex_panes "<app>" columns=... %}{% scitex_pane "<id>" label=_("…") icon=... order=... %}…{% endscitex_pane %}{% endscitex_panes %}`, or the equivalent `data-stx-panes` / `data-stx-pane` markup. Above 640px the panes sit side by side in a grid (`--stx-panes-columns`, or `layout="app"` to keep the app's own layout).
