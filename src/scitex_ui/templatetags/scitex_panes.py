@@ -15,8 +15,9 @@ builds the phone tab bar and exposes ``window.stxPanes.show("plot")``.
 from __future__ import annotations
 
 from django import template
-from django.templatetags.static import static
 from django.utils.html import format_html, format_html_join
+
+from .scitex_static import versioned_static
 
 register = template.Library()
 
@@ -57,10 +58,10 @@ class PanesNode(template.Node):
         return format_html(
             '<link rel="stylesheet" href="{}">\n<div {}>{}</div>\n'
             '<script type="module" src="{}"></script>',
-            static("scitex_ui/css/app/panes.css"),
+            versioned_static("scitex_ui/css/app/panes.css"),
             format_html_join(" ", '{}="{}"', attrs),
             self.nodelist.render(context),
-            static("scitex_ui/js/app/panes.js"),
+            versioned_static("scitex_ui/js/app/panes.js"),
         )
 
 

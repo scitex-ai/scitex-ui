@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """{% scitex_panes %} / {% scitex_pane %} render the panes markup contract."""
 
+import re
+
 import django
 import pytest
 from django.conf import settings
@@ -89,20 +91,20 @@ def test_pane_label_is_escaped():
 
 def test_wrapper_loads_the_panes_script():
     # Arrange
-    expected = '<script type="module" src="/static/scitex_ui/js/app/panes.js"></script>'
+    expected = re.compile(r'<script type="module" src="/static/scitex_ui/js/app/panes\.js\?v=[0-9a-f]{12}"></script>')
     # Act
     html = _render()
     # Assert
-    assert expected in html
+    assert expected.search(html)
 
 
 def test_wrapper_loads_the_panes_stylesheet():
     # Arrange
-    expected = '<link rel="stylesheet" href="/static/scitex_ui/css/app/panes.css">'
+    expected = re.compile(r'<link rel="stylesheet" href="/static/scitex_ui/css/app/panes\.css\?v=[0-9a-f]{12}">')
     # Act
     html = _render()
     # Assert
-    assert expected in html
+    assert expected.search(html)
 
 
 def test_unknown_argument_is_a_syntax_error():

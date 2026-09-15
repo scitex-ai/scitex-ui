@@ -7,6 +7,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — `{% app_static %}`: static URLs that change when the file does
+
+- `{% load scitex_static %}{% app_static 'app/js/app.js' %}` renders `/static/app/js/app.js?v=<12-hex content hash>`, so browsers fetch a fresh copy after every deploy or edit instead of reusing a heuristically cached one. The hash is cached per process and recomputed only when the file's mtime or size changes; a file the finders cannot locate renders as plain `{% static %}`.
+- `{% scitex_panes %}` now versions `panes.css` / `panes.js` the same way.
+
 ## [0.21.1] - 2026-09-15
 
 ### Added — mobile panes: one column per screen on phones
