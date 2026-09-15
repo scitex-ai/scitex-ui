@@ -7,10 +7,35 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Added — `{% app_static %}`: static URLs that change when the file does
+## [0.22.0] - 2026-09-15
 
-- `{% load scitex_static %}{% app_static 'app/js/app.js' %}` renders `/static/app/js/app.js?v=<12-hex content hash>`, so browsers fetch a fresh copy after every deploy or edit instead of reusing a heuristically cached one. The hash is cached per process and recomputed only when the file's mtime or size changes; a file the finders cannot locate renders as plain `{% static %}`.
-- `{% scitex_panes %}` now versions `panes.css` / `panes.js` the same way.
+### Added — keymap primitive: Emacs major-mode command registry + keyboard runtime
+
+- `ts/shell/keymap` (export `./ts/shell/keymap`): a framework-neutral command registry with stable named IDs, global and per-page/app-mode keymaps, and a single `CommandRegistry.run()` dispatch that button, keyboard, and agent calls all converge on. Macro support is future-only; the registry leaves a clean caller seam (`CallerInfo.via`) for it.
+- Emacs chord grammar (`C-x`, `M-g`, `S-A`, `M2-C-RET`, `RET`/`TAB`/`SPAC`/`F1..`/punctuation) with canonical normalization and round-trip display.
+- `Keymap` runtime: mode activate/deactivate, `bind()` with conflict detection (no silent one-wins), pending multi-chord prefix tracking with viability expiry, input/contenteditable suppression (bindings fire in inputs only with `inInput: true`), `dispatchSequence()` for programmatic/agent dispatch, `attach()`/`detach()` lifecycle cleanup for SPA navigation, and `help()` introspection.
+- Django hook `scitex_ui.keymap`: `render_keymap_init(app_id, app_defaults, mode)` emits the JSON payload the runtime reads on load (same pattern as `{% scitex_js_catalog %}`); `keymap_defaults()` returns the global command set (the 8 existing keyboard-shortcuts chords, so migration is mechanical).
+- Operator beta boundary (c_2e8da2f3c5a3): stable named Command Registry + global and app/page-local maps + customizable shortcut UI contract.
+- Keymap lint fix (e4e83e0): replaced 8 `no-explicit-any` casts in `_keymap.ts` with a `KeyboardEvent` type assertion and the `globalRegistry` default; no runtime change.
+
+### Added — project-selector: canonical app-header slot + one-primitive contract
+
+- One library-level project picker primitive (Hub, Stats, FigRecipe, Writer all place it; none forks it). Canonical desktop placement codified: LEFT of the app header, immediately after app identity/title, before app-specific actions — never arbitrarily right-aligned.
+- CSS guard `.stx-app-header__slot--project-selector` (order 1, margin-left 0, margin-right auto) structurally pins the selector left on every app, with no consumer-specific CSS workaround. On phones the same slot is order 0 + full-width (44px trigger spanning the row).
+- Entry rename: the distributable bundle is now `js/app/project-selector.js`; `js/app/project-picker.js` is a documented `@deprecated` alias that imports the canonical bundle (old pages keep working). The `{% scitex_project_picker %}` template loads the new name.
+- Stale "the global header never hosts it" prose updated in CSS and `_ProjectSelector.ts` to state the app-header-slot contract.
+- 27 contract tests (AAA + single-assert + positive/negative controls): left-slot pinning, phone full-width/order-0, no self-right-align, 44px targets, capped panel, anti-fork (app-scope-selector reuses ProjectSelector; SelectorNav is a different widget; project-picker.js is the alias not a copy), provider URL contract (listProjects/rememberProject, POST, same-origin).
+
+### Added — client i18n: Django-compatible gettext for TS-rendered strings
+
+- `ts/_base/gettext.ts` (export via `./ts/_base`): `gettext` / `ngettext` / `pgettext` / `npgettext` / `interpolate` / `gettext_noop` / `pluralidx` — the same names as Django's JS catalog. Catalogs are read from `{% scitex_js_catalog "<app package>" %}` json_script elements; with no catalog on the page every function returns the English msgid unchanged.
+- `scitex_ui.i18n.js_catalog(packages)` + `{% scitex_js_catalog %}` (scitex_ui.templatetags.scitex_i18n): embeds the active language's djangojs catalog for a list of installed app packages, in a json_script element the TS reader collects.
+- `scitex_ui.testing.assert_no_untranslated`: a contract test helper that walks a rendered page's DOM and asserts no visible text element still carries an untranslated msgid (opt-in per leaf).
+- The shell now embeds scitex_ui's own djangojs catalog, so viewer Viewer/Editor labels are no longer English on JA pages. `shellTranslate` / `SHELL_STRINGS` are untouched (moving them onto the djangojs catalog is a possible follow-up).
+
+### Added — host project provider as a host service
+
+- The hub advertises a project provider endpoint via `<meta name="stx-project-provider" content="<url>">`; leaf apps mount the shared ProjectSelector against it without knowing the hub's URL scheme. `httpProjectProvider(url)` implements the GET-list / POST-remember contract; `hostProjectProvider(doc)` reads the meta tag and returns the provider (or null). This is what lets FigRecipe and other project-scope apps place the picker in their own header without duplicating the hub's project list logic.
 
 ### Added — SciTeX brand palette (navy + gold), one chrome accent on every app
 
@@ -25,6 +50,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 - Light palette: new `--color-primary` #1a2a40 (`-hover` #243752, `-active` #121e2e), `--color-on-primary` #ffffff, `--color-primary-subtle`, `--focus-ring-color` (navy at 35%) and `--primary-color`. `--color-btn-primary-*` (and so `--role-primary-*`), `--color-accent-fg/-emphasis` and `--accent` (was purple #6d4cad, also in `shell/theme.css`) now resolve to the navy.
 - Dark palette unchanged: the new tokens are reset to `initial` there, so `var(--x, fallback)` sites keep rendering their fallbacks. Body links stay `--text-link`; semantic status colours and per-app accents are untouched.
+
+## [0.21.2] - 2026-09-15
+
+### Added — `{% app_static %}`: static URLs that change when the file does
+
+- `{% load scitex_static %}{% app_static 'app/js/app.js' %}` renders `/static/app/js/app.js?v=<12-hex content hash>`, so browsers fetch a fresh copy after every deploy or edit instead of reusing a heuristically cached one. The hash is cached per process and recomputed only when the file's mtime or size changes; a file the finders cannot locate renders as plain `{% static %}`.
+- `{% scitex_panes %}` now versions `panes.css` / `panes.js` the same way.
 
 ## [0.21.1] - 2026-09-15
 
