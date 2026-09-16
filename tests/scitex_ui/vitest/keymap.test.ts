@@ -241,3 +241,196 @@ describe("Keymap runtime", () => {
     expect(undo.chords).toContain("M-/");
   });
 });
+
+/* ── Keymap overrides — the write-only defect (setOverride was ignored) ──────
+ * 0.22.0 wrote overrideStorage but resolve()/findBindingByChord()/help() and
+ * dispatch never read it, so a persisted user override had NO runtime effect
+ * (a Hub settings UI could save a shortcut that does nothing). These are the
+ * framework regression tests for that fix — they RED on 0.22.0 and GREEN on
+ * the override-consultation fix. They cover every acceptance criterion on the
+ * card: override changes keyboard + program dispatch; conflict detection sees
+ * the effective scope; unbind/enable/reset restore correct defaults; help
+ * reports effective chords; global-vs-mode precedence + input suppression
+ * remain; and the persistence adapter round-trips pure-JSON override data.
+ */
+describe("Keymap overrides (write-only defect fix)", () => {
+  let reg: CommandRegistry;
+  let map: Keymap;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    reg = new CommandRegistry();
+    map = new Keymap({ registry: reg });
+  });
+
+  it("an override redirects keyboard dispatch to the new chord and frees the old one", () => {
+    const save = vi.fn();
+    reg.set({ id: "save", label: "Save", action: save });
+    expect(map.bind("global", "C-s", "save")).toBeNull();
+    map.setOverride("save", "M-s"); // alt+s
+
+    const fired = key({ key: "s", alt: true });
+    map["handleKeydown"](fired as any);
+    expect(save).toHaveBeenCalledTimes(1); // M-s now runs save
+    expect(fired._prevented.called).toBe(true);
+
+    const old = key({ key: "s", ctrl: true });
+    map["handleKeydown"](old as any);
+    expect(save).toHaveBeenCalledTimes(1); // C-s no longer runs save
+    expect(old._prevented.called).toBe(false); // the freed chord: native behavior preserved
+  });
+
+  it("an override redirects program dispatch (dispatchSequence) too", () => {
+    const save = vi.fn();
+    reg.set({ id: "save", label: "Save", action: save });
+    expect(map.bind("global", "C-s", "save")).toBeNull();
+    map.setOverride("save", "M-s");
+
+    expect(map.dispatchSequence("M-s", "program")).toBe("save");
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(map.dispatchSequence("C-s", "program")).toBeNull(); // displaced chord is free
+  });
+
+  it("help() reports the EFFECTIVE chord after an override, not the displaced default", () => {
+    reg.set({ id: "save", label: "Save", action: vi.fn() });
+    expect(map.bind("global", "C-s", "save")).toBeNull();
+    map.setOverride("save", "M-s");
+
+    const saveHelp = map.help().commands.find((c) => c.id === "save")!;
+    expect(saveHelp.chords).toContain("M-S");
+    expect(saveHelp.chords).not.toContain("C-S");
+  });
+
+  it("binding a chord that is effectively occupied by an override is a conflict", () => {
+    reg.set({ id: "save", label: "Save", action: vi.fn() });
+    reg.set({ id: "close", label: "Close", action: vi.fn() });
+    expect(map.bind("global", "C-s", "save")).toBeNull();
+    map.setOverride("save", "C-c"); // save now effectively at C-c (was a free chord)
+
+    // close tries to take C-c — it is effectively occupied by save's override.
+    const conflict = map.bind("global", "C-c", "close");
+    expect(conflict).not.toBeNull();
+    expect(conflict!.existingCommandId).toBe("save");
+    expect(conflict!.newCommandId).toBe("close");
+  });
+
+  it("an override-induced collision is surfaced via overrideConflicts() (not silent)", () => {
+    reg.set({ id: "save", label: "Save", action: vi.fn() });
+    reg.set({ id: "close", label: "Close", action: vi.fn() });
+    expect(map.bind("global", "C-s", "save")).toBeNull();
+    expect(map.bind("global", "C-c", "close")).toBeNull();
+    map.setOverride("save", "C-c"); // save's override lands on close's default chord
+
+    const conflicts = map.overrideConflicts();
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0].scope).toBe("global");
+    expect(conflicts[0].sequenceKey).toBe("C-C");
+    expect([conflicts[0].existingCommandId, conflicts[0].newCommandId]).toEqual(
+      expect.arrayContaining(["save", "close"]),
+    );
+  });
+
+  it("unbind disables a command (its default is preserved) and enable restores it", () => {
+    reg.set({ id: "save", label: "Save", action: vi.fn() });
+    expect(map.bind("global", "C-s", "save")).toBeNull();
+
+    map.unbind("save");
+    expect(map.resolve(parseSequence("C-s"))).toBeNull(); // disabled: no longer bound
+    expect(map.dispatchSequence("C-s", "program")).toBeNull();
+    expect(map.help().commands.find((c) => c.id === "save")!.chords).toEqual([]);
+
+    map.enable("save");
+    expect(map.resolve(parseSequence("C-s"))!.commandId).toBe("save"); // restored
+    expect(map.help().commands.find((c) => c.id === "save")!.chords).toContain("C-S");
+  });
+
+  it("resetOverrides restores factory defaults after overrides AND unbinds", () => {
+    reg.set({ id: "save", label: "Save", action: vi.fn() });
+    reg.set({ id: "close", label: "Close", action: vi.fn() });
+    expect(map.bind("global", "C-s", "save")).toBeNull();
+    expect(map.bind("global", "C-c", "close")).toBeNull();
+
+    map.setOverride("save", "M-s");
+    map.unbind("close");
+
+    map.resetOverrides();
+
+    expect(map.resolve(parseSequence("C-s"))!.commandId).toBe("save"); // override cleared
+    expect(map.resolve(parseSequence("M-s"))).toBeNull();
+    expect(map.resolve(parseSequence("C-c"))!.commandId).toBe("close"); // unbind restored
+    expect(map.overrideConflicts()).toEqual([]);
+  });
+
+  it("global vs active-mode precedence is preserved when overrides are present", () => {
+    reg.set({ id: "global-s", label: "G", action: vi.fn() });
+    reg.set({ id: "editor-s", label: "E", action: vi.fn() });
+    expect(map.bind("global", "C-s", "global-s")).toBeNull();
+    expect(map.bind("editor", "C-s", "editor-s")).toBeNull();
+    expect(map.bind("editor", "C-x", "editor-s")).toBeNull();
+
+    map.activateMode("editor");
+    // shadowing unchanged: the editor binding wins at C-s
+    expect(map.resolve(parseSequence("C-s"))!.commandId).toBe("editor-s");
+
+    // override the editor command onto a fresh chord; it applies only in editor scope
+    map.setOverride("editor-s", "M-e");
+    expect(map.resolve(parseSequence("M-e"))!.commandId).toBe("editor-s");
+    expect(map.resolve(parseSequence("C-x"))).toBeNull(); // C-x displaced in editor
+
+    map.deactivateMode();
+    // global scope: editor-s is gone, global-s is still at C-s
+    expect(map.resolve(parseSequence("C-s"))!.commandId).toBe("global-s");
+    expect(map.resolve(parseSequence("M-e"))).toBeNull(); // editor-only override not visible
+  });
+
+  it("input suppression still applies to a command reached via its override", () => {
+    const copy = vi.fn();
+    reg.set({ id: "copy", label: "Copy", action: copy });
+    expect(map.bind("global", "C-c", "copy")).toBeNull(); // inInput=false (default)
+    map.setOverride("copy", "M-c"); // moved to alt+c, still a non-input binding
+
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    map["handleKeydown"](key({ key: "c", alt: true, target: input }) as any);
+    expect(copy).not.toHaveBeenCalled(); // suppressed inside the field via the override chord
+  });
+
+  it("serializeOverrides()/loadOverrides() round-trip pure-JSON persistence data", () => {
+    reg.set({ id: "save", label: "Save", action: vi.fn() });
+    reg.set({ id: "close", label: "Close", action: vi.fn() });
+    expect(map.bind("global", "C-s", "save")).toBeNull();
+    expect(map.bind("global", "C-c", "close")).toBeNull();
+
+    map.setOverride("save", "M-s");
+    map.unbind("close");
+
+    const data = map.serializeOverrides();
+    // must be pure JSON — the persistence adapter's contract (Hub stores this verbatim)
+    const roundTripped = JSON.parse(JSON.stringify(data));
+    expect(roundTripped).toEqual(data);
+    expect(roundTripped).toEqual({ overrides: { save: "M-S" }, unbound: ["close"] });
+
+    // a fresh app with the same defaults, restored from that JSON:
+    const reg2 = new CommandRegistry();
+    reg2.set({ id: "save", label: "Save", action: vi.fn() });
+    reg2.set({ id: "close", label: "Close", action: vi.fn() });
+    const map2 = new Keymap({ registry: reg2 });
+    expect(map2.bind("global", "C-s", "save")).toBeNull();
+    expect(map2.bind("global", "C-c", "close")).toBeNull();
+    map2.loadOverrides(roundTripped);
+
+    expect(map2.resolve(parseSequence("M-s"))!.commandId).toBe("save"); // override restored
+    expect(map2.resolve(parseSequence("C-s"))).toBeNull(); // displaced
+    expect(map2.resolve(parseSequence("C-c"))).toBeNull(); // close disabled
+    expect(map2.help().commands.find((c) => c.id === "save")!.chords).toContain("M-S");
+  });
+
+  it("the overrideStorage constructor seam seeds initial overrides", () => {
+    const save = vi.fn();
+    reg.set({ id: "save", label: "Save", action: save });
+    const seeded = new Keymap({ registry: reg, overrideStorage: new Map([["save", parseSequence("M-s")]]) });
+    expect(seeded.bind("global", "C-s", "save")).toBeNull();
+    expect(seeded.resolve(parseSequence("M-s"))!.commandId).toBe("save");
+    expect(seeded.resolve(parseSequence("C-s"))).toBeNull();
+  });
+});

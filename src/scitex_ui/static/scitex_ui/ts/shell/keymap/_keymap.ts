@@ -19,6 +19,16 @@
  * CONFLICT DETECTION is at bind time, not keypress time: binding the same
  * chord to two commands in the same scope is reported immediately so the
  * authoring app sees it, rather than the user hitting a silent one-wins.
+ *
+ * USER OVERRIDES ARE REAL STATE, NOT A DEAD WRITE. A user rebind (setOverride)
+ * and a disable (unbind) live in an overlay on top of the factory defaults,
+ * and every mutation REBUILDS the effective binding state from that overlay.
+ * resolve()/findBindingByChord()/help()/dispatchSequence() all read the
+ * EFFECTIVE state, so an override actually changes keyboard + program dispatch
+ * and the help UI. (In 0.22.0 setOverride wrote overrideStorage but nothing
+ * ever read it — a persisted user shortcut had no runtime effect. That is the
+ * write-only defect this fix removes.) The overlay is pure-JSON-serializable
+ * (serializeOverrides/loadOverrides) so a consuming app (Hub) can persist it.
  */
 
 import {
@@ -53,8 +63,9 @@ export interface Conflict {
 
 export interface KeymapOptions {
   registry?: CommandRegistry;
-  /** Storage for user overrides; defaults to an in-memory map (no persistence
-   *  — persistence is the consuming app's concern, passed in). */
+  /** Initial user-override overlay (commandId -> sequence). Defaults to empty;
+   *  a consuming app typically seeds it from persisted override data, or
+   *  loads it after bind() setup via loadOverrides(). */
   overrideStorage?: Map<string, Sequence>;
 }
 
@@ -63,11 +74,32 @@ const INPUT_SELECTOR =
 
 export class Keymap {
   private readonly registry: CommandRegistry;
-  /** scope -> list of bindings. "global" is always present. */
-  private readonly bindings = new Map<BindingScope, Binding[]>();
-  /** scope -> canonical-sequence-key -> commandId, for O(1) resolution + conflicts. */
-  private readonly index = new Map<BindingScope, Map<string, string>>();
+
+  /** SOURCE OF TRUTH: the factory bindings the app adds via bind(), per scope.
+   *  User overrides never mutate this — they are an overlay (overrideStorage /
+   *  unbound) applied on top during rebuildEffective(). "global" is always
+   *  present. */
+  private readonly defaults = new Map<BindingScope, Binding[]>();
+
+  /** The user override overlay: commandId -> the chord it now runs on. */
   private readonly overrideStorage: Map<string, Sequence>;
+
+  /** Command IDs the user has disabled. A disabled command keeps its factory
+   *  default (so enable()/resetOverrides() restore exactly what was there) but
+   *  contributes no effective chord while disabled. */
+  private readonly unbound = new Set<string>();
+
+  /** Override-induced collisions (an override landed on another command's
+   *  effective chord). Surfaced via overrideConflicts() — never silent. */
+  private overrideCollisions: Conflict[] = [];
+
+  /** EFFECTIVE state (defaults + overrides − unbound): scope -> bindings.
+   *  resolve/findBindingByChord/help read THIS, and it is rebuilt by
+   *  rebuildEffective() after every mutation. */
+  private readonly bindings = new Map<BindingScope, Binding[]>();
+  /** EFFECTIVE state: scope -> canonical-sequence-key -> commandId (O(1) + conflicts). */
+  private readonly index = new Map<BindingScope, Map<string, string>>();
+
   /** Pending prefix sequence while a multi-chord command is being typed. */
   private pending: Sequence = [];
   // Typed as Event (not KeyboardEvent) so it satisfies addEventListener's
@@ -77,9 +109,9 @@ export class Keymap {
   constructor(options: KeymapOptions = {}) {
     this.registry = options.registry ?? globalRegistry;
     this.overrideStorage = options.overrideStorage ?? new Map();
-    this.bindings.set("global", []);
-    this.index.set("global", new Map());
+    this.defaults.set("global", []);
     this.onKeydown = (event) => this.handleKeydown(event);
+    this.rebuildEffective();
   }
 
   get currentMode(): string | null {
@@ -89,10 +121,7 @@ export class Keymap {
   /** Activate a page/app mode. Installs the scope so it is bindable, and
    *  tells the registry which mode-scoped commands are now live. */
   activateMode(mode: string): void {
-    if (!this.bindings.has(mode)) {
-      this.bindings.set(mode, []);
-      this.index.set(mode, new Map());
-    }
+    this.ensureScope(mode);
     this.registry.setMode(mode);
     this.resetPending();
   }
@@ -103,60 +132,166 @@ export class Keymap {
     this.resetPending();
   }
 
-  /** Bind a chord (or "C-x C-s" sequence) to a command ID in a scope.
-   *  Returns a Conflict when the chord was already bound to a DIFFERENT
-   *  command in that scope — the authoring app decides what to do. Re-binding
-   *  the same chord to the same command is a no-op, not a conflict. */
-  bind(scope: BindingScope, sequenceStr: string, commandId: string, inInput = false): Conflict | null {
-    if (scope !== "global") {
-      if (!this.bindings.has(scope)) {
-        this.bindings.set(scope, []);
-        this.index.set(scope, new Map());
-      }
+  /** Ensure a (non-global) scope exists in the defaults table so it is bindable. */
+  private ensureScope(scope: BindingScope): void {
+    if (scope !== "global" && !this.defaults.has(scope)) {
+      this.defaults.set(scope, []);
     }
+  }
+
+  /** Bind a chord (or "C-x C-s" sequence) to a command ID in a scope.
+   *  Returns a Conflict when the chord is already EFFECTIVELY bound to a
+   *  DIFFERENT command in that scope — the authoring app decides what to do.
+   *  Re-binding the same chord to the same command is a no-op, not a conflict.
+   *  The conflict check reads the effective index, so a chord that is live
+   *  only because of a user override counts as occupied. */
+  bind(scope: BindingScope, sequenceStr: string, commandId: string, inInput = false): Conflict | null {
+    this.ensureScope(scope);
     const seq = parseSequence(sequenceStr);
     const key = sequenceKey(seq);
-    const scopeIndex = this.index.get(scope)!;
-    const existing = scopeIndex.get(key);
+    const existing = this.index.get(scope)?.get(key);
     if (existing !== undefined && existing !== commandId) {
       return { sequenceKey: key, scope, existingCommandId: existing, newCommandId: commandId };
     }
     if (existing === commandId) return null; // idempotent re-bind
-    scopeIndex.set(key, commandId);
-    this.bindings.get(scope)!.push({ sequence: seq, commandId, inInput });
+    this.defaults.get(scope)!.push({ sequence: seq, commandId, inInput });
+    this.rebuildEffective();
     return null;
-  }
-
-  /** All bindings a user has overridden this chord to, as a fresh map. */
-  private effectiveScope(): BindingScope {
-    return this.currentMode ?? "global";
   }
 
   /**
    * Apply a user override: remember that `sequenceStr` now runs `commandId`
-   * instead of its default. Overrides are stored in `overrideStorage` keyed by
-   * command ID and consulted during resolution. This is the "user override
-   * overlay" — the app persists overrideStorage as it sees fit.
+   * instead of its default chord, in every scope where the command is bound.
+   * The override is real state — rebuildEffective() runs immediately, so
+   * keyboard + program dispatch and help() all change. Persist it with
+   * serializeOverrides() / loadOverrides() (a Hub settings UI stores exactly
+   * that JSON). The displaced default chord is freed (native behavior returns
+   * to it) and, if the new chord was occupied by another command, the
+   * collision is surfaced via overrideConflicts().
    */
   setOverride(commandId: string, sequenceStr: string): void {
     this.overrideStorage.set(commandId, parseSequence(sequenceStr));
+    this.rebuildEffective();
   }
 
+  /**
+   * Disable a command: it contributes no effective chord while disabled, but
+   * its factory default is PRESERVED (so enable()/resetOverrides() restore
+   * exactly what was there, not a rebuilt guess). Any override on it is
+   * dropped — a disabled command has no chord to override.
+   */
   unbind(commandId: string): void {
-    for (const [scope, list] of this.bindings) {
-      const kept = list.filter((b) => b.commandId !== commandId);
-      this.bindings.set(scope, kept);
-      // rebuild the index for this scope
-      const newIndex = new Map<string, string>();
-      for (const b of kept) newIndex.set(sequenceKey(b.sequence), b.commandId);
-      this.index.set(scope, newIndex);
-    }
+    this.unbound.add(commandId);
     this.overrideStorage.delete(commandId);
+    this.rebuildEffective();
   }
 
-  /** Reset every user override; default bindings remain. */
+  /** Re-enable a previously disabled command at its factory default chord. */
+  enable(commandId: string): void {
+    this.unbound.delete(commandId);
+    this.rebuildEffective();
+  }
+
+  /** Reset every user override AND every unbind; factory defaults restored. */
   resetOverrides(): void {
     this.overrideStorage.clear();
+    this.unbound.clear();
+    this.rebuildEffective();
+  }
+
+  /**
+   * Serialize the user's override state to pure JSON — the persistence
+   * adapter's contract. `overrides` is commandId -> effective chord string
+   * (canonical display form, e.g. "M-S"); `unbound` is the list of disabled
+   * command IDs. A consuming app (Hub) stores this verbatim and hands it back
+   * through loadOverrides() on the next mount.
+   */
+  serializeOverrides(): { overrides: Record<string, string>; unbound: string[] } {
+    const overrides: Record<string, string> = {};
+    for (const [id, seq] of this.overrideStorage) overrides[id] = sequenceKey(seq);
+    return { overrides, unbound: [...this.unbound].sort() };
+  }
+
+  /**
+   * Load override state produced by serializeOverrides() (or any consumer with
+   * the same shape). Replaces the current override state and rebuilds the
+   * effective bindings.
+   */
+  loadOverrides(data: { overrides?: Record<string, string>; unbound?: string[] }): void {
+    this.overrideStorage.clear();
+    this.unbound.clear();
+    if (data.overrides) {
+      for (const [id, seqStr] of Object.entries(data.overrides)) {
+        this.overrideStorage.set(id, parseSequence(seqStr));
+      }
+    }
+    if (data.unbound) {
+      for (const id of data.unbound) this.unbound.add(id);
+    }
+    this.rebuildEffective();
+  }
+
+  /**
+   * Override-induced collisions: a chord where a user override (or a second
+   * default) landed on top of another command's effective chord. Non-empty
+   * means a UI should warn — the displaced command lost that chord. This is
+   * the "no silent one-wins" guarantee for the override path.
+   */
+  overrideConflicts(): Conflict[] {
+    return [...this.overrideCollisions];
+  }
+
+  /**
+   * Rebuild the EFFECTIVE binding state (this.bindings / this.index) from the
+   * source of truth: factory defaults + user overrides − disabled commands.
+   *   Pass 1 places every NON-overridden default at its factory chord.
+   *   Pass 2 places every OVERRIDDEN command at its override chord; it WINS
+   *   the chord, displacing whatever pass 1 placed there, and records the
+   *   displacement as an override collision so the UI can surface it.
+   * A command bound in several scopes gets its override applied in each; the
+   * inInput flag of the original binding is carried through. resolve(),
+   * findBindingByChord(), help() and isPendingViable() read the effective
+   * state, so one rebuild is what makes an override take runtime effect
+   * everywhere at once.
+   */
+  private rebuildEffective(): void {
+    this.bindings.clear();
+    this.index.clear();
+    for (const scope of this.defaults.keys()) {
+      this.bindings.set(scope, []);
+      this.index.set(scope, new Map());
+    }
+    this.overrideCollisions = [];
+    for (const pass of [1, 2]) {
+      for (const [scope, list] of this.defaults) {
+        const effIndex = this.index.get(scope)!;
+        const effList = this.bindings.get(scope)!;
+        for (const b of list) {
+          const overridden = this.overrideStorage.has(b.commandId);
+          if (pass === 1 ? overridden : !overridden) continue; // each pass owns its half
+          if (this.unbound.has(b.commandId)) continue; // disabled contributes no chord
+          const seq = this.overrideStorage.get(b.commandId) ?? b.sequence;
+          const key = sequenceKey(seq);
+          const occupant = effIndex.get(key);
+          if (occupant === b.commandId) continue; // idempotent (same command already here)
+          if (occupant !== undefined) {
+            this.overrideCollisions.push({
+              sequenceKey: key,
+              scope,
+              existingCommandId: occupant,
+              newCommandId: b.commandId,
+            });
+            if (pass === 1) continue; // two defaults colliding: first wins (bind() prevents this)
+            // pass 2: the user's override wins the chord it displaced onto.
+            effIndex.set(key, b.commandId);
+            effList.push({ sequence: seq, commandId: b.commandId, inInput: b.inInput });
+            continue;
+          }
+          effIndex.set(key, b.commandId);
+          effList.push({ sequence: seq, commandId: b.commandId, inInput: b.inInput });
+        }
+      }
+    }
   }
 
   /**
@@ -280,7 +415,8 @@ export class Keymap {
   }
 
   /** The introspection model: current mode + every command with the chords
-   *  bound to it (resolved across scopes). Feeds the help UI and agent tools. */
+   *  bound to it (resolved across scopes). Feeds the help UI and agent tools.
+   *  Reports the EFFECTIVE chords (overrides applied, unbinds honored). */
   help(): {
     mode: string | null;
     commands: Array<{
