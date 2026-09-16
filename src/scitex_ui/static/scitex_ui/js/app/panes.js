@@ -1,6 +1,4 @@
-/* AUTO-GENERATED from ts/app/panes/auto-mount.ts via esbuild — do not edit by hand. Rebuild: npx esbuild ts/app/panes/auto-mount.ts --bundle --format=esm --outfile=js/app/panes.js */
-
-// ts/_base/gettext.ts
+// src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts
 var JS_CATALOG_ELEMENT_PREFIX = "scitex-i18n-catalog-";
 var state = null;
 function installCatalog(payload) {
@@ -32,7 +30,7 @@ function gettext(msgid) {
   return translated || msgid;
 }
 
-// ts/app/panes/_Panes.ts
+// src/scitex_ui/static/scitex_ui/ts/app/panes/_Panes.ts
 var PANES_ATTRIBUTE = "data-stx-panes";
 var PANE_ATTRIBUTE = "data-stx-pane";
 var ACTIVE_ATTRIBUTE = "data-stx-pane-active";
@@ -43,7 +41,7 @@ var STORAGE_PREFIX = "stx-panes:";
 var CLS = "stx-panes";
 var SWIPE_MIN_PX = 60;
 var SWIPE_AXIS_RATIO = 1.5;
-var NO_SWIPE_SELECTOR = "input, textarea, select, [contenteditable=''], [contenteditable='true'], [data-stx-no-swipe]";
+var NO_SWIPE_SELECTOR = "input, textarea, select, [contenteditable=''], [contenteditable='true'], [data-stx-no-swipe], canvas, svg, table, iframe, embed, object, [role='img'], [role='application'], [data-stx-interactive], .stx-pdf-viewer, .stx-canvas, .stx-graph, .stx-editor";
 function defaultMedia() {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
   return window.matchMedia(PHONE_QUERY);
@@ -90,8 +88,10 @@ var Panes = class {
     const media = options.media === void 0 ? defaultMedia() : options.media;
     this.setSingle(Boolean(media?.matches));
     media?.addEventListener("change", (event) => this.setSingle(event.matches));
-    root.addEventListener("touchstart", (event) => this.onTouchStart(event), { passive: true });
-    root.addEventListener("touchend", (event) => this.onTouchEnd(event), { passive: true });
+    if (options.swipeToSwitch) {
+      root.addEventListener("touchstart", (event) => this.onTouchStart(event), { passive: true });
+      root.addEventListener("touchend", (event) => this.onTouchEnd(event), { passive: true });
+    }
   }
   get active() {
     return this.activeId;
@@ -231,7 +231,7 @@ var Panes = class {
   }
 };
 
-// ts/app/panes/mount.ts
+// src/scitex_ui/static/scitex_ui/ts/app/panes/mount.ts
 var MOUNTED_ATTRIBUTE = "data-stx-panes-mounted";
 var instances = [];
 function mountPanes(root = document, options = {}) {
@@ -258,7 +258,7 @@ function showPane(pane, app) {
 }
 var stxPanes = { mount: mountPanes, get: getPanes, show: showPane };
 
-// ts/app/panes/auto-mount.ts
+// src/scitex_ui/static/scitex_ui/ts/app/panes/auto-mount.ts
 window.stxPanes = stxPanes;
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => mountPanes());

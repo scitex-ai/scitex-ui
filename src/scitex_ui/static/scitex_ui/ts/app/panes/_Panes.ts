@@ -8,9 +8,19 @@
  *
  * Above the phone breakpoint nothing changes: the panes sit side by side.
  * At or below it the root gets `stx-panes--single`, a sticky tab bar sits above
- * the panes and only the active pane shows. A horizontal swipe moves to the
- * adjacent tab unless it starts inside something that scrolls horizontally or
- * takes text input. The active pane is remembered per app in sessionStorage.
+ * the panes and only the active pane shows. The active pane changes by explicit
+ * tab tap/click, accessible keyboard activation (arrow keys on the tablist), or
+ * a named command (`show()`).
+ *
+ * Horizontal swipe-to-switch-tab is DISABLED by default (operator mobile
+ * ruling 7724-7725): it conflicts with pan/zoom/scroll inside Writer PDF,
+ * FigRecipe canvas, graphs, editors and tables. Apps whose content has no
+ * horizontal gestures may opt in with `swipeToSwitch: true`; when opted in,
+ * swipes beginning inside a horizontal scroller, a text input, or interactive
+ * content (canvas, svg, table, iframe, PDF/canvas/graph/editor wrappers) are
+ * ignored.
+ *
+ * The active pane is remembered per app in sessionStorage.
  */
 
 import { gettext } from "../../_base/gettext";
@@ -34,7 +44,10 @@ const CLS = "stx-panes";
 const SWIPE_MIN_PX = 60;
 const SWIPE_AXIS_RATIO = 1.5;
 const NO_SWIPE_SELECTOR =
-  "input, textarea, select, [contenteditable=''], [contenteditable='true'], [data-stx-no-swipe]";
+  "input, textarea, select, [contenteditable=''], [contenteditable='true'], [data-stx-no-swipe], " +
+  "canvas, svg, table, iframe, embed, object, " +
+  "[role='img'], [role='application'], [data-stx-interactive], " +
+  ".stx-pdf-viewer, .stx-canvas, .stx-graph, .stx-editor";
 
 function defaultMedia(): PanesMedia | null {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
@@ -95,8 +108,14 @@ export class Panes {
     this.setSingle(Boolean(media?.matches));
     media?.addEventListener("change", (event) => this.setSingle(event.matches));
 
-    root.addEventListener("touchstart", (event) => this.onTouchStart(event), { passive: true });
-    root.addEventListener("touchend", (event) => this.onTouchEnd(event), { passive: true });
+    // Horizontal swipe-to-switch-tab: DISABLED by default (operator mobile
+    // ruling 7724-7725). Content gestures (PDF pan, canvas zoom, table
+    // scroll) must not accidentally change the active tab. Apps that have
+    // no horizontal content gestures can opt in with `swipeToSwitch: true`.
+    if (options.swipeToSwitch) {
+      root.addEventListener("touchstart", (event) => this.onTouchStart(event), { passive: true });
+      root.addEventListener("touchend", (event) => this.onTouchEnd(event), { passive: true });
+    }
   }
 
   get active(): string {
