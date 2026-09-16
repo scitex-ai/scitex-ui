@@ -42,6 +42,14 @@ _REPOINTED = {
     "--font-mono": "--mono-font-family",
 }
 
+# The guard scans the whole css/ tree (see _sites_consuming). The aliases were
+# consumed in BOTH shell/ (this card) and app/ (the parent card's population):
+#   shell/   --font-mono x3, --fg-default x2, --tab-accent x1   (this PR's card)
+#   app/     --font-mono x1 (package-docs-sidebar.css)          (parent card)
+# Repointing the app/ site is safe because app.css imports the primitives layer
+# (colors/spacing/typography-vars), so --mono-font-family resolves there —
+# verified, not assumed.
+
 
 def _blank_comments(text):
     """Replace comment bodies with blank lines, preserving line numbering, so a
@@ -51,17 +59,16 @@ def _blank_comments(text):
 
 
 def _sites_consuming(token):
-    """Stylesheets under css/shell that read `token` via var(), as 'path:line'.
+    """Every stylesheet under css/ that reads `token` via var(), as 'path:line'.
 
-    Scoped to shell/ — THIS card's population ("nine tokens consumed across
-    shell/"). The app/ layer is the parent card's (app-css-tokens-defined-
-    nowhere-20260728); an app/ instance of --font-mono exists (package-docs-
-    sidebar.css) and is recorded there, not repointed here, because its fallback
-    stack differs from --mono-font-family's and the fix is that card's decision.
+    The whole css/ tree (shell/, app/, primitives/), not just shell/: the three
+    aliases are defined by no palette, so a consumer is broken wherever it lives.
+    --font-mono had one app/ site (package-docs-sidebar.css) in addition to the
+    three shell/ sites — scoping to shell/ alone would have let the app/ site
+    keep rendering a frozen literal while the guard reported clean.
     """
     found = []
-    shell_dir = css_dir() / "shell"
-    for sheet in sorted(shell_dir.rglob("*.css")):
+    for sheet in sorted(css_dir().rglob("*.css")):
         source = _blank_comments(sheet.read_text())
         for number, line in enumerate(source.splitlines(), start=1):
             if token in _CONSUMES.findall(line):

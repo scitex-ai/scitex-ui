@@ -62,7 +62,7 @@
 .stx-app-pkg-sidebar__version {
   font-size: 10px;
   color: var(--text-muted, #777777);
-  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-family: var(--mono-font-family, "JetBrains Mono", monospace);
 }
 
 .stx-app-pkg-sidebar__loading,
