@@ -257,3 +257,24 @@ describe("first-use tour: Watch tour / Later / Do not show again", () => {
     expect(document.querySelector(".stx-app-help__tour-bubble")).not.toBeNull();
   });
 });
+
+  it("asks on first use instead of starting the tour, and Watch then shows a highlight", () => {
+    const storage = new MemoryStorage();
+    const target = document.createElement("div");
+    target.id = "proj";
+    document.body.appendChild(target);
+    const help = mountGuide("writer", "en", storage);
+    help.showTourInvite();
+    expect(document.querySelector(".stx-app-help__tour-highlight")).toBeNull();
+  });
+
+  it("highlights the first target only after Watch tour is chosen", () => {
+    const storage = new MemoryStorage();
+    const target = document.createElement("div");
+    target.id = "proj";
+    document.body.appendChild(target);
+    const help = mountGuide("writer", "en", storage);
+    help.showTourInvite();
+    document.querySelector<HTMLButtonElement>(".stx-app-help__choice--watch")?.click();
+    expect(document.querySelector(".stx-app-help__tour-highlight")).not.toBeNull();
+  });

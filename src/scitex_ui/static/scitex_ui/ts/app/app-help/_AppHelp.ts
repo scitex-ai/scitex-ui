@@ -52,6 +52,13 @@ const CLS_NAV = `${CLS}__nav`;
 //: the labels are translated, the hooks are not.
 const CLS_CHOICES = `${CLS}__choices`;
 const CLS_CHOICE = `${CLS}__choice`;
+//: The bubble's replaceable body. The choices live BESIDE it inside the bubble,
+//: not inside it: the tour re-renders the step text on every step, and a row that
+//: lives in the replaced subtree survives exactly zero steps. Measured 2026-09-17
+//: in a browser: appended to the tour overlay instead, the row rendered at the
+//: overlay's top-left corner, outside the bubble's pointer-events, so the three
+//: answers could not be clicked at all — the primitive looked fine in jsdom.
+const CLS_ENTRY = `${CLS}__tour-entry`;
 
 /** Read the active language: document lang, else "en". */
 export function activeLanguage(doc: Document = document): string {
@@ -122,11 +129,15 @@ export class AppHelp {
 
     if (options.autoStart === false) return;
     if (this.tourPreference() === "unseen" && !this.firstOpenDone() && this.tourSteps.length > 0) {
-      // Defer so the targets exist in the DOM by the time the tour highlights.
+      // FIRST USE IS AN ASK, NOT A LECTURE. The invite shows the three choices
+      // (§8) and highlights nothing; the coach marks only run once the user
+      // picks Watch tour. Auto-starting the tour here would drag a first-time
+      // user through steps before offering them "Later" — with no way to answer
+      // the question the product is asking. Defer so the page has settled.
       if (typeof requestAnimationFrame === "function") {
-        requestAnimationFrame(() => this.startTour());
+        requestAnimationFrame(() => this.showTourInvite());
       } else {
-        this.startTour();
+        this.showTourInvite();
       }
     }
   }
@@ -261,9 +272,9 @@ export class AppHelp {
       this.tour = this.renderTour();
       this.root.appendChild(this.tour);
     }
-    const bubble = this.tour.querySelector(`.${CLS_TOUR_BUBBLE}`);
-    if (bubble) {
-      bubble.innerHTML = `<div class="${CLS_STEP}"><div class="${CLS_STEP_TITLE}">${gettext(
+    const entry = this.tour.querySelector(`.${CLS_ENTRY}`);
+    if (entry) {
+      entry.innerHTML = `<div class="${CLS_STEP}"><div class="${CLS_STEP_TITLE}">${gettext(
         "Take a quick tour?",
       )}</div></div>`;
     }
@@ -322,12 +333,12 @@ export class AppHelp {
       });
       this.root.appendChild(this.highlight);
     }
-    const bubble = this.tour.querySelector(`.${CLS_TOUR_BUBBLE}`);
-    if (bubble) {
+    const entry = this.tour.querySelector(`.${CLS_ENTRY}`);
+    if (entry) {
       const icon = step.icon ? `<span class="${CLS_STEP_ICON}" aria-hidden="true">${step.icon}</span>` : "";
       const title = stepText(step.title, this.language) || gettext("Guide");
       const body = stepText(step.body, this.language);
-      bubble.innerHTML =
+      entry.innerHTML =
         `<div class="${CLS_STEP}">` +
         `${icon}<div class="${CLS_STEP_TITLE}">${title}</div>` +
         (body ? `<div class="${CLS_STEP_BODY}">${body}</div>` : "") +
@@ -467,11 +478,12 @@ export class AppHelp {
 
     const bubble = document.createElement("div");
     bubble.className = CLS_TOUR_BUBBLE;
+    const entry = document.createElement("div");
+    entry.className = CLS_ENTRY;
+    bubble.appendChild(entry);
+    bubble.appendChild(this.renderChoices());
+    this.setChoicesVisible(false);
     tour.appendChild(bubble);
-
-    const choices = this.renderChoices();
-    choices.hidden = true;
-    tour.appendChild(choices);
 
     const meta = document.createElement("div");
     meta.className = `${CLS}__tour-meta`;

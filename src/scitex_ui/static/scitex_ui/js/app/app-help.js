@@ -52,6 +52,7 @@ var CLS_COUNT = `${CLS}__count`;
 var CLS_NAV = `${CLS}__nav`;
 var CLS_CHOICES = `${CLS}__choices`;
 var CLS_CHOICE = `${CLS}__choice`;
+var CLS_ENTRY = `${CLS}__tour-entry`;
 function activeLanguage(doc = document) {
   const lang = doc.documentElement?.getAttribute("lang")?.toLowerCase() ?? "";
   const base = lang.split("-")[0] || "en";
@@ -110,9 +111,9 @@ var AppHelp = class {
     if (options.autoStart === false) return;
     if (this.tourPreference() === "unseen" && !this.firstOpenDone() && this.tourSteps.length > 0) {
       if (typeof requestAnimationFrame === "function") {
-        requestAnimationFrame(() => this.startTour());
+        requestAnimationFrame(() => this.showTourInvite());
       } else {
-        this.startTour();
+        this.showTourInvite();
       }
     }
   }
@@ -228,9 +229,9 @@ var AppHelp = class {
       this.tour = this.renderTour();
       this.root.appendChild(this.tour);
     }
-    const bubble = this.tour.querySelector(`.${CLS_TOUR_BUBBLE}`);
-    if (bubble) {
-      bubble.innerHTML = `<div class="${CLS_STEP}"><div class="${CLS_STEP_TITLE}">${gettext(
+    const entry = this.tour.querySelector(`.${CLS_ENTRY}`);
+    if (entry) {
+      entry.innerHTML = `<div class="${CLS_STEP}"><div class="${CLS_STEP_TITLE}">${gettext(
         "Take a quick tour?"
       )}</div></div>`;
     }
@@ -283,12 +284,12 @@ var AppHelp = class {
       });
       this.root.appendChild(this.highlight);
     }
-    const bubble = this.tour.querySelector(`.${CLS_TOUR_BUBBLE}`);
-    if (bubble) {
+    const entry = this.tour.querySelector(`.${CLS_ENTRY}`);
+    if (entry) {
       const icon = step.icon ? `<span class="${CLS_STEP_ICON}" aria-hidden="true">${step.icon}</span>` : "";
       const title = stepText(step.title, this.language) || gettext("Guide");
       const body = stepText(step.body, this.language);
-      bubble.innerHTML = `<div class="${CLS_STEP}">${icon}<div class="${CLS_STEP_TITLE}">${title}</div>` + (body ? `<div class="${CLS_STEP_BODY}">${body}</div>` : "") + `</div>`;
+      entry.innerHTML = `<div class="${CLS_STEP}">${icon}<div class="${CLS_STEP_TITLE}">${title}</div>` + (body ? `<div class="${CLS_STEP_BODY}">${body}</div>` : "") + `</div>`;
     }
     this.setChoicesVisible(false);
     const count = this.tour.querySelector(`.${CLS_COUNT}`);
@@ -408,10 +409,12 @@ var AppHelp = class {
     tour.setAttribute("aria-label", gettext("How to use"));
     const bubble = document.createElement("div");
     bubble.className = CLS_TOUR_BUBBLE;
+    const entry = document.createElement("div");
+    entry.className = CLS_ENTRY;
+    bubble.appendChild(entry);
+    bubble.appendChild(this.renderChoices());
+    this.setChoicesVisible(false);
     tour.appendChild(bubble);
-    const choices = this.renderChoices();
-    choices.hidden = true;
-    tour.appendChild(choices);
     const meta = document.createElement("div");
     meta.className = `${CLS}__tour-meta`;
     const count = document.createElement("span");

@@ -109,6 +109,7 @@
         "__title",
         "__tour",
         "__tour-bubble",
+        "__tour-entry",
         "__tour-highlight",
         "__tour-meta"
       ],
