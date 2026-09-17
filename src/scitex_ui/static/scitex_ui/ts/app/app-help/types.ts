@@ -49,6 +49,22 @@ export interface HelpStorage {
   removeItem(key: string): void;
 }
 
+/**
+ * What the user answered at first use (SSOT: scitex-hub PR 923 §8 — "App first
+ * use may offer Watch tour, Later, and Do not show again. These preferences are
+ * account-level and reversible in Settings.").
+ *
+ * THREE STATES, not a boolean. "Later" means the user has NOT seen the tour and
+ * has NOT refused it; "never" means they refused it. Collapsing both into the
+ * existing `done` flag would either nag a refuser on every visit or silently
+ * lose the tour for someone who only postponed it — and neither failure is
+ * visible in the UI, only in the answer that went missing.
+ */
+export type TourPreference = "unseen" | "later" | "never";
+
+/** Which of the three first-use choices was taken (the event payload). */
+export type TourChoice = "watch" | "later" | "never";
+
 export interface AppHelpOptions {
   /** Storage namespace / app id; defaults to the root's `data-stx-help`. */
   app?: string;
@@ -65,4 +81,6 @@ export interface HelpChangeDetail {
   /** "panel" | "tour" | "closed". */
   view: string;
   step?: number;
+  /** Present when the change came from a first-use choice. */
+  choice?: TourChoice;
 }

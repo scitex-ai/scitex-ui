@@ -1,0 +1,38 @@
+  alert-banner v0.1.0 — Dismissible top-fixed alert / error banner
+  app-help v0.1.0 — In-app How-to-use guide: `?` help panel + first-open coach-mark tour from one per-app EN/JA steps file (stxHelp.open/close/replay)
+  app-launcher v0.1.0 — Standard app-launcher pattern: grid of app tiles behind a grid-glyph trigger, emits stx-app-launcher:select
+  app-shell v0.1.0 — Workspace layout shell with collapsible sidebar
+  attachment v0.1.0 — Inline attachment chips — lazy-loaded image and file link, sized for narrow bubbles
+  badge v0.1.0 — Tonal pill badge with status tone and caps modifiers
+  collapsible-panel v0.1.0 — Collapsed-state styling for app split-panes
+  combobox v0.1.0 — Fuzzy-typeahead select: trigger opens a search input + filtered option list; arrow keys navigate, Enter selects, Esc closes. Optional onCreate for 'add new value' flows.
+  confirm-modal v0.1.0 — Modern confirmation dialog replacing window.confirm()
+  context-menu v0.3.0 — Right-click context menu with items, dividers, shortcut hints, section labels, cursor positioning, dismissal and keyboard navigation
+  data-table v0.1.0 — Full spreadsheet component with selection, editing, virtual scroll, CSV import
+  dim v0.1.0 — Renders an authorization verdict onto a control that stays visible: aria-disabled (never the disabled attribute, which would take the control and its explanation out of tab order), the reason via both data-tooltip and aria-describedby, and the sign-in route where the verdict carries one.
+  drawer v0.1.0 — Off-canvas drawer with scrim, inert-when-closed and focus trap
+  dropdown v0.1.0 — Context menu dropdown attached to a trigger element
+  element-inspector v0.1.0 — Visual DOM debugging overlay toggled with Alt+I
+  empty-state v0.1.0 — Empty-state block in two scales — full panel with icon/title/hint/action, and a compact single line for dropdowns
+  file-browser v0.1.0 — Tree view for navigating file hierarchies
+  file-tabs v0.1.0 — Tab bar for managing open files with drag-reorder and rename
+  form-controls v0.1.0 — Single definition of input/select/textarea/checkbox/button styling with standard control heights
+  import-export v0.1.0 — Standard import/export pattern: format list + confirm/cancel bar, emits stx-import-export:confirm
+  media-viewer v0.1.0 — Display images, PDFs, and diagrams with zoom/pan
+  miller-columns v0.1.0 — Finder-style multi-column browser with detail column
+  monaco-editor v0.1.0 — Monaco code editor with diff support, themes, and language detection
+  package-docs-sidebar v0.1.0 — Navigable sidebar for Python package documentation
+  panes v0.1.0 — Multi-column app layout that becomes one pane per screen with a tab bar on phones; stxPanes.show(id), stx-panes:change, .stx-acc accordion
+  project-selector v0.2.0 — Project picker with fuzzy search over a provider's accessible projects; emits stx-project-selector:change
+  receipt v0.1.0 — Delivery receipt mark advancing through unknown / sent / seen / failed
+  recent-pane v0.1.0 — Real-time file-change feed pane with filters and badges
+  reply-quote v0.1.0 — Truncated clickable quote of a replied-to message, inheriting its bubble's colour
+  resizer v0.1.0 — Draggable panel divider with collapse, snap, and persistence
+  selector-nav v0.1.0 — Vertical icon+label navigation strip with footer section
+  settings-card v0.1.0 — Settings row card with icon, description and grid container
+  sidebar-layout v0.1.0 — Sidebar + content layout frame with nav list styling
+  status-bar v0.1.0 — Bottom status bar with left/center/right sections
+  theme-provider v0.1.0 — Light/dark theme manager with semantic color tokens
+  toast v0.1.0 — Transient notification with an optional time-boxed undo
+  toggle-switch v0.1.0 — Checkbox-backed toggle switch with small size variant
+  tooltip v0.1.0 — Auto-positioned tooltip system using data-tooltip attributes

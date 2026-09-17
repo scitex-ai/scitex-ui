@@ -509,6 +509,12 @@
              absent or the viewport is wide. See ADR 0002. -->
         <script src="{% static 'scitex_ui/js/shell/mobile-swipe.js' %}"
                 defer></script>
+        <!-- Launcher overlay collision runtime (SSOT hub PR 923 §4): keeps the
+             app surface at the full viewport and clears/retracts the overlay
+             when a focused actionable control would sit behind it. Self-guards:
+             attaches nothing when this page renders no launcher. -->
+        <script src="{% static 'scitex_ui/js/shell/launcher-overlay.js' %}"
+                defer></script>
         {% block extra_js %}{% endblock %}
         <!-- Element inspector (Alt+I) — only emitted for DEBUG/staff -->
         {% include "scitex_ui/_element_inspector.html" %}

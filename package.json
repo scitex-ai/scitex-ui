@@ -53,6 +53,7 @@
     "./ts/app/reply-quote": "./src/scitex_ui/static/scitex_ui/ts/app/reply-quote/index.ts",
     "./ts/app/toast": "./src/scitex_ui/static/scitex_ui/ts/app/toast/index.ts",
     "./ts/app/tooltip": "./src/scitex_ui/static/scitex_ui/ts/app/tooltip/index.ts",
+    "./ts/app/tour-player": "./src/scitex_ui/static/scitex_ui/ts/app/tour-player/index.ts",
     "./ts/_base": "./src/scitex_ui/static/scitex_ui/ts/_base/index.ts",
     "./ts/shell/app-shell": "./src/scitex_ui/static/scitex_ui/ts/shell/app-shell/index.ts",
     "./ts/shell/auto-response": "./src/scitex_ui/static/scitex_ui/ts/shell/auto-response/index.ts",

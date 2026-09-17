@@ -43,6 +43,7 @@
 @import "./app/toast.css";
 @import "./app/toggle-switch.css";
 @import "./app/tooltip.css";
+@import "./app/tour-player.css";
 @import "./primitives/colors.css";
 @import "./primitives/spacing.css";
 @import "./primitives/typography-vars.css";
@@ -66,6 +67,7 @@
 @import "./shell/ai-panel/13-terminal-media.css";
 @import "./shell/app-shell.css";
 @import "./shell/chat.css";
+@import "./shell/launcher-overlay.css";
 @import "./shell/media-input.css";
 @import "./shell/media-viewer.css";
 @import "./shell/mobile.css";
