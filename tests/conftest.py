@@ -18,7 +18,10 @@ from __future__ import annotations
 
 import os
 import sysconfig
+import pytest
 from pathlib import Path
+
+from tests._component_metadata import check_component_metadata
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -50,3 +53,19 @@ def _ensure_subprocess_coverage_shim() -> None:
 
 
 _ensure_subprocess_coverage_shim()
+
+
+@pytest.fixture
+def check_metadata():
+    """Verify a component's metadata and on-disk assets.
+
+    DEFINED AT THE ROOT ON PURPOSE. It used to live in
+    tests/scitex_ui/_components/conftest.py, where it worked for every local run
+    and every directory-style invocation, and disappeared for exactly the tests
+    that need it under the CI shard runner's explicit multi-file argument list —
+    measured 2026-09-17: 24 errors with `pytest <64 file paths>`, none with the
+    same files as directories. The root conftest is loaded however the arguments
+    are spelled, so this is where a fixture every component test needs belongs.
+    The check itself is in tests/_component_metadata.py.
+    """
+    return check_component_metadata
