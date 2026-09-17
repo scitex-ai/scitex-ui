@@ -115,6 +115,19 @@ def _inline_css(path: pathlib.Path) -> str:
     return re.sub(r'@import\s+"([^"]+)";', expand, text)
 
 
+#: The two tags the demo drops, because it inlines both assets below.
+#:
+#: Anchored on the URL, NOT on the quoting. Django's {% static %} appends a
+#: cache-busting query (".../panes.css?v=4d9422bced5f"), so a pattern that
+#: requires the closing quote right after ".css" matches NOTHING — the page then
+#: ships two references to files it never makes available. Measured 2026-09-17
+#: in a browser at 1440x900 and 390x844: both 404 on every load of every theme,
+#: and it is silent, because the inlined copies below still style and drive the
+#: panes. Nothing on the page looks wrong; only the network log says so.
+_DROP_INLINED_LINK = re.compile(r'<link[^>]*href="[^"]*panes\.css[^"]*"[^>]*>')
+_DROP_INLINED_SCRIPT = re.compile(r'<script[^>]*src="[^"]*panes\.js[^"]*"[^>]*>\s*</script>')
+
+
 def build() -> str:
     """The demo page as one HTML string."""
     _configure_django()
@@ -126,8 +139,8 @@ def build() -> str:
     tokens += _inline_css(static / "css" / "primitives" / "spacing.css")
     panes_css = (static / "css" / "app" / "panes.css").read_text(encoding="utf-8")
     panes_js = (static / "js" / "app" / "panes.js").read_text(encoding="utf-8")
-    panes = re.sub(r'<link rel="stylesheet" href="[^"]+panes\.css">', "", panes)
-    panes = re.sub(r'<script type="module" src="[^"]+panes\.js"></script>', "", panes)
+    panes = _DROP_INLINED_LINK.sub("", panes)
+    panes = _DROP_INLINED_SCRIPT.sub("", panes)
     return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
