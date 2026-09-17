@@ -89,6 +89,18 @@
         "--dragging"
       ]
     },
+    "stx-app-header": {
+      "elements": [
+        "__action",
+        "__actions",
+        "__slot",
+        "__title",
+        "__version"
+      ],
+      "modifiers": [
+        "--project-selector"
+      ]
+    },
     "stx-app-help": {
       "elements": [
         "__button",

@@ -70,6 +70,7 @@
     "./ts/shell/workspace-files-tree": "./src/scitex_ui/static/scitex_ui/ts/shell/workspace-files-tree/index.ts",
     "./ts/shell/workspace-panel-resizer": "./src/scitex_ui/static/scitex_ui/ts/shell/workspace-panel-resizer/index.ts",
     "./ts/utils/_element-inspector": "./src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/index.ts",
+    "./ts/app/app-header": "./src/scitex_ui/static/scitex_ui/ts/app/app-header/index.ts",
     "./ts/app/app-help": "./src/scitex_ui/static/scitex_ui/ts/app/app-help/index.ts"
   },
   "files": [
