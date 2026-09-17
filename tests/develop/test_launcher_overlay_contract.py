@@ -5,7 +5,8 @@
 
 Card: ``ui-shared-brand-dock-tour-primitives-20260917`` (parent
 ``hub-private-beta-login-to-wow-journey-20260917``), SSOT: scitex-hub PR 923,
-``docs/product/PRIVATE_BETA_LOGIN_TO_WOW.md`` §4 "Shared shell and launcher".
+``docs/product/PRIVATE_BETA_LOGIN_TO_WOW.md`` section 4, "Shared shell and
+launcher":
 
     The floating launcher overlays content; it does not reserve a full-width
     bottom strip. Apps use the full available viewport.
@@ -14,8 +15,8 @@ WHAT THIS GUARD IS FOR. The shipped hub dock solves the collision between a
 bottom-fixed dock and page content by RESERVING A BAND: ``body:has(> .site-dock)
 { padding-bottom: var(--site-dock-clearance) }`` (hub
 ``static/shared/css/components/site-dock.css``). That reservation is what makes
-the strip permanent — the dock is translucent, floats over the page, and the
-page is nonetheless permanently shorter by its height. §4 forbids the
+the strip permanent — the dock is translucent, floats over the page, and the page
+is nonetheless permanently shorter by its height. Section 4 forbids the
 reservation and moves the collision to the one moment it matters: while an
 actionable control has FOCUS.
 
@@ -24,18 +25,20 @@ So the SDK primitive must ship two halves, and both are assertable:
   CSS  ``css/shell/launcher-overlay.css`` — fixed, OUT OF FLOW, translucent at
        rest, opaque on interaction, no page-level band, safe-area aware,
        reduced-motion aware, 44px targets.
-  TS   ``ts/shell/launcher-overlay/`` — the collision runtime, so a focused
+  TS   ``ts/shell/launcher-overlay.ts`` — the collision runtime, so a focused
        actionable control is never left behind the overlay.
 
-STATIC ON PURPOSE. This is the half that runs in CI on every change. The
-geometry claim itself ("zero intersection between a focused control and the
-overlay") is a BROWSER measurement and belongs to the evidence on the card, not
-here — a green here means "the primitive does not reserve a band and carries the
-interaction states", not "no control is ever covered".
+STATIC ON PURPOSE. This is the half that runs in CI on every change. The geometry
+claim itself ("zero intersection between a focused control and the overlay") is a
+BROWSER measurement and belongs to the evidence on the card, not here — a green
+here means "the primitive does not reserve a band and carries the interaction
+states", not "no control is ever covered".
 
-SHAPE: every detector below carries a POSITIVE and a NEGATIVE control, per
-test_detectors_carry_controls.py — a guard whose pattern stops matching turns
-every assertion vacuously true, and one that over-matches inverts the finding.
+SHAPE: one assertion per test and AAA markers on their own lines, per the project
+audit (PA-307 STX-TQ002 / STX-TQ007). Every detector below carries a POSITIVE and
+a NEGATIVE control, per test_detectors_carry_controls.py — a guard whose pattern
+stops matching turns every assertion vacuously true, and one that over-matches
+inverts the finding.
 """
 
 from __future__ import annotations
@@ -80,7 +83,7 @@ _OVERLAY_JS = (
 _COMMENT = re.compile(r"/\*.*?\*/", re.S)
 
 #: A rule that RESERVES a band at the bottom of the page for the overlay.
-#: §4: "Do not solve collisions with a permanent full-width spacer." The
+#: Section 4: "Do not solve collisions with a permanent full-width spacer." The
 #: selector must address the page itself — a `padding-bottom` on the overlay is
 #: its own layout, not the page's.
 _BAND_ON_PAGE = re.compile(
@@ -102,15 +105,15 @@ _VH_FALLBACK = re.compile(r"\b100vh\b")
 #: Notch / gesture-bar awareness on the bottom edge, where the overlay lives.
 _SAFE_BOTTOM = re.compile(r"env\(\s*safe-area-inset-bottom")
 
-#: Motion must be optional (§4 lists `prefers-reduced-motion`).
+#: Motion must be optional (section 4 lists `prefers-reduced-motion`).
 _REDUCED_MOTION = re.compile(r"@media\s*\(prefers-reduced-motion\s*:\s*reduce\)")
 
-#: The interaction states that must make the overlay opaque (§4).
+#: The interaction states that must make the overlay opaque (section 4).
 _OPAQUE_STATES = (
     ":hover",
     ":focus-within",
     ":active",
-    "[aria-expanded=\"true\"]",
+    '[aria-expanded="true"]',
     "[data-stx-launcher-open]",
     "[data-stx-launcher-pressed]",
 )
@@ -137,29 +140,29 @@ def _overlay_css() -> str:
     return _read(_OVERLAY_CSS)
 
 
+# ---------------------------------------------------------------------------
+# The contract
+# ---------------------------------------------------------------------------
+
+
 def test_the_primitive_exists() -> None:
-    """The SDK cannot ship the overlay behaviour without the files."""
-    # Arrange / Act
-    present = [_OVERLAY_CSS.is_file(), _OVERLAY_TS.is_file(), _OVERLAY_JS.is_file()]
+    """The SDK cannot ship the overlay behaviour without the three files."""
+    # Arrange
+    parts = [_OVERLAY_CSS, _OVERLAY_TS, _OVERLAY_JS]
+    # Act
+    present = [part.is_file() for part in parts]
     # Assert
-    assert all(present), (
-        "css/shell/launcher-overlay.css, ts/shell/launcher-overlay.ts and its "
-        "esbuild bundle js/shell/launcher-overlay.js are the three halves of this "
-        f"primitive; present={present}"
-    )
+    assert all(present), f"css + ts + esbuild bundle are all required; present={present}"
 
 
 def test_the_overlay_does_not_reserve_a_band_on_the_page() -> None:
-    """§4: apps use the full viewport; the collision is handled at focus time."""
+    """Section 4: apps use the full viewport; the collision is handled at focus."""
     # Arrange
     css = _overlay_css()
     # Act
     reserved = _BAND_ON_PAGE.findall(css)
     # Assert
-    assert reserved == [], (
-        "the launcher overlay must not reserve a page-level bottom band; found "
-        f"{[sel.strip() for sel, _ in reserved]}"
-    )
+    assert reserved == [], f"no page-level bottom band for the overlay; found {reserved}"
 
 
 def test_the_panes_primitive_no_longer_reserves_a_dock_band() -> None:
@@ -169,36 +172,37 @@ def test_the_panes_primitive_no_longer_reserves_a_dock_band() -> None:
     # Act
     subtracted = _DOCK_HEIGHT_SUBTRACTION.findall(css)
     # Assert
-    assert subtracted == [], (
-        "panes.css must size to the viewport, not to (viewport - dock height): a "
-        f"floating overlay owns no band; found {subtracted}"
-    )
+    assert subtracted == [], f"panes.css must size to the viewport; found {subtracted}"
 
 
 def test_the_overlay_states_every_interaction_that_must_make_it_opaque() -> None:
-    """§4: opaque on hover, focus-within, touch/press, expansion, or open menu."""
+    """Section 4: opaque on hover, focus-within, touch/press, expansion, open."""
     # Arrange
     css = _overlay_css()
     # Act
     missing = [state for state in _OPAQUE_STATES if state not in css]
     # Assert
-    assert missing == [], (
-        "every interaction state in §4 must be stated in the stylesheet, or the "
-        f"overlay stays translucent exactly when a user is aiming at it; missing {missing}"
-    )
+    assert missing == [], f"a state missing here leaves the overlay translucent while aimed at: {missing}"
 
 
-def test_the_full_viewport_claim_carries_a_static_fallback() -> None:
-    """`dvh` for the modern path, `vh` for the browsers that predate it."""
+def test_the_full_viewport_claim_carries_a_dynamic_unit() -> None:
+    """`dvh` tracks the mobile URL bar; a reserved band is not the alternative."""
     # Arrange
     css = _overlay_css()
     # Act
-    dynamic, static = _DVH.search(css), _VH_FALLBACK.search(css)
+    dynamic = _DVH.search(css)
     # Assert
-    assert dynamic is not None and static is not None, (
-        "the full-viewport rule needs `100dvh` with a `100vh` fallback; "
-        f"dvh={dynamic is not None} vh={static is not None}"
-    )
+    assert dynamic is not None, "the app surface must size to 100dvh"
+
+
+def test_the_full_viewport_claim_carries_a_static_fallback() -> None:
+    """Browsers without `dvh` need the line before it."""
+    # Arrange
+    css = _overlay_css()
+    # Act
+    static = _VH_FALLBACK.search(css)
+    # Assert
+    assert static is not None, "the app surface must keep a 100vh fallback"
 
 
 def test_the_overlay_respects_the_bottom_safe_area() -> None:
@@ -208,14 +212,11 @@ def test_the_overlay_respects_the_bottom_safe_area() -> None:
     # Act
     safe = _SAFE_BOTTOM.search(css)
     # Assert
-    assert safe is not None, (
-        "the overlay must offset by env(safe-area-inset-bottom) (or the shared "
-        "--stx-safe-inset-bottom token that wraps it)"
-    )
+    assert safe is not None, "the overlay must offset by env(safe-area-inset-bottom)"
 
 
 def test_the_overlay_honours_reduced_motion() -> None:
-    """§4 lists prefers-reduced-motion; a fade is motion."""
+    """Section 4 lists prefers-reduced-motion; a fade is motion."""
     # Arrange
     css = _overlay_css()
     # Act
@@ -225,23 +226,31 @@ def test_the_overlay_honours_reduced_motion() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Controls — one pair per detector. Each demonstrates the pattern can fire (so a
-# green above is not a blind instrument) and can decline (so it is not inverted).
+# Controls — one pair per detector, so a green above is neither blind nor
+# inverted. Positive: the pattern matched a real instance. Negative: it declined
+# a string literal. Tree scans do not count as either direction.
 # ---------------------------------------------------------------------------
 
 
-def test_the_stripper_removes_a_comment_and_keeps_the_rule() -> None:
-    """Positive: the comment is GONE. Negative: the code beside it survived."""
+def test_the_stripper_removes_a_comment() -> None:
     # Arrange
     sample = "/* padding-bottom: 88px; */ .a { color: red; }"
     # Act
     stripped = _COMMENT.sub("", sample)
     # Assert
     assert "padding-bottom" not in stripped
+
+
+def test_the_stripper_keeps_the_surrounding_rule() -> None:
+    # Arrange
+    sample = "/* padding-bottom: 88px; */ .a { color: red; }"
+    # Act
+    stripped = _COMMENT.sub("", sample)
+    # Assert
     assert "color: red" in stripped
 
 
-def test_the_rule_detector_matches_a_page_level_band() -> None:
+def test_the_band_detector_matches_a_page_level_band() -> None:
     # Arrange
     sample = "body:has(> .stx-launcher-overlay) { padding-bottom: 88px; }"
     # Act
@@ -250,7 +259,7 @@ def test_the_rule_detector_matches_a_page_level_band() -> None:
     assert found is not None
 
 
-def test_the_rule_detector_declines_a_band_on_the_overlay_itself() -> None:
+def test_the_band_detector_declines_a_band_on_the_overlay_itself() -> None:
     # Arrange
     sample = ".stx-launcher-overlay { padding-bottom: 6px; margin-bottom: 0; }"
     # Act
@@ -259,7 +268,7 @@ def test_the_rule_detector_declines_a_band_on_the_overlay_itself() -> None:
     assert found is None
 
 
-def test_the_margin_form_of_the_reservation_is_also_caught() -> None:
+def test_the_band_detector_matches_the_margin_form() -> None:
     # Arrange
     sample = ":root { margin-bottom: var(--stx-launcher-clearance); }"
     # Act
@@ -268,7 +277,7 @@ def test_the_margin_form_of_the_reservation_is_also_caught() -> None:
     assert found is not None
 
 
-def test_the_band_detector_declines_a_mention_in_a_comment() -> None:
+def test_the_band_detector_declines_a_mention_inside_a_comment() -> None:
     # Arrange
     sample = "/* body { padding-bottom: 88px } is the reservation this forbids */"
     # Act
