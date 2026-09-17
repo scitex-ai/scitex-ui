@@ -62,10 +62,22 @@ _TS = (
 
 _OVERLAY_CSS = _CSS / "shell" / "launcher-overlay.css"
 _PANES_CSS = _CSS / "app" / "panes.css"
-_OVERLAY_TS = _TS / "shell" / "launcher-overlay" / "index.ts"
+#: Shell runtime modules are single files built to an IIFE bundle (ADR 0002),
+#: unlike ts/app/ components which are directories with an ESM bundle. The
+#: bundle is what a browser runs: a .ts file is installed but not consumable.
+_OVERLAY_TS = _TS / "shell" / "launcher-overlay.ts"
+_OVERLAY_JS = (
+    pathlib.Path(__file__).resolve().parents[2]
+    / "src"
+    / "scitex_ui"
+    / "static"
+    / "scitex_ui"
+    / "js"
+    / "shell"
+    / "launcher-overlay.js"
+)
 
 _COMMENT = re.compile(r"/\*.*?\*/", re.S)
-_RULE = re.compile(r"([^{}]+)\{([^{}]*)\}", re.S)
 
 #: A rule that RESERVES a band at the bottom of the page for the overlay.
 #: §4: "Do not solve collisions with a permanent full-width spacer." The
@@ -128,11 +140,12 @@ def _overlay_css() -> str:
 def test_the_primitive_exists() -> None:
     """The SDK cannot ship the overlay behaviour without the files."""
     # Arrange / Act
-    present = [_OVERLAY_CSS.is_file(), _OVERLAY_TS.is_file()]
+    present = [_OVERLAY_CSS.is_file(), _OVERLAY_TS.is_file(), _OVERLAY_JS.is_file()]
     # Assert
     assert all(present), (
-        "css/shell/launcher-overlay.css and ts/shell/launcher-overlay/index.ts are "
-        f"the two halves of this primitive; present={present}"
+        "css/shell/launcher-overlay.css, ts/shell/launcher-overlay.ts and its "
+        "esbuild bundle js/shell/launcher-overlay.js are the three halves of this "
+        f"primitive; present={present}"
     )
 
 
@@ -218,19 +231,21 @@ def test_the_overlay_honours_reduced_motion() -> None:
 
 
 def test_the_stripper_removes_a_comment_and_keeps_the_rule() -> None:
+    """Positive: the comment is GONE. Negative: the code beside it survived."""
     # Arrange
-    sample = "/* padding-bottom: 88px; */\n.a { color: red; }"
+    sample = "/* padding-bottom: 88px; */ .a { color: red; }"
     # Act
-    stripped = _strip(sample)
+    stripped = _COMMENT.sub("", sample)
     # Assert
-    assert "padding-bottom" not in stripped and "color: red" in stripped
+    assert "padding-bottom" not in stripped
+    assert "color: red" in stripped
 
 
 def test_the_rule_detector_matches_a_page_level_band() -> None:
     # Arrange
     sample = "body:has(> .stx-launcher-overlay) { padding-bottom: 88px; }"
     # Act
-    found = _BAND_ON_PAGE.search(_strip(sample))
+    found = _BAND_ON_PAGE.search(sample)
     # Assert
     assert found is not None
 
@@ -239,7 +254,7 @@ def test_the_rule_detector_declines_a_band_on_the_overlay_itself() -> None:
     # Arrange
     sample = ".stx-launcher-overlay { padding-bottom: 6px; margin-bottom: 0; }"
     # Act
-    found = _BAND_ON_PAGE.search(_strip(sample))
+    found = _BAND_ON_PAGE.search(sample)
     # Assert
     assert found is None
 
@@ -248,16 +263,25 @@ def test_the_margin_form_of_the_reservation_is_also_caught() -> None:
     # Arrange
     sample = ":root { margin-bottom: var(--stx-launcher-clearance); }"
     # Act
-    found = _BAND_ON_PAGE.search(_strip(sample))
+    found = _BAND_ON_PAGE.search(sample)
     # Assert
     assert found is not None
+
+
+def test_the_band_detector_declines_a_mention_in_a_comment() -> None:
+    # Arrange
+    sample = "/* body { padding-bottom: 88px } is the reservation this forbids */"
+    # Act
+    found = _BAND_ON_PAGE.search(_COMMENT.sub("", sample))
+    # Assert
+    assert found is None
 
 
 def test_the_dock_subtraction_detector_matches_the_hub_token() -> None:
     # Arrange
     sample = "height: calc(100dvh - var(--site-dock-height, 0px));"
     # Act
-    found = _DOCK_HEIGHT_SUBTRACTION.search(_strip(sample))
+    found = _DOCK_HEIGHT_SUBTRACTION.search(sample)
     # Assert
     assert found is not None
 
@@ -266,34 +290,43 @@ def test_the_dock_subtraction_detector_declines_a_header_subtraction() -> None:
     # Arrange
     sample = "height: calc(100dvh - var(--site-header-height, 44px));"
     # Act
-    found = _DOCK_HEIGHT_SUBTRACTION.search(_strip(sample))
+    found = _DOCK_HEIGHT_SUBTRACTION.search(sample)
     # Assert
     assert found is None
 
 
-def test_the_viewport_detector_declines_a_static_only_height() -> None:
-    # Arrange
-    sample = ".stx-app-viewport { height: 100vh; }"
-    # Act
-    dynamic, static = _DVH.search(_strip(sample)), _VH_FALLBACK.search(_strip(sample))
-    # Assert
-    assert dynamic is None and static is not None
-
-
 def test_the_viewport_detector_matches_the_dynamic_unit() -> None:
     # Arrange
-    sample = ".stx-app-viewport { height: 100dvh; }"
+    sample = ".stx-viewport-full { min-height: 100dvh; }"
     # Act
-    found = _DVH.search(_strip(sample))
+    found = _DVH.search(sample)
     # Assert
     assert found is not None
 
 
-def test_the_safe_area_detector_declines_a_bare_mention() -> None:
+def test_the_viewport_detector_declines_a_static_only_height() -> None:
     # Arrange
-    sample = ".stx-launcher-overlay { --note: safe-area-inset-bottom; }"
+    sample = ".stx-viewport-full { min-height: 100vh; }"
     # Act
-    found = _SAFE_BOTTOM.search(_strip(sample))
+    found = _DVH.search(sample)
+    # Assert
+    assert found is None
+
+
+def test_the_fallback_detector_matches_the_static_unit() -> None:
+    # Arrange
+    sample = ".stx-viewport-full { min-height: 100vh; }"
+    # Act
+    found = _VH_FALLBACK.search(sample)
+    # Assert
+    assert found is not None
+
+
+def test_the_fallback_detector_declines_the_dynamic_unit() -> None:
+    # Arrange
+    sample = ".stx-viewport-full { min-height: 100dvh; }"
+    # Act
+    found = _VH_FALLBACK.search(sample)
     # Assert
     assert found is None
 
@@ -302,16 +335,16 @@ def test_the_safe_area_detector_matches_the_env_form() -> None:
     # Arrange
     sample = "bottom: calc(12px + env(safe-area-inset-bottom, 0px));"
     # Act
-    found = _SAFE_BOTTOM.search(_strip(sample))
+    found = _SAFE_BOTTOM.search(sample)
     # Assert
     assert found is not None
 
 
-def test_the_motion_detector_declines_an_unrelated_media_query() -> None:
+def test_the_safe_area_detector_declines_a_bare_mention() -> None:
     # Arrange
-    sample = "@media (min-width: 768px) { .a { color: red; } }"
+    sample = ".stx-launcher-overlay { --note: safe-area-inset-bottom; }"
     # Act
-    found = _REDUCED_MOTION.search(_strip(sample))
+    found = _SAFE_BOTTOM.search(sample)
     # Assert
     assert found is None
 
@@ -320,6 +353,15 @@ def test_the_motion_detector_matches_the_reduce_query() -> None:
     # Arrange
     sample = "@media (prefers-reduced-motion: reduce) { .a { transition: none; } }"
     # Act
-    found = _REDUCED_MOTION.search(_strip(sample))
+    found = _REDUCED_MOTION.search(sample)
     # Assert
     assert found is not None
+
+
+def test_the_motion_detector_declines_an_unrelated_media_query() -> None:
+    # Arrange
+    sample = "@media (min-width: 768px) { .a { color: red; } }"
+    # Act
+    found = _REDUCED_MOTION.search(sample)
+    # Assert
+    assert found is None
