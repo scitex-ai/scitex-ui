@@ -79,9 +79,12 @@ describe("language switching keeps the viewer's place", () => {
     expect(play).toHaveBeenCalled();
   });
 
-  it("starts on the declared default languages", () => {
+  it("starts on the first audio track with captions OFF", () => {
+    // Captions off is the contract, not an omission: a player that starts
+    // captioned has made a choice the viewer did not, and the viewer who needs
+    // them will turn them on — the same reason the tour itself is an offer.
     const player = mount();
-    expect([player.audioLanguage, player.captionLanguage]).toEqual(["en", "en"]);
+    expect([player.audioLanguage, player.captionLanguage]).toEqual(["en", "off"]);
   });
 });
 

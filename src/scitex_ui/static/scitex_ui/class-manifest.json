@@ -242,6 +242,16 @@
       ],
       "modifiers": []
     },
+    "stx-tour-player": {
+      "elements": [
+        "__chapter",
+        "__chapters",
+        "__control",
+        "__controls",
+        "__video"
+      ],
+      "modifiers": []
+    },
     "wft-breadcrumb": {
       "elements": [
         "__segment",

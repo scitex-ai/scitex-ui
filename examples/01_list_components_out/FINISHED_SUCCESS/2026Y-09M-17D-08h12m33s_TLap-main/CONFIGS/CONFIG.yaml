@@ -1,0 +1,13 @@
+ID: 2026Y-09M-17D-08h12m33s_TLap
+PID: 55689
+START_DATETIME: 2026-09-17 08:12:33.122188
+FILE: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components.py
+SDIR_OUT: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components_out/RUNNING/2026Y-09M-17D-08h12m33s_TLap-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-09-17 08:12:35.632773
+RUN_DURATION: 00:00:02

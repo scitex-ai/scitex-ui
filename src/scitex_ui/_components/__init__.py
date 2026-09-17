@@ -39,3 +39,4 @@ from ._theme_provider import ThemeProvider  # noqa: F401
 from ._toast import Toast  # noqa: F401
 from ._toggle_switch import ToggleSwitch  # noqa: F401
 from ._tooltip import Tooltip  # noqa: F401
+from ._tour_player import TourPlayer  # noqa: F401

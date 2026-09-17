@@ -1,0 +1,13 @@
+ID: 2026Y-09M-17D-08h12m47s_oQ0a
+PID: 55773
+START_DATETIME: 2026-09-17 08:12:47.028368
+FILE: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/04_mobile_panes_demo.py
+SDIR_OUT: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/04_mobile_panes_demo_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/04_mobile_panes_demo_out/RUNNING/2026Y-09M-17D-08h12m47s_oQ0a-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-09-17 08:12:49.391641
+RUN_DURATION: 00:00:02
