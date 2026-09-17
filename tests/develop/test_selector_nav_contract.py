@@ -176,15 +176,27 @@ def test_the_level_class_has_a_rule() -> None:
 
 
 def test_a_nested_level_is_indented_so_the_hierarchy_is_visible() -> None:
-    """Two levels at the same indent read as one flat list."""
+    """Two levels at the same indent read as one flat list.
+
+    Keyed to the DEPTH ATTRIBUTE, not to nesting: the levels are siblings in the
+    DOM, which a 390x844 measurement caught (every level at the same x).
+    """
     # Arrange
-    block = _rule_block(
-        ".stx-app-selector-nav__level .stx-app-selector-nav__level"
-    )
+    block = _rule_block('.stx-app-selector-nav__level[data-stx-depth="1"]')
     # Act
     indented = "margin-left" in block
     # Assert
     assert indented
+
+
+def test_the_component_tags_each_level_with_its_depth() -> None:
+    """The attribute the indent is keyed to is written by the component."""
+    # Arrange
+    ts = _ts_text()
+    # Act
+    tagged = 'setAttribute("data-stx-depth"' in ts
+    # Assert
+    assert tagged
 
 
 def test_the_cascade_rows_meet_the_touch_minimum() -> None:

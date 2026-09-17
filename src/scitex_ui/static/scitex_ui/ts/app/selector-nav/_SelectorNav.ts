@@ -188,7 +188,7 @@ export class SelectorNav extends BaseComponent<SelectorNavConfig> {
 
     while (level.length > 0) {
       const openNode = openPath[depth];
-      this.itemsEl.appendChild(this.buildCascadeLevel(level, current, openNode));
+      this.itemsEl.appendChild(this.buildCascadeLevel(level, current, openNode, depth));
       if (!openNode || !(openNode.children ?? []).length) break;
       level = openNode.children ?? [];
       depth += 1;
@@ -199,9 +199,15 @@ export class SelectorNav extends BaseComponent<SelectorNavConfig> {
     nodes: SelectorNavItem[],
     current: SelectorNavResolution | null,
     open: SelectorNavItem | undefined,
+    depth: number,
   ): HTMLElement {
     const list = document.createElement("div");
     list.className = `${CLS}__level`;
+    // The levels are SIBLINGS in the DOM, so depth cannot be expressed by
+    // nesting — measured at 390x844 in a real browser: every level rendered at
+    // the same x, i.e. the hierarchy was invisible and the cascade read as one
+    // flat list. The attribute is what the stylesheet indents by.
+    list.setAttribute("data-stx-depth", String(depth));
     list.setAttribute("role", "listbox");
 
     nodes.forEach((node, index) => {

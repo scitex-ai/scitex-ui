@@ -82,10 +82,19 @@
 }
 
 /* A nested level is indented by its depth: without this the cascade reads as
- * one flat list and the hierarchy is invisible. */
-.stx-app-selector-nav__level .stx-app-selector-nav__level {
+ * one flat list and the hierarchy is invisible — MEASURED at 390x844, where
+ * every level rendered at the same x before this rule existed. The levels are
+ * SIBLINGS in the DOM (the component tags each with data-stx-depth), so the
+ * indent is keyed to the attribute, not to nesting. */
+.stx-app-selector-nav__level[data-stx-depth="1"] {
   margin-left: 12px;
   width: calc(100% - 12px);
+}
+
+.stx-app-selector-nav__level[data-stx-depth="2"],
+.stx-app-selector-nav__level[data-stx-depth="3"] {
+  margin-left: 24px;
+  width: calc(100% - 24px);
 }
 
 .stx-app-selector-nav--cascade .stx-app-selector-nav__item {
