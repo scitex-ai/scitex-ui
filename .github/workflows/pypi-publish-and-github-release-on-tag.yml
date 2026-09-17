@@ -187,8 +187,24 @@ jobs:
       - name: Publish to PyPI via manual OIDC trusted publishing in the SIF
         run: bash .github/ci/exec-in-sif.sh publish-in-sif.sh 3.12
 
-  release:
+  # POST-PUBLISH RECORD (not a gate): verify the artifact that just landed on
+  # PyPI is what a consumer will actually install. Runs AFTER publish, so it
+  # cannot prevent a bad publish — it reports one, loudly. The pre-upload GATE
+  # is tests/develop/test_packaging.py (local build, every PR); this answers
+  # the question that gate structurally cannot (are the PyPI-served bytes
+  # installable + self-consistent?). Fail-loud on a wrong artifact OR an
+  # environment gap — both stop the GitHub Release announcement below.
+  # Card: scitex-ui-release-wheel-verification-is-a-manual-step-20260905.
+  record:
     needs: [build, publish]
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-org-cpu"]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: RECORD — verify the published artifact is installable and self-consistent
+        run: bash .github/ci/exec-in-sif.sh verify-in-sif.sh 3.12 ${{ needs.build.outputs.version }}
+
+  release:
+    needs: [build, publish, record]
     runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-org-cpu"]') }}
     permissions:
       contents: write
