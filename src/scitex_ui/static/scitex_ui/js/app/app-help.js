@@ -50,6 +50,8 @@ var CLS_STEP_BODY = `${CLS}__step-body`;
 var CLS_CLOSE = `${CLS}__close`;
 var CLS_COUNT = `${CLS}__count`;
 var CLS_NAV = `${CLS}__nav`;
+var CLS_CHOICES = `${CLS}__choices`;
+var CLS_CHOICE = `${CLS}__choice`;
 function activeLanguage(doc = document) {
   const lang = doc.documentElement?.getAttribute("lang")?.toLowerCase() ?? "";
   const base = lang.split("-")[0] || "en";
@@ -106,7 +108,7 @@ var AppHelp = class {
     this.button = this.renderButton();
     root.appendChild(this.button);
     if (options.autoStart === false) return;
-    if (!this.firstOpenDone() && this.tourSteps.length > 0) {
+    if (this.tourPreference() === "unseen" && !this.firstOpenDone() && this.tourSteps.length > 0) {
       if (typeof requestAnimationFrame === "function") {
         requestAnimationFrame(() => this.startTour());
       } else {
@@ -123,6 +125,58 @@ var AppHelp = class {
       return this.storage?.getItem(`${STORAGE_PREFIX}${this.app}:done`) === "1";
     } catch {
       return true;
+    }
+  }
+  /**
+   * What the user answered at first use: "unseen" | "later" | "never".
+   *
+   * A SEPARATE KEY FROM `done` on purpose. `done` records that the guide was
+   * SEEN (a fact about the guide); this records what the user ASKED FOR (a fact
+   * about the user). Overwriting one with the other is how "Later" becomes
+   * indistinguishable from "Do not show again", and how a primitive ends up
+   * either re-offering a tour to someone who refused it or dropping it for
+   * someone who only postponed it.
+   */
+  tourPreference() {
+    try {
+      const stored = this.storage?.getItem(this.tourKey());
+      return stored === "later" || stored === "never" ? stored : "unseen";
+    } catch {
+      return "unseen";
+    }
+  }
+  /** "Later": not now, and not a refusal. Suppresses the auto-start. */
+  deferTour() {
+    this.writeTourPreference("later");
+    this.closeTour();
+    this.emit({ view: "closed", choice: "later" });
+  }
+  /** "Do not show again": a refusal. Reversible only through reset. */
+  dismissTourForever() {
+    this.writeTourPreference("never");
+    this.closeTour();
+    this.emit({ view: "closed", choice: "never" });
+  }
+  /**
+   * Drop both the preference and the seen-flag, so Settings can re-offer the
+   * tour (SSOT: "reversible in Settings"). Deliberately clearing `done` too:
+   * a user who resets wants the tour offered again.
+   */
+  resetTourPreference() {
+    try {
+      this.storage?.removeItem(this.tourKey());
+      this.storage?.removeItem(`${STORAGE_PREFIX}${this.app}:done`);
+    } catch {
+    }
+    this.emit({ view: "closed", choice: "watch" });
+  }
+  tourKey() {
+    return `${STORAGE_PREFIX}${this.app}:tour`;
+  }
+  writeTourPreference(preference) {
+    try {
+      this.storage?.setItem(this.tourKey(), preference);
+    } catch {
     }
   }
   markFirstOpenDone() {
@@ -162,6 +216,25 @@ var AppHelp = class {
       this.root.appendChild(this.tour);
     }
     this.showTourStep(0);
+    this.emit({ view: "tour", step: 0 });
+  }
+  /**
+   * Show the first-use invite: the tour bubble with the three choices and no
+   * highlight, so nothing is pointed at until the user asks to watch.
+   */
+  showTourInvite() {
+    this.closePanel();
+    if (!this.tour) {
+      this.tour = this.renderTour();
+      this.root.appendChild(this.tour);
+    }
+    const bubble = this.tour.querySelector(`.${CLS_TOUR_BUBBLE}`);
+    if (bubble) {
+      bubble.innerHTML = `<div class="${CLS_STEP}"><div class="${CLS_STEP_TITLE}">${gettext(
+        "Take a quick tour?"
+      )}</div></div>`;
+    }
+    this.setChoicesVisible(true);
     this.emit({ view: "tour", step: 0 });
   }
   /** Replay the tour (available from the panel footer). */
@@ -217,6 +290,7 @@ var AppHelp = class {
       const body = stepText(step.body, this.language);
       bubble.innerHTML = `<div class="${CLS_STEP}">${icon}<div class="${CLS_STEP_TITLE}">${title}</div>` + (body ? `<div class="${CLS_STEP_BODY}">${body}</div>` : "") + `</div>`;
     }
+    this.setChoicesVisible(false);
     const count = this.tour.querySelector(`.${CLS_COUNT}`);
     if (count) count.textContent = `${index + 1} / ${this.tourSteps.length}`;
     const nav = this.tour.querySelector(`.${CLS_NAV}`);
@@ -226,6 +300,45 @@ var AppHelp = class {
       const next = nav.querySelector('[data-act="next"]');
       if (next) next.textContent = index === this.tourSteps.length - 1 ? gettext("Done") : gettext("Next");
     }
+  }
+  /**
+   * The three first-use choices, each wired to its own outcome.
+   * Labels are translated; the `--watch/--later/--never` hooks are not, so a
+   * leaf can target one answer without matching on prose that changes per
+   * language.
+   */
+  renderChoices() {
+    const wrap = document.createElement("div");
+    wrap.className = CLS_CHOICES;
+    const choices = [
+      ["watch", gettext("Watch tour")],
+      ["later", gettext("Later")],
+      ["never", gettext("Do not show again")]
+    ];
+    for (const [choice, label] of choices) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `${CLS_CHOICE} ${CLS_CHOICE}--${choice}`;
+      button.dataset.choice = choice;
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        if (choice === "watch") {
+          this.startTour();
+          this.emit({ view: "tour", step: 0, choice });
+        } else if (choice === "later") {
+          this.deferTour();
+        } else {
+          this.dismissTourForever();
+        }
+      });
+      wrap.appendChild(button);
+    }
+    return wrap;
+  }
+  /** The choices belong to the invite, not to every step of a running tour. */
+  setChoicesVisible(visible) {
+    const choices = this.tour?.querySelector(`.${CLS_CHOICES}`);
+    if (choices) choices.hidden = !visible;
   }
   renderButton() {
     const button = document.createElement("button");
@@ -296,6 +409,9 @@ var AppHelp = class {
     const bubble = document.createElement("div");
     bubble.className = CLS_TOUR_BUBBLE;
     tour.appendChild(bubble);
+    const choices = this.renderChoices();
+    choices.hidden = true;
+    tour.appendChild(choices);
     const meta = document.createElement("div");
     meta.className = `${CLS}__tour-meta`;
     const count = document.createElement("span");

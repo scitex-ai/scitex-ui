@@ -265,3 +265,69 @@
     width: calc(100vw - var(--spacing-sm, 8px) * 2);
   }
 }
+
+/* ── First-use choices: Watch tour / Later / Do not show again ─────────────
+   SSOT: scitex-hub PR 923 §8 — "App first use may offer Watch tour, Later, and
+   Do not show again. These preferences are account-level and reversible in
+   Settings."
+
+   Three buttons, three hooks, and the hooks are NOT the labels: the labels are
+   translated and a leaf that targets one answer must not have to match on prose
+   that changes per language. The importances differ too — Watch is the only
+   primary action, Later is neutral, and Do not show again is quiet — because a
+   refusal is not the loudest thing in the room. */
+.stx-app-help__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm, 8px);
+  margin-top: var(--spacing-sm, 8px);
+}
+
+.stx-app-help__choices[hidden] {
+  display: none;
+}
+
+.stx-app-help__choice {
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border-default, #999);
+  border-radius: var(--radius-md, 4px);
+  background: var(--bg-surface, #f8f7f5);
+  color: var(--text-primary, #333);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The one primary action. --color-primary / --color-on-primary resolve from
+   shell/theme.css, which declares both since the brand-token slice (they used
+   to resolve only through primitives/colors.css). */
+.stx-app-help__choice--watch {
+  border-color: var(--color-primary, #1a2a40);
+  background: var(--color-primary, #1a2a40);
+  color: var(--color-on-primary, #fff);
+}
+
+/* Neutral: postponing is a legitimate answer, not a lesser one. Stated
+   explicitly so the hook exists in the stylesheet even where it matches the
+   base rule — a leaf targeting `--later` must find something to target. */
+.stx-app-help__choice--later {
+  border-color: var(--border-default, #999);
+  background: var(--bg-surface, #f8f7f5);
+  color: var(--text-primary, #333);
+}
+
+/* Quietest of the three, and deliberately so: the user is declining, which
+   should be easy to do and not compete with the action they came for. */
+.stx-app-help__choice--never {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted, #777);
+  text-decoration: underline;
+}
+
+.stx-app-help__choice:focus-visible {
+  outline: 2px solid var(--color-primary, #1a2a40);
+  outline-offset: 2px;
+}

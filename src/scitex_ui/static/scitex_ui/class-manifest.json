@@ -92,6 +92,8 @@
     "stx-app-help": {
       "elements": [
         "__button",
+        "__choice",
+        "__choices",
         "__close",
         "__count",
         "__footer",

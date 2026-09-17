@@ -171,3 +171,89 @@ describe("the `?` help panel", () => {
     expect(document.querySelector(".stx-app-help__tour")).not.toBeNull();
   });
 });
+
+/**
+ * First use offers three choices, not two.
+ *
+ * SSOT: scitex-hub PR 923 §8 — "App first use may offer Watch tour, Later, and
+ * Do not show again. These preferences are account-level and reversible in
+ * Settings."
+ *
+ * The binary this replaces (`done` or not) cannot express the difference: a user
+ * who answers "Later" has NOT seen the tour and has NOT refused it, and a
+ * primitive that records both answers as one flag either nags a refuser forever
+ * or silently loses the tour for someone who only postponed it.
+ */
+describe("first-use tour: Watch tour / Later / Do not show again", () => {
+  it("records Later without claiming the guide was seen", () => {
+    const storage = new MemoryStorage();
+    const help = mountGuide("writer", "en", storage);
+    help.deferTour();
+    expect(storage.getItem(`${STORAGE_PREFIX}writer:tour`)).toBe("later");
+  });
+
+  it("records Do not show again as a refusal of its own", () => {
+    const storage = new MemoryStorage();
+    const help = mountGuide("writer", "en", storage);
+    help.dismissTourForever();
+    expect(storage.getItem(`${STORAGE_PREFIX}writer:tour`)).toBe("never");
+  });
+
+  it("reads back the three preferences, defaulting to unseen", () => {
+    const storage = new MemoryStorage();
+    const help = mountGuide("writer", "en", storage);
+    expect(help.tourPreference()).toBe("unseen");
+  });
+
+  it("suppresses the auto-start after Later but keeps the two answers distinguishable", () => {
+    const later = new MemoryStorage();
+    mountGuide("writer", "en", later).deferTour();
+    const root = document.createElement("div");
+    root.setAttribute(HELP_ATTRIBUTE, "writer");
+    document.body.appendChild(root);
+    const reopened = new AppHelp(root, { app: "writer", storage: later });
+    expect(reopened.tourPreference()).toBe("later");
+  });
+
+  it("never auto-starts again after Do not show again, and does not claim completion", () => {
+    const storage = new MemoryStorage();
+    mountGuide("writer", "en", storage).dismissTourForever();
+    const root = document.createElement("div");
+    root.setAttribute(HELP_ATTRIBUTE, "writer");
+    document.body.appendChild(root);
+    const reopened = new AppHelp(root, { app: "writer", storage });
+    expect(reopened.tourPreference()).toBe("never");
+  });
+
+  it("offers a Settings-side reset that clears both keys, so the tour can be re-offered", () => {
+    const storage = new MemoryStorage();
+    const help = mountGuide("writer", "en", storage);
+    help.dismissTourForever();
+    help.resetTourPreference();
+    expect(
+      [storage.getItem(`${STORAGE_PREFIX}writer:tour`), storage.getItem(`${STORAGE_PREFIX}writer:done`)],
+    ).toEqual([null, null]);
+  });
+
+  it("renders the three choices on the tour's first bubble with their own hooks", () => {
+    const storage = new MemoryStorage();
+    const help = mountGuide("writer", "en", storage);
+    help.startTour();
+    const classes = Array.from(document.querySelectorAll(".stx-app-help__choice")).map((n) =>
+      Array.from(n.classList).filter((c) => c.startsWith("stx-app-help__choice--")).join(""),
+    );
+    expect(classes.sort()).toEqual([
+      "stx-app-help__choice--later",
+      "stx-app-help__choice--never",
+      "stx-app-help__choice--watch",
+    ]);
+  });
+
+  it("starts the tour when the user chooses Watch tour from the invite", () => {
+    const storage = new MemoryStorage();
+    const help = mountGuide("writer", "en", storage);
+    help.showTourInvite();
+    document.querySelector<HTMLButtonElement>(".stx-app-help__choice--watch")?.click();
+    expect(document.querySelector(".stx-app-help__tour-bubble")).not.toBeNull();
+  });
+});
