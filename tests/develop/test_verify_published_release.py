@@ -88,6 +88,24 @@ def _wheel_bytes(n_static: int) -> bytes:
 
 
 class TestVersionMetadata:
+    def test_git_v_prefix_is_not_part_of_the_pypi_version(self):
+        # Arrange — release workflows pass the Git tag, while PyPI reports the
+        # normalized PEP 440 package version without its transport prefix.
+        payload = _mk(
+            {
+                "bdist_wheel": ("scitex_ui-0.0.0-py3-none-any.whl", "http://x/w.whl", "a"),
+                "sdist": ("scitex_ui-0.0.0.tar.gz", "http://x/s.tar.gz", "b"),
+            }
+        )
+        raised = None
+        # Act
+        try:
+            assert_version_metadata(payload, "v0.0.0")
+        except VerifyError as exc:
+            raised = exc
+        # Assert
+        assert raised is None
+
     def test_a_full_non_yanked_release_passes(self):
         # Arrange — a healthy version listing: both packagetypes, not yanked.
         payload = _mk(

@@ -204,7 +204,8 @@ def fetch_version_payload(
 def assert_version_metadata(payload: PypiFiles, version: str) -> None:
     """The version the record was asked to verify is the version PyPI reports,
     and it is a full release (not yanked, both packagetypes present)."""
-    if payload.version != version:
+    package_version = version.removeprefix("v")
+    if payload.version != package_version:
         raise VerifyError(
             f"PyPI reports {payload.version} for the {version} endpoint — the "
             "version did not round-trip."
