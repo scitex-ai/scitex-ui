@@ -58,6 +58,65 @@
   background: var(--workspace-bg-active, rgba(177, 186, 196, 0.12));
 }
 
+/* ── The CASCADE shape (mobile) ───────────────────────────────────────────
+ * The same tree, presented as descending dropdown levels instead of a strip.
+ * Written 2026-09-17 with ts/app/selector-nav/: the class `__level` had no rule
+ * before this, because the component was CSS-only and nothing rendered a level.
+ * One level per depth, full width, each row a touch target — and the level that
+ * CONTAINS the selection stays expanded, so restoring a deep selection does not
+ * land on a level the user then has to re-find. */
+.stx-app-selector-nav--cascade .stx-app-selector-nav__items {
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.stx-app-selector-nav__level {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 1px solid var(--workspace-border-subtle, rgba(110, 118, 129, 0.3));
+  border-radius: 6px;
+  background: var(--workspace-bg-elevated, var(--bg-surface, #fff));
+  overflow: hidden;
+}
+
+/* A nested level is indented by its depth: without this the cascade reads as
+ * one flat list and the hierarchy is invisible. */
+.stx-app-selector-nav__level .stx-app-selector-nav__level {
+  margin-left: 12px;
+  width: calc(100% - 12px);
+}
+
+.stx-app-selector-nav--cascade .stx-app-selector-nav__item {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--stx-touch-target-min, 44px);
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.stx-app-selector-nav--cascade .stx-app-selector-nav__item .stx-app-selector-nav__label {
+  font-size: 0.875rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.stx-app-selector-nav--cascade .stx-app-selector-nav__item.active {
+  border-left: 3px solid var(--color-primary, #4a6fa5);
+}
+
+/* Level rows are 44px minimum wherever the shape is used, not only under a
+ * coarse pointer: a cascade on a desktop-narrow pane still needs the target. */
+@media (max-width: 600px), (pointer: coarse) {
+  .stx-app-selector-nav--cascade .stx-app-selector-nav__item {
+    min-height: var(--stx-touch-target-min, 44px);
+  }
+}
+
 .stx-app-selector-nav__item.disabled {
   opacity: var(--disabled-opacity);
   cursor: not-allowed;
