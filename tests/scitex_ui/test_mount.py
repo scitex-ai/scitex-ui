@@ -34,6 +34,11 @@ if not settings.configured:
 from django.template.loader import render_to_string  # noqa: E402
 
 from scitex_ui.mount import (  # noqa: E402
+    APP_VERSION_ATTRIBUTE,
+    APP_VERSION_KEY,
+    AppVersionError,
+    app_version_context,
+    declared_app_version,
     MOUNT_DECLARED_KEY,
     MOUNT_META_NAME,
     MOUNT_PREFIX_KEY,
@@ -41,6 +46,10 @@ from scitex_ui.mount import (  # noqa: E402
     mount_context,
     mount_prefix,
 )
+
+import scitex_ui  # noqa: E402
+
+from tests._checkout import static_dir, templates_dir  # noqa: E402
 
 _MARKER = "scitex_ui/_mount_marker.html"
 _SHELL = "scitex_ui/standalone_shell.html"
@@ -328,3 +337,187 @@ def test_the_marker_lands_in_the_head_not_the_body() -> None:
     marker_at = html.index(f'name="{MOUNT_META_NAME}"')
     # Assert
     assert marker_at < html.index("</head>")
+
+
+
+#: The app-header primitive's reader (PR #250) — a cross-language contract, so
+#: the writer here and the reader there are asserted to agree on the name.
+_READER = static_dir() / "ts" / "app" / "app-header" / "types.ts"
+
+
+def _mount_tag(html: str) -> str:
+    """The <div id="root"> open tag — where data-app-version must land."""
+    start = html.find('id="root"')
+    if start == -1:
+        return ""
+    return html[max(0, start - 200): html.find(">", start) + 1]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# THE APP VERSION CONTRACT — stamped when declared, NEVER invented
+# ═══════════════════════════════════════════════════════════════════════════
+# Coordinator direction 2026-09-17: the standalone/mount shell takes an explicit
+# ``app_version`` input and stamps ``data-app-version`` on the app mount
+# container, fail-closed, with no hardcoded fallback — the half that unblocks
+# FigRecipe and every leaf version badge.
+#
+# WHY IT IS HERE: the contract lives in this module (mount.py), so its tests
+# mirror it (PS-204), and these arms are the render-equivalent half — the shell
+# is rendered through Django's own engine and the emitted DOM is read back,
+# because the defect being guarded only appears once a template RUNS ("mount.ts
+# shipped correct and unreachable because no template fed it", one layer up).
+#
+# One assertion per test, three marker lines (PA-307 §3).
+# ── The pure half ──────────────────────────────────────────────────────────
+
+
+def test_a_declared_version_is_returned_trimmed() -> None:
+    # Arrange
+    raw = "  1.4.0  "
+    # Act
+    value = declared_app_version(raw)
+    # Assert
+    assert value == "1.4.0"
+
+
+def test_already_clean_version_is_returned_unchanged() -> None:
+    # Arrange
+    raw = "1.4.0"
+    # Act
+    value = declared_app_version(raw)
+    # Assert
+    assert value == "1.4.0"
+
+
+def test_no_version_declared_is_none_not_a_default() -> None:
+    # Arrange — nothing was passed in at all (state 3).
+    nothing = None
+    # Act
+    value = declared_app_version(nothing)
+    # Assert
+    assert value is None
+
+
+def test_a_blank_version_is_treated_as_not_declared() -> None:
+    # Arrange — state 2: declared unknown. A blank string is NOT a version.
+    # Act
+    value = declared_app_version("   ")
+    # Assert
+    assert value is None
+
+
+def test_a_non_string_version_is_refused_rather_than_coerced() -> None:
+    # Arrange — a ModuleType or a Version object str()s into something that
+    # LOOKS like a version, which is the wrong-answer-that-looks-right class.
+    not_a_string = scitex_ui
+    # Act
+    # Assert — the refusal IS the assertion, and it must be loud.
+    with pytest.raises(AppVersionError, match="must be a string or None"):
+        declared_app_version(not_a_string)  # type: ignore[arg-type]
+
+
+def test_the_context_key_is_always_present() -> None:
+    # Arrange — one key, always set: the value's falsiness is the signal, which
+    # is safe here because NO blank version is legal (contrast the mount prefix).
+    # Act
+    context = app_version_context()
+    # Assert
+    assert context[APP_VERSION_KEY] is None and APP_VERSION_KEY in context
+
+
+# ── The rendered shell: the mount container read back ──────────────────────
+
+
+def test_a_declared_version_is_stamped_on_the_mount_container() -> None:
+    # Arrange
+    context = app_version_context("1.4.0")
+    # Act
+    html = render_to_string(_SHELL, context)
+    # Assert
+    assert f'{APP_VERSION_ATTRIBUTE}="1.4.0"' in _mount_tag(html)
+
+
+def test_the_attribute_lands_within_the_mount_container_tag() -> None:
+    # Arrange — the reader resolves from the mount ROOT first, so an attribute
+    # anywhere else on the page (an ancestor's meta, the body) would still work
+    # by luck and hide a regression here.
+    context = app_version_context("2.0.1")
+    # Act
+    tag = _mount_tag(render_to_string(_SHELL, context))
+    # Assert
+    assert APP_VERSION_ATTRIBUTE in tag and 'id="root"' in tag
+
+
+def test_an_undeclared_version_stamps_no_attribute_at_all() -> None:
+    # Arrange — state 3: every GUI extending the shell today. They must be
+    # unchanged by this release: no attribute, no marker, nothing new.
+    # The assertion is on a STAMPED attribute (name="value"), not on the bare
+    # name: the template's own comment names the attribute in prose, and a
+    # check that cannot tell prose from markup is the false-positive shape this
+    # repo keeps carding.
+    # Act
+    html = render_to_string(_SHELL, {})
+    # Assert
+    assert f'{APP_VERSION_ATTRIBUTE}="' not in html
+
+
+def test_a_blank_version_stamps_no_attribute_either() -> None:
+    # Arrange — state 2 must render exactly like state 3: the badge is absent
+    # rather than empty, because an empty attribute reads as a declared value.
+    # Act
+    html = render_to_string(_SHELL, app_version_context("   "))
+    # Assert
+    assert f'{APP_VERSION_ATTRIBUTE}="' not in html
+
+
+def test_the_shell_never_falls_back_to_its_own_version() -> None:
+    # Arrange — THE defect this contract exists to prevent: a leaf's badge
+    # showing scitex-ui's number because the shell substituted its own.
+    # Act
+    html = render_to_string(_SHELL, {})
+    # Assert
+    assert scitex_ui.__version__ not in html
+
+
+def test_the_template_declares_no_default_for_the_version() -> None:
+    # Arrange — `{{ app_version|default:... }}` is the fallback, one filter away.
+    template = (
+        templates_dir() / "scitex_ui" / "standalone_shell.html"
+    ).read_text()
+    # Act
+    filtered = "app_version|default" in template
+    # Assert
+    assert filtered is False
+
+
+# ── Writer/reader agreement across the language boundary ───────────────────
+
+
+def test_the_writer_constant_is_a_non_empty_attribute_name() -> None:
+    # Arrange — pin the writer even while the reader is unmerged, so "the test
+    # skipped" can never be the only thing said about this half of the contract.
+    # Act
+    named = APP_VERSION_ATTRIBUTE.startswith("data-") and len(APP_VERSION_ATTRIBUTE) > 10
+    # Assert
+    assert named
+
+
+@pytest.mark.skipif(
+    not _READER.is_file(),
+    reason=(
+        "ts/app/app-header/types.ts is not in this tree yet — it lands with the "
+        "app-header primitive (PR #250). The writer half is asserted above."
+    ),
+)
+def test_the_stamped_attribute_matches_the_reader_constant() -> None:
+    # Arrange — the writer is Python, the reader is TypeScript
+    # (ts/app/app-header/types.ts, PR #250): a rename on either side must fail
+    # HERE rather than leave a badge that never renders. Skipped with a named
+    # reason only while that file is absent, so the arm activates on merge
+    # instead of silently passing.
+    import re
+
+    match = re.search(r'APP_VERSION_ATTRIBUTE\s*=\s*"([^"]+)"', _READER.read_text())
+    # Act
+    reader_name = match.group(1) if match else None
+    # Assert
+    assert reader_name == APP_VERSION_ATTRIBUTE
