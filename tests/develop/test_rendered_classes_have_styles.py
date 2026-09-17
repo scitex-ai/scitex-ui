@@ -214,20 +214,18 @@ _KNOWN_UNSTYLED: dict[str, str] = {
     "stx-shell-webcam-overlay": _inline_hook("ts/shell/chat/_webcam-capture.ts", "10 .style writes"),
     "stx-shell-webcam-panel": _inline_hook("ts/shell/chat/_webcam-capture.ts", "10 .style writes"),
     "ws-viewer-fallback-pre": _inline_hook("ts/shell/viewer/_ViewerManager.ts", "full rule in pre.style.cssText at :475"),
-    # (ws-viewer-placeholder is a FINDING, not a hook — it is an innerHTML
-    #  error box with no inline style of its own; listed once, below.)
-    # true findings (11)
-    "stx-shell-ai-context-menu": _FINDING,
-    "stx-shell-ai-context-menu-item": _FINDING,
-    "stx-shell-ai-image-thumb": _FINDING,
-    "stx-shell-ai-image-thumb-remove": _FINDING,
-    "stx-shell-ai-md-segment": _FINDING,
-    "stx-shell-ai-msg-thumb": _FINDING,
-    "stx-shell-ai-msg-thumbs": _FINDING,
-    "stx-shell-ai-session-rename": _FINDING,
-    "stx-shell-ai-tools": _FINDING,
+    # (ws-viewer-placeholder was a FINDING, not a hook — an innerHTML error box
+    #  with no inline style of its own; it is styled now, see the empty findings
+    #  note below.)
+    # true findings (1 — the OTHER TEN were PAID OFF 2026-09-17 by styling them
+    #  in the files their siblings live in: the 9 chat/ai-panel classes in
+    #  css/shell/ai-panel/{03,04,07,11}, ws-viewer-placeholder in
+    #  css/shell/workspace-viewer.css. The ratchet below now fails a NEW
+    #  unstyled class rather than letting it join a population.)
+    # stx-shell-drop-target: paid off on PR #249 (the CSS rule was keyed to
+    # `.drop-target`, a class the producer never writes). Left on the ceiling
+    # HERE so this branch does not collide with that one; #249 removes the line.
     "stx-shell-drop-target": _FINDING,
-    "ws-viewer-placeholder": _FINDING,
 }
 
 
