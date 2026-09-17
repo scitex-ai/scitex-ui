@@ -216,7 +216,11 @@ _KNOWN_UNSTYLED: dict[str, str] = {
     "ws-viewer-fallback-pre": _inline_hook("ts/shell/viewer/_ViewerManager.ts", "full rule in pre.style.cssText at :475"),
     # (ws-viewer-placeholder is a FINDING, not a hook — it is an innerHTML
     #  error box with no inline style of its own; listed once, below.)
-    # true findings (11)
+    # true findings (10 — stx-shell-drop-target paid off 2026-09-16: the CSS
+    #  rule was keyed to .drop-target, a class the producer never writes; it
+    #  now targets .stx-shell-drop-target, so the drag affordance paints and
+    #  the producer-direction guard sees it styled. Remaining: the 9 chat
+    #  styling decisions + ws-viewer-placeholder, all on the card.)
     "stx-shell-ai-context-menu": _FINDING,
     "stx-shell-ai-context-menu-item": _FINDING,
     "stx-shell-ai-image-thumb": _FINDING,
@@ -226,7 +230,6 @@ _KNOWN_UNSTYLED: dict[str, str] = {
     "stx-shell-ai-msg-thumbs": _FINDING,
     "stx-shell-ai-session-rename": _FINDING,
     "stx-shell-ai-tools": _FINDING,
-    "stx-shell-drop-target": _FINDING,
     "ws-viewer-placeholder": _FINDING,
 }
 
