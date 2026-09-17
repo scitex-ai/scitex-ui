@@ -28,6 +28,21 @@ export interface PanesOptions {
   media?: PanesMedia | null;
   /** Where the active pane is remembered; defaults to sessionStorage. */
   storage?: PanesStorage | null;
+  /**
+   * Enable horizontal swipe-to-switch-tab on single-pane (phone) mode.
+   *
+   * Default: **false**. Operator mobile ruling 7724-7725: horizontal swipe
+   * conflicts with pan/zoom/scroll inside Writer PDF, FigRecipe canvas,
+   * graphs, editors, and tables. App tabs change only by explicit tab tap,
+   * accessible keyboard activation, or a named command; content gestures
+   * belong to the active pane.
+   *
+   * When true, the `startsInsideOwnGesture` guard still applies: swipes
+   * beginning inside a horizontal scroller, a text input, or interactive
+   * content (canvas, svg, table, iframe, PDF/canvas/graph/editor wrappers)
+   * are ignored.
+   */
+  swipeToSwitch?: boolean;
 }
 
 export interface PanesChangeDetail {
