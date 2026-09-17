@@ -7,6 +7,20 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-09-17
+
+### Added
+- Added the shared floating launcher overlay and host-shell version contract.
+- Added reusable app tour/help components and screenshot/design contracts.
+
+### Changed
+- Disabled swipe-to-switch-tab by default so touch gestures do not change panes unexpectedly.
+- Made PDF fit-width use the container content box and enforced one active navigation destination.
+
+### Fixed
+- Restored WCAG AA empty-state contrast and missing shell token aliases.
+- Added durable post-publish artifact verification to the release pipeline.
+
 ## [0.22.0] - 2026-09-15
 
 ### Added — keymap primitive: Emacs major-mode command registry + keyboard runtime
