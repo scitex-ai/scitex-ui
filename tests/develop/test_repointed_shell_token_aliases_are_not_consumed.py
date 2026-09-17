@@ -168,14 +168,15 @@ def test_the_scan_ignores_a_token_no_stylesheet_uses():
 
 
 def test_each_repointed_alias_is_no_longer_consumed():
-    # Arrange — the three tokens this file fixed, and any that still have consumers.
+    # Arrange
+    # Act — the three tokens this file fixed, and any that still have consumers.
     offenders = {
         token: _sites_consuming(token)
         for token in _REPOINTED
         if _sites_consuming(token)
     }
 
-    # Act + Assert — none of them may be read via var() anywhere under css/.
+    # Assert — none of them may be read via var() anywhere under css/.
     assert not offenders, (
         "a repointed shell alias is being consumed again, recreating a "
         f"defined-nowhere token (correct in one theme by accident): "
