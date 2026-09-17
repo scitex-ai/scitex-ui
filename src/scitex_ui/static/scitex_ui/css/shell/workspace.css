@@ -282,7 +282,7 @@
 
 .stx-workspace__module-tabs__tab--active {
   color: var(--workspace-text-primary, #e6edf3);
-  border-left-color: var(--tab-accent, var(--color-accent-emphasis, #238636));
+  border-left-color: var(--color-accent-emphasis);
   background: var(--workspace-bg-tertiary, #1c2128);
 }
 
