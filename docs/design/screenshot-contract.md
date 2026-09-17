@@ -99,6 +99,30 @@ server tag renders the manifest-backed figure so a page needs no JS). Behaviour:
 - reusing reference-page photography, artwork or testimonials (the design artifact's own
   constraint, kept verbatim).
 
+---
+
+## 5. First use, and the two schema findings it produced
+
+The first capture under this contract is committed beside it:
+`docs/design/captures/shell-390-light-en.{png,json}` (390x844, dpr 2, light, EN, dev-container).
+Using the contract immediately corrected it, which is the point:
+
+**Finding 1 — a frame can be composed of MORE THAN ONE commit, and `source_commit` (singular)
+cannot say so.** This frame needs the shell's version stamping (`feat/app-version-contract`
+@ 1e4a4d2) AND the header bundle that reads it (`feat/app-header-primitive` @ 60dbb34). One
+field would have implied a tree that never existed. The entry therefore carries
+`composed_of: [{commit, branch, contributes}]` as an OPTIONAL list, with `source_commit`
+naming the primary. A frame whose composition cannot be listed is not shippable evidence.
+
+**Finding 2 — the contract needs a `does_not_show` field, and it is not decoration.** The
+live DOM readback showed `.stx-shell-layout` **absent** on the canary page (the shell's layout
+class is added by JS this page does not load). The frame therefore supports the version-badge
+and no-overflow claims and must NOT be used for "the whole workspace renders". Without
+`does_not_show` the tempting caption is the one the image does not support — and the author
+is the last person likely to notice.
+
+Both fields are additive to the schema; neither changes the required set.
+
 ## 4. Video frames
 
 A still taken from a recording is a capture like any other and carries the same manifest, with
