@@ -113,6 +113,11 @@ export class TourPlayer {
       root.appendChild(this.chapterRow);
     }
     this.applyCaptionTracks();
+    // Paint the initial state of the two language controls. Without this the
+    // caption button reads as an empty box until the first interaction, which is
+    // exactly the wrong moment to be unlabelled: a viewer looking for subtitles
+    // finds a blank control and concludes there are none.
+    this.refreshControls();
     if (options.autoplay) this.play();
   }
 

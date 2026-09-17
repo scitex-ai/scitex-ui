@@ -107,6 +107,7 @@ var TourPlayer = class {
       root.appendChild(this.chapterRow);
     }
     this.applyCaptionTracks();
+    this.refreshControls();
     if (options.autoplay) this.play();
   }
   get audioLanguage() {
