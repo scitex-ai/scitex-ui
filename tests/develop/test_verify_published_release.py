@@ -36,17 +36,38 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / ".github" / "ci"))
 
 from verify_published_release import (  # noqa: E402
     ASSET_COUNT_FLOOR,
+    CSS_REFERENCE_FLOOR,
     PypiFiles,
     VerifyEnvironmentError,
     VerifyError,
     _declared_static_assets_from_zip,
     _http_get,
     assert_file_hash,
+    assert_shipped_css_references_resolve,
     assert_version_metadata,
     download,
     fetch_version_payload,
     sha256_of,
 )
+
+
+def _css_tree(tmp_path: Path, *, references: int, missing: int = 0) -> Path:
+    """A wheel-shaped css/ tree with `references` resolving, `missing` dangling.
+
+    Each reference points at a sibling file that IS written, so the only
+    dangling ones are the deliberate `missing` count.
+    """
+    css_dir = tmp_path / "scitex_ui" / "static" / "scitex_ui" / "css"
+    css_dir.mkdir(parents=True, exist_ok=True)
+    body: list[str] = []
+    for i in range(references):
+        body.append(f".c{i} {{ background: url('img/a{i}.png'); }}")
+        (css_dir / "img").mkdir(exist_ok=True)
+        (css_dir / "img" / f"a{i}.png").write_bytes(b"\x89PNG")
+    for i in range(missing):
+        body.append(f".m{i} {{ background: url('img/gone{i}.png'); }}")
+    (css_dir / "bundle.css").write_text("\n".join(body) + "\n")
+    return css_dir
 
 
 def _mk(files: dict) -> PypiFiles:
@@ -94,26 +115,26 @@ class TestVersionMetadata:
         )
         payload = PypiFiles(name="scitex-ui", version="0.0.0", yanked=True, files=payload.files)
         # Act
+        # Assert — a yanked release is one the reader must act on.
         with pytest.raises(VerifyError, match="YANKED"):
             assert_version_metadata(payload, "0.0.0")
-        # Assert — a yanked release is one the reader must act on.
 
     def test_an_sdist_only_release_is_rejected(self):
         # Arrange — no wheel: a consumer loading <script> assets gets nothing.
         payload = _mk({"sdist": ("s.tar.gz", "http://x/s.tar.gz", "b")})
         # Act
+        # Assert
         with pytest.raises(VerifyError, match="missing"):
             assert_version_metadata(payload, "0.0.0")
-        # Assert
 
     def test_a_version_that_does_not_round_trip_is_rejected(self):
         # Arrange — the endpoint answered a different version than asked.
         payload = PypiFiles(name="scitex-ui", version="9.9.9", yanked=False, files={
             "bdist_wheel": ("w.whl", "u", "a"), "sdist": ("s.tar.gz", "u", "b")})
         # Act
+        # Assert
         with pytest.raises(VerifyError, match="round-trip"):
             assert_version_metadata(payload, "0.0.0")
-        # Assert
 
 
 class TestSha256:
@@ -149,9 +170,9 @@ class TestSha256:
         p.write_bytes(b"artifact")
         bad = "0" * 64  # not the real digest
         # Act
+        # Assert — the arm that catches PyPI serving different bytes than uploaded.
         with pytest.raises(VerifyError, match="sha256 mismatch"):
             assert_file_hash(p, bad)
-        # Assert — the arm that catches PyPI serving different bytes than uploaded.
 
 
 class TestWheelStaticTree:
@@ -169,9 +190,9 @@ class TestWheelStaticTree:
         p = tmp_path / "wheel_bare.whl"
         p.write_bytes(_wheel_bytes(0))
         # Act
+        # Assert — the arm that catches a packaging exclude dropping the tree.
         with pytest.raises(VerifyError, match="static files"):
             _declared_static_assets_from_zip(p)
-        # Assert — the arm that catches a packaging exclude dropping the tree.
 
 
 class TestDownload:
@@ -187,8 +208,8 @@ class TestDownload:
 
         monkey = pytest.MonkeyPatch()
         monkey.setattr(sys.modules["verify_published_release"], "_http_get", fake_get)
+        # Act
         try:
-            # Act
             result = download("http://files.x/scitex_ui-0.0.0.whl?sig=abc#frag", dest, timeout=5)
         finally:
             monkey.undo()
@@ -219,8 +240,8 @@ class TestPollLoop:
         monkey = pytest.MonkeyPatch()
         monkey.setattr(mod, "_http_get", flaky_get)
         monkey.setattr(mod.time, "sleep", lambda *_: None)
+        # Act
         try:
-            # Act
             payload = fetch_version_payload("0.0.0", max_attempts=5, delay_s=0)
         finally:
             monkey.undo()
@@ -237,13 +258,13 @@ class TestPollLoop:
         monkey = pytest.MonkeyPatch()
         monkey.setattr(mod, "_http_get", always_404)
         monkey.setattr(mod.time, "sleep", lambda *_: None)
+        # Act
         try:
-            # Act
+        # Assert — a not-yet-published version is UNKNOWN, not "artifact bad".
             with pytest.raises(VerifyEnvironmentError, match="never resolved"):
                 fetch_version_payload("0.0.0", max_attempts=3, delay_s=0)
         finally:
             monkey.undo()
-        # Assert — a not-yet-published version is UNKNOWN, not "artifact bad".
 
     def test_a_network_outage_is_an_environment_result(self):
         # Arrange — transport failure (not a 404) must not be retried as lag.
@@ -254,11 +275,100 @@ class TestPollLoop:
 
         monkey = pytest.MonkeyPatch()
         monkey.setattr(mod, "_http_get", outage)
+        # Act
         try:
-            # Act
+        # Assert — an outage and a lag are different channels; conflating them
+        # is how an outage would read as a broken release.
             with pytest.raises(VerifyEnvironmentError, match="no network"):
                 fetch_version_payload("0.0.0", max_attempts=3, delay_s=0)
         finally:
             monkey.undo()
-        # Assert — an outage and a lag are different channels; conflating them
-        # is how an outage would read as a broken release.
+
+
+class TestCssReferencesInThePublishedWheel:
+    """Arm 6: presence is not resolvability.
+
+    The asset-presence check above passes on a wheel whose stylesheet points at
+    a file that is not there — 0.20.1 shipped exactly that (a path quoted inside
+    a CSS comment, which a consumer's collectstatic reads as live).
+
+    The scan is applied to the INSTALLED tree, and these are the offline reject
+    arms: a clean tree passes, a dangling reference fails, and a tree too small
+    to be evidence fails rather than reading as clean.
+    """
+
+    def test_a_clean_installed_tree_passes_and_reports_the_count(self, tmp_path):
+        # Arrange — a wheel-shaped tree just over the floor, all resolving.
+        css_dir = _css_tree(tmp_path, references=CSS_REFERENCE_FLOOR + 5)
+        # Act
+        references = assert_shipped_css_references_resolve(css_dir)
+        # Assert — positive control: the instrument sees a true case.
+        assert references >= CSS_REFERENCE_FLOOR
+
+    def test_a_dangling_reference_in_the_installed_wheel_is_rejected(self, tmp_path):
+        # Arrange — the floor is satisfied, so only the dangling ref can fail.
+        css_dir = _css_tree(tmp_path, references=CSS_REFERENCE_FLOOR, missing=1)
+        # Act
+        # Assert — a consumer's collectstatic reads that path as live.
+        with pytest.raises(VerifyError, match="do not resolve"):
+            assert_shipped_css_references_resolve(css_dir)
+
+    def test_a_reference_inside_a_comment_is_still_reported(self, tmp_path):
+        # Arrange — the 0.20.1 shape: the ONLY dangling path is inside a
+        # comment, where a human would call it prose and a browser does not.
+        css_dir = _css_tree(tmp_path, references=CSS_REFERENCE_FLOOR)
+        bundle = css_dir / "bundle.css"
+        bundle.write_text(
+            bundle.read_text() + ".x { /* was: url('img/gone.png') */ }\n"
+        )
+        # Act
+        # Assert — the scan is comment-INCLUSIVE on purpose.
+        with pytest.raises(VerifyError, match="do not resolve"):
+            assert_shipped_css_references_resolve(css_dir)
+
+    def test_a_tree_below_the_reference_floor_is_rejected(self, tmp_path):
+        # Arrange — a tree that resolves perfectly but is too small to prove it.
+        css_dir = _css_tree(tmp_path, references=CSS_REFERENCE_FLOOR - 1)
+        # Act
+        # Assert — a clean-looking result from a drifted walk is not evidence.
+        with pytest.raises(VerifyError, match="floor"):
+            assert_shipped_css_references_resolve(css_dir)
+
+    def test_a_tree_with_no_stylesheets_at_all_is_rejected(self, tmp_path):
+        # Arrange — the extreme of the case above: nothing to scan.
+        empty = tmp_path / "scitex_ui" / "static" / "scitex_ui" / "css"
+        empty.mkdir(parents=True)
+        # Act
+        # Assert — "no findings" must never be produced by scanning nothing.
+        with pytest.raises(VerifyError, match="no stylesheets"):
+            assert_shipped_css_references_resolve(empty)
+
+    def test_an_absent_scan_module_is_an_environment_result(self, tmp_path):
+        # Arrange — the record reuses the checkout's scan; if that file moves,
+        # the record cannot run. That is an environment gap, not a bad release.
+        import verify_published_release as mod
+
+        monkey = pytest.MonkeyPatch()
+        monkey.setattr(mod, "_CSS_SCAN_MODULE", "no_such_scan_module")
+        # Act
+        try:
+            css_dir = _css_tree(tmp_path, references=CSS_REFERENCE_FLOOR)
+        # Assert — the two channels stay distinct.
+            with pytest.raises(VerifyEnvironmentError, match="is absent"):
+                assert_shipped_css_references_resolve(css_dir)
+        finally:
+            monkey.undo()
+
+    def test_the_record_shares_the_gates_own_instrument(self):
+        # Arrange — one instrument, two trees. A rename on either side must
+        # break this test rather than silently giving the record its own scan.
+        import verify_published_release as mod
+
+        repo_root = Path(__file__).resolve().parents[2]
+        # Act
+        gate = repo_root / "tests" / "develop" / f"{mod._CSS_SCAN_MODULE}.py"
+        # Assert
+        assert gate.is_file(), (
+            f"the record imports {mod._CSS_SCAN_MODULE} as its scan; that file "
+            "is the pre-upload gate's own, and it moved"
+        )

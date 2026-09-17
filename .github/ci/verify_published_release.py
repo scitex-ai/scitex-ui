@@ -40,6 +40,12 @@ WHAT IT DOES, given a published version:
      from the installed registry (self-consistent — the package asserts its
      own manifest is present), so there is no second hardcoded manifest to
      drift.
+  6. Scans the INSTALLED stylesheets for references that do not resolve inside
+     the wheel, comment-INCLUSIVE (a path quoted inside a CSS comment is still
+     read as live by a consumer's collectstatic). It REUSES the pre-upload
+     gate's own scan functions rather than re-implementing them: presence is
+     not resolvability, and 0.20.1 shipped a stylesheet whose asset was present
+     and whose reference still broke every hub build.
 
 Fail-loud (operator directive): every step asserts non-empty output; any
 failure is a hard error naming the exact cause, never a silent skip. The two
@@ -77,6 +83,19 @@ VERSION_ENDPOINT = f"https://pypi.org/pypi/{PROJECT}/{{version}}/json"
 #: components; if this reads <20, the registry lookup drifted and the asset
 #: check would prove nothing. (Mirrors test_packaging's `len(declared) > 20`.)
 ASSET_COUNT_FLOOR = 20
+
+#: Floor for the comment-INCLUSIVE CSS reference scan (arm 6). The shipped css/
+#: tree carries hundreds of `url(...)` / quoted `@import` references; if the
+#: walk or the instrument reads fewer than this, "no unresolved reference"
+#: would prove nothing. Mirrors ASSET_COUNT_FLOOR's role.
+CSS_REFERENCE_FLOOR = 100
+
+#: The repo's own scan, IMPORTED rather than re-implemented: the pre-upload gate
+#: scans the CHECKOUT with these functions and this record must scan the WHEEL
+#: with the SAME instrument. A second implementation would drift, and the green
+#: one would mean less than it appears to.
+_CSS_SCAN_MODULE = "test_shipped_css_references_all_resolve"
+_CSS_SCAN_NAMES = ("_reference_count", "_unresolved_in")
 
 
 class VerifyError(ReleaseArtifactError):
@@ -345,6 +364,91 @@ def assert_installed_assets(target_dir: Path) -> list[str]:
     return declared
 
 
+def _load_css_scan():
+    """The CHECKOUT's comment-INCLUSIVE CSS reference scan, as a library.
+
+    Imported, not re-implemented: the pre-upload gate scans the checkout with
+    these functions, and this record must scan the WHEEL with the same
+    instrument. Two implementations would drift apart and the green one would
+    mean less than it looks like it means.
+
+    Raising VerifyEnvironmentError (not VerifyError) on a missing module is
+    deliberate: the record job checks the repo out, so an absent tests/develop
+    is an environment gap, never a statement about the artifact.
+    """
+    repo_root = Path(__file__).resolve().parents[2]
+    scan_path = repo_root / "tests" / "develop" / f"{_CSS_SCAN_MODULE}.py"
+    if not scan_path.is_file():
+        raise VerifyEnvironmentError(
+            f"{scan_path} is absent, so the published wheel's CSS references "
+            "cannot be scanned. The record job checks out the repo; a missing "
+            "file is an environment gap, not a bad artifact."
+        )
+    sys.path.insert(0, str(scan_path.parent))
+    try:
+        scan = importlib.import_module(_CSS_SCAN_MODULE)
+    except ImportError as exc:
+        raise VerifyEnvironmentError(
+            f"{_CSS_SCAN_MODULE} is present but not importable ({exc}) — the "
+            "record cannot run its CSS arm."
+        ) from exc
+    missing = [name for name in _CSS_SCAN_NAMES if not hasattr(scan, name)]
+    if missing:
+        raise VerifyEnvironmentError(
+            f"{_CSS_SCAN_MODULE} no longer exposes {missing}. The gate and this "
+            "record must share ONE instrument: update this import rather than "
+            "re-implementing the scan here, or the two will disagree and nobody "
+            "will be told which one is right."
+        )
+    return scan
+
+
+def assert_shipped_css_references_resolve(static_dir: Path) -> int:
+    """Every reference in the WHEEL's CSS must resolve INSIDE the wheel.
+
+    WHY THIS ARM, separately from the asset-presence check above: presence is
+    not resolvability. 0.20.1 shipped a path QUOTED INSIDE A CSS COMMENT, which
+    Django reads as live, and it broke collectstatic for every hub build — the
+    asset was present and the release still shipped a broken stylesheet. The
+    pre-upload gate catches that in the CHECKOUT; this catches it in the bytes
+    PyPI serves, which is the only place a build-time difference between the two
+    can show up.
+
+    The scan deliberately does NOT strip comments: a reference a stylesheet's
+    reader would act on is reported whether or not a human meant it as prose.
+    """
+    scan = _load_css_scan()
+
+    css_files = sorted(static_dir.rglob("*.css"))
+    if not css_files:
+        raise VerifyError(
+            f"no stylesheets under {static_dir}, so the reference scan would "
+            "report a clean wheel by scanning nothing."
+        )
+
+    findings: list[str] = []
+    references = 0
+    for path in css_files:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        references += scan._reference_count(text)
+        for line, url in scan._unresolved_in(text, path.parent):
+            findings.append(f"{path.relative_to(static_dir)}:{line}: {url}")
+
+    if references < CSS_REFERENCE_FLOOR:
+        raise VerifyError(
+            f"the installed CSS carries only {references} references "
+            f"(< {CSS_REFERENCE_FLOOR} floor) — the walk or the instrument "
+            "drifted, so 'no unresolved reference' would prove nothing."
+        )
+    if findings:
+        raise VerifyError(
+            f"{len(findings)} reference(s) in the PUBLISHED wheel's stylesheets "
+            "do not resolve inside it (a consumer's collectstatic reads these as "
+            "live):\n  " + "\n  ".join(findings[:20])
+        )
+    return references
+
+
 def verify_version(version: str, *, scratch: Path, python: str, **poll_kw) -> dict:
     """Orchestrate the full record. Returns a small summary for logging.
 
@@ -381,6 +485,13 @@ def verify_version(version: str, *, scratch: Path, python: str, **poll_kw) -> di
     pip_install_wheel(wheel_path, target_dir, python=python)
     checks["installed_assets"] = len(assert_installed_assets(target_dir))
 
+    # Arm 6: the installed CSS must be SELF-CONSISTENT — presence is not
+    # resolvability, and 0.20.1 shipped a resolvable-looking stylesheet that
+    # broke every consumer's collectstatic.
+    checks["installed_css_references"] = assert_shipped_css_references_resolve(
+        target_dir / "scitex_ui" / "static" / "scitex_ui" / "css"
+    )
+
     return checks
 
 
@@ -404,8 +515,9 @@ def main(argv: list[str]) -> int:
         print(f"  {k}: {v}")
     print(
         f"OK: {version} on PyPI is a full, non-yanked release; wheel+sdist "
-        "sha256 match PyPI's report; the published wheel is installable and "
-        "carries every static asset its own registry declares."
+        "sha256 match PyPI's report; the published wheel is installable, "
+        "carries every static asset its own registry declares, and every "
+        "reference in its stylesheets resolves inside the wheel."
     )
     return 0
 
