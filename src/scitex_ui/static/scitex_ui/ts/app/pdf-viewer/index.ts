@@ -76,6 +76,46 @@ function applyPalette(el: HTMLElement, palette: PdfPalette): void {
   }
 }
 
+/**
+ * The width a fit-to-width page may occupy: the container's CONTENT box.
+ *
+ * ``clientWidth`` INCLUDES the horizontal padding (it excludes borders and the
+ * scrollbar only), so dividing by it sizes the page to the PADDED width. The
+ * page canvas then overflows the content box by exactly the two paddings and
+ * the container scrolls sideways.
+ *
+ * MEASURED BY scitex-writer at 390x844 (chromium, their PR #396/v2.43.3, the
+ * first app to render this primitive on a phone): with
+ * ``.pdf-viewer-host { padding: 16px }``, fit-width produced a 382px canvas
+ * positioned at x=16 — right edge 398 on a 390px viewport, container
+ * scrollWidth 414 > clientWidth 382. They worked around it by deleting the
+ * horizontal gutter at phone width. Every adopter would have inherited the
+ * same bug, so it is fixed HERE, where the geometry is computed, rather than
+ * per consumer.
+ *
+ * Pure on purpose: the arithmetic is the whole defect, and a pure function is
+ * the only form in which it has a test that can fail (`clientWidth` is 0 under
+ * jsdom, so a DOM-reading version is untestable in the unit suite).
+ */
+export function contentBoxWidth(
+  clientWidth: number,
+  paddingLeft: number,
+  paddingRight: number,
+): number {
+  const content = clientWidth - (paddingLeft + paddingRight);
+  return content > 0 ? content : 0;
+}
+
+/** The container's content-box width, from the live box model. */
+function containerContentWidth(container: HTMLElement): number {
+  const style = getComputedStyle(container);
+  return contentBoxWidth(
+    container.clientWidth,
+    parseFloat(style.paddingLeft) || 0,
+    parseFloat(style.paddingRight) || 0,
+  );
+}
+
 class PdfViewer implements PdfViewerApi {
   private readonly container: HTMLElement;
   private readonly hooks: PdfViewerHooks;
@@ -163,7 +203,9 @@ class PdfViewer implements PdfViewerApi {
     const view = this.views[0];
     if (!view) return;
     const baseWidth = view.viewport.width / this.scale; // unscaled page width
-    const target = this.container.clientWidth / baseWidth;
+    // The CONTENT box, never clientWidth: clientWidth includes the horizontal
+    // padding, and sizing to it overflows the container by 2x padding.
+    const target = containerContentWidth(this.container) / baseWidth;
     if (target > 0 && Number.isFinite(target)) await this.setScale(target);
   }
 

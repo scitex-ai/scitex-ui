@@ -82,6 +82,7 @@ and identical in both modes.
 
 from __future__ import annotations
 
+
 #: Context key holding the prefix. Read by ``_mount_marker.html``.
 MOUNT_PREFIX_KEY = "stx_mount_prefix"
 
@@ -168,3 +169,60 @@ def mount_context(request, *, view_path: str = "") -> dict[str, object]:
         MOUNT_PREFIX_KEY: mount_prefix(request, view_path=view_path),
         MOUNT_DECLARED_KEY: True,
     }
+
+
+# ============================================================================
+# THE APP VERSION CONTRACT — the third attribute of the same mount container
+# ============================================================================
+# The states, the mount-marker contrast and the reason no fallback may exist are
+# documented in the module docstring above and in the block below; this section
+# lives here rather than in its own file because `data-app-version` is stamped on
+# the SAME element this module's marker describes, and because src/scitex_ui sits
+# at its flat-module threshold (PS-108b) — a new top-level module for one
+# attribute would trade a real structural rule for a filing preference.
+
+#: Context key a view passes into ``standalone_shell.html`` (or into any template
+#: that stamps the container itself).
+APP_VERSION_KEY = "app_version"
+
+#: The DOM attribute. MUST match ``APP_VERSION_ATTRIBUTE`` in
+#: ``ts/app/app-header/types.ts`` — the writer and the reader are two languages
+#: apart, so a rename on either side has to fail a test, not a badge.
+APP_VERSION_ATTRIBUTE = "data-app-version"
+
+
+class AppVersionError(ValueError):
+    """The version is not usable AS a version, and coercing it would invent one."""
+
+
+def declared_app_version(app_version: str | None = None) -> str | None:
+    """The version to stamp, or ``None`` when there is none — never a substitute.
+
+    Refuses a non-string instead of ``str()``-ing it: a ``ModuleType``, a
+    ``Version`` object or an object's ``repr`` all render as something that
+    looks like a version, which is the same wrong-answer-that-looks-right class
+    this module exists to stop. A blank or whitespace-only string is treated as
+    NOT declared (state 2 above), not as a version.
+    """
+    if app_version is None:
+        return None
+    if not isinstance(app_version, str):
+        raise AppVersionError(
+            f"{APP_VERSION_KEY} must be a string or None, got "
+            f"{type(app_version).__name__}. Refusing to coerce it: a coerced "
+            "value renders as a plausible version that is not the app's."
+        )
+    value = app_version.strip()
+    return value or None
+
+
+def app_version_context(app_version: str | None = None) -> dict[str, object]:
+    """Build the context key that stamps the mount container.
+
+    Merge into any context rendered by ``standalone_shell.html``, exactly as
+    :func:`scitex_ui.mount.mount_context` is merged for the mount marker.
+    The key is ALWAYS set (to ``None`` when nothing was declared) so a template
+    reads one key rather than testing for its presence — the value's falsiness is
+    the signal, and it is safe here because no blank version is legal.
+    """
+    return {APP_VERSION_KEY: declared_app_version(app_version)}

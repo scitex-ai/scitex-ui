@@ -42,11 +42,22 @@
   justify-content: center;
   padding: 60px 20px;
   text-align: center;
-  color: var(--text-muted, #8b949e);
+  /* --text-secondary, NOT --text-muted. Measured: the light --text-muted
+     (#777777) is 4.18:1 on --bg-surface / 4.00:1 on --bg-muted — below WCAG
+     2.1 AA (4.5:1) on every shipped light surface, so no opacity or size
+     adjustment can rescue text that starts there (card
+     scitex-ui-text-muted-fails-aa-against-any-light-surface-20260906).
+     --text-secondary resolves to #4a4a4a in light (7.92:1 worst surface) and
+     #c9d1d9 in dark, so BOTH palettes pass here. When that palette token is
+     fixed, this can revert in one line. */
+  color: var(--text-secondary, #4a4a4a);
 }
 
 .stx-app-empty__icon {
   font-size: 36px;
+  /* Decorative glyph: it accompanies the title and names nothing on its own,
+     so SC 1.4.11 does not apply and the dimming is a design choice, not a
+     contrast failure. Text below must not borrow this treatment. */
   opacity: 0.4;
   margin-bottom: 16px;
 }
@@ -57,9 +68,11 @@
   margin-bottom: 6px;
 }
 
+/* The hint is quieter by SIZE, never by opacity: an opacity stack multiplies
+   the ratio of whatever it is applied to (0.6 turned 4.18:1 into 3.22:1 —
+   a second, compounding failure on top of the token's). */
 .stx-app-empty__hint {
   font-size: 12px;
-  opacity: 0.6;
 }
 
 /* Optional call to action — the thing that turns a dead end into a next step. */
@@ -75,7 +88,7 @@
   padding: 10px;
   font-size: 12px;
   font-style: italic;
-  opacity: 0.85;
+  /* No opacity: see __hint. 0.85 made 4.18:1 into 3.22:1 on the light surface. */
 }
 
 .stx-app-empty--compact .stx-app-empty__icon,

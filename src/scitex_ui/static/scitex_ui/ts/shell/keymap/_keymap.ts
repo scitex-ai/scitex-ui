@@ -374,9 +374,13 @@ export class Keymap {
 
     const hit = this.findBindingByChord(this.pending);
     if (hit && sequenceKey(hit.binding.sequence) === sequenceKey(this.pending)) {
-      // Exact match: fire and clear the pending prefix.
-      preventDefault();
-      this.registry.run(hit.binding.commandId, { via: "keyboard", source: target }, undefined);
+      // Exact match: dispatch the command. Conditional consumption — swallow
+      // the key ONLY when the command actually consumed it (ran AND its action
+      // didn't report a no-op). A no-op (e.g. "delete" with nothing selected)
+      // returns false, so we do NOT preventDefault and the key's native
+      // browser behavior is preserved. See CommandDef.action.
+      const consumed = this.registry.run(hit.binding.commandId, { via: "keyboard", source: target }, undefined);
+      if (consumed) preventDefault();
       this.resetPending();
       return;
     }

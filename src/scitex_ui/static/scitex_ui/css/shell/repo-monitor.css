@@ -259,7 +259,7 @@
   border: 1px solid var(--border-default, #30363d);
   border-radius: 3px;
   color: var(--text-primary, #c9d1d9);
-  font-family: var(--font-mono, "SFMono-Regular", "Consolas", monospace);
+  font-family: var(--mono-font-family, "SFMono-Regular", "Consolas", monospace);
   font-size: 0.65rem;
   padding: 4px 6px;
   resize: vertical;

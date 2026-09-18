@@ -120,3 +120,33 @@
   background: var(--app-accent-color, var(--workspace-icon-primary, #059669));
   z-index: 2;
 }
+
+/* ── Exactly ONE current destination; every other item NEUTRAL ────────────
+ * MEASURED DEFECT (operator, mobile screenshots, 2026-09-17): the Cards Board
+ * tab was the real selection while the global dock showed Home in purple and
+ * Chat in blue. Not multiple routing — INACTIVE ICONS PAINTED IN THEIR BRAND
+ * COLOUR, which reads as selected. A dock that is ambiguous about where you are
+ * is worse than one with no highlighting at all.
+ *
+ * The rule is deliberately specificity-armed: a brand colour (--app-accent-color
+ * or a per-app icon class) may apply ONLY to the item that carries
+ * aria-current. `:not([aria-current]) i` out-specifies a plain per-app icon
+ * rule, so a leaf's brand colour cannot resurrect the defect. The selected
+ * background is keyed to BOTH hooks, because the released component sets
+ * `.active` while the nav primitive now also sets aria-current.
+ */
+.stx-app-selector-nav__item:not([aria-current]) {
+  color: var(--workspace-text-secondary, #8b949e);
+  background: transparent;
+}
+
+.stx-app-selector-nav__item:not([aria-current]) i,
+.stx-app-selector-nav__item:not([aria-current]) .stx-app-selector-nav__label {
+  color: inherit;
+}
+
+.stx-app-selector-nav__item[aria-current],
+.stx-app-selector-nav__item.active {
+  color: var(--workspace-text-primary, #e6edf3);
+  background: var(--workspace-bg-active, rgba(177, 186, 196, 0.12));
+}

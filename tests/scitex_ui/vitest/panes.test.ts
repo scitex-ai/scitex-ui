@@ -1,4 +1,12 @@
-/** Mobile panes: switching, persistence, breakpoint and swipe. `npx vitest run` */
+/** Mobile panes: switching, persistence, breakpoint, swipe. `npx vitest run`
+
+Swipe-to-switch-tab is DISABLED by default (operator mobile ruling 7724-7725):
+horizontal content gestures (PDF pan, canvas drag, table scroll) must not
+change the active tab. The default is explicit tab tap/click, keyboard
+activation on the tablist, or a named `show()` command. Apps may opt in with
+`swipeToSwitch: true`; when opted in, swipes beginning inside interactive
+content (canvas, svg, table, iframe, PDF/canvas/graph/editor wrappers) are
+ignored. */
 
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -10,6 +18,7 @@ import {
 } from "../../../src/scitex_ui/static/scitex_ui/ts/app/panes";
 import type {
   PanesMedia,
+  PanesOptions,
   PanesStorage,
 } from "../../../src/scitex_ui/static/scitex_ui/ts/app/panes";
 
@@ -40,6 +49,9 @@ const MARKUP = `
     <section data-stx-pane="data" data-stx-label="Data" data-stx-icon="D">
       <input id="field">
       <div id="rail" style="overflow-x: auto"><div style="width: 2000px">wide</div></div>
+      <div id="pdf" class="stx-pdf-viewer"><canvas id="page"></canvas></div>
+      <div id="graph" class="stx-graph"><svg width="400" height="300"></svg></div>
+      <table id="table"><tr><td>cell</td></tr></table>
     </section>
     <section data-stx-pane="settings" data-stx-label="Settings" data-stx-order="3">settings</section>
     <section data-stx-pane="plot" data-stx-label="Plot" data-stx-order="2">plot</section>
@@ -50,8 +62,8 @@ function root(): HTMLElement {
   return document.querySelector<HTMLElement>("[data-stx-panes]")!;
 }
 
-function phone(storage: PanesStorage = new MemoryStorage()): Panes {
-  return new Panes(root(), { media: new FakeMedia(true), storage });
+function phone(options: PanesOptions = {}): Panes {
+  return new Panes(root(), { media: new FakeMedia(true), storage: new MemoryStorage(), ...options });
 }
 
 function activePane(panes: Panes): string | null {
@@ -144,15 +156,38 @@ describe("pane switching", () => {
     // Assert
     expect(pane).toBe("settings");
   });
+
+  it("switches on keyboard ArrowRight over the tablist", () => {
+    // Arrange
+    const panes = phone();
+    const firstTab = panes.tablist.querySelector<HTMLElement>('[data-stx-pane-tab="data"]')!;
+    firstTab.focus();
+    // Act
+    firstTab.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    // Assert
+    expect(panes.active).toBe("plot");
+  });
+
+  it("switches on keyboard ArrowLeft over the tablist", () => {
+    // Arrange
+    const panes = phone();
+    panes.show("plot");
+    const tab = panes.tablist.querySelector<HTMLElement>('[data-stx-pane-tab="plot"]')!;
+    tab.focus();
+    // Act
+    tab.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+    // Assert
+    expect(panes.active).toBe("data");
+  });
 });
 
 describe("persistence", () => {
   it("reopens on the pane last shown for the same app", () => {
     // Arrange
     const storage = new MemoryStorage();
-    phone(storage).show("plot");
+    phone({ storage }).show("plot");
     // Act
-    const reopened = phone(storage);
+    const reopened = phone({ storage });
     // Assert
     expect(reopened.active).toBe("plot");
   });
@@ -160,7 +195,7 @@ describe("persistence", () => {
   it("keys the remembered pane by app", () => {
     // Arrange
     const storage = new MemoryStorage();
-    phone(storage).show("plot");
+    phone({ storage }).show("plot");
     // Act
     const other = new Panes(root(), { app: "other", media: new FakeMedia(true), storage });
     // Assert
@@ -172,7 +207,7 @@ describe("persistence", () => {
     const storage = new MemoryStorage();
     storage.setItem("stx-panes:demo", "gone");
     // Act
-    const panes = phone(storage);
+    const panes = phone({ storage });
     // Assert
     expect(panes.active).toBe("data");
   });
@@ -208,36 +243,66 @@ describe("breakpoint", () => {
   });
 });
 
-describe("swipe", () => {
-  it("moves to the next tab on a left swipe", () => {
+describe("swipe is disabled by default", () => {
+  it("does not move to the next tab on a left swipe", () => {
     // Arrange
     const panes = phone();
     // Act
     swipe(panes.panes[0].element, -120);
     // Assert
-    expect(panes.active).toBe("plot");
+    expect(panes.active).toBe("data");
   });
 
-  it("moves to the previous tab on a right swipe", () => {
+  it("does not move to the previous tab on a right swipe", () => {
     // Arrange
     const panes = phone();
     panes.show("settings");
     // Act
     swipe(panes.panes[2].element, 120);
     // Assert
-    expect(panes.active).toBe("plot");
+    expect(panes.active).toBe("settings");
   });
 
-  it("ignores a mostly vertical gesture", () => {
-    // Arrange
+  it("does not switch tabs when panning a PDF (canvas inside the pane)", () => {
+    // Arrange — the card's core case: horizontal/diagonal pan in the PDF viewer.
     const panes = phone();
+    const page = document.getElementById("page")!;
     // Act
-    swipe(panes.panes[0].element, -80, 200);
+    swipe(page, -150);
+    swipe(page, -100, 60); // diagonal
     // Assert
     expect(panes.active).toBe("data");
   });
 
-  it("does not swipe panes from inside a horizontal scroller", () => {
+  it("does not switch tabs when panning a graph (svg)", () => {
+    // Arrange
+    const panes = phone();
+    const svg = document.querySelector<HTMLElement>("#graph svg")!;
+    // Act
+    swipe(svg, -150);
+    // Assert
+    expect(panes.active).toBe("data");
+  });
+
+  it("does not switch tabs when swiping a table", () => {
+    // Arrange
+    const panes = phone();
+    // Act
+    swipe(document.getElementById("table")!, -150);
+    // Assert
+    expect(panes.active).toBe("data");
+  });
+
+  it("does not switch tabs on a vertical scroll gesture", () => {
+    // Arrange
+    const panes = phone();
+    // Act — vertical swipe (dy dominates) must not switch.
+    swipe(panes.panes[0].element, -20, 300);
+    // Assert
+    expect(panes.active).toBe("data");
+  });
+
+  it("does not switch tabs when scrolling a horizontal scroller", () => {
     // Arrange
     const panes = phone();
     const rail = document.getElementById("rail")!;
@@ -249,7 +314,7 @@ describe("swipe", () => {
     expect(panes.active).toBe("data");
   });
 
-  it("does not swipe panes from a text field", () => {
+  it("does not switch tabs when swiping over a text field", () => {
     // Arrange
     const panes = phone();
     // Act
@@ -258,11 +323,101 @@ describe("swipe", () => {
     expect(panes.active).toBe("data");
   });
 
-  it("does not swipe on desktop", () => {
+  it("does not switch tabs on desktop", () => {
     // Arrange
     const panes = new Panes(root(), { media: new FakeMedia(false), storage: new MemoryStorage() });
     // Act
     swipe(panes.panes[0].element, -120);
+    // Assert
+    expect(panes.active).toBe("data");
+  });
+
+  it("switches with an explicit tab click even with swipe disabled", () => {
+    // Arrange
+    const panes = phone();
+    const tab = panes.tablist.querySelector<HTMLElement>('[data-stx-pane-tab="plot"]')!;
+    // Act
+    tab.click();
+    // Assert
+    expect(panes.active).toBe("plot");
+  });
+});
+
+describe("swipe is enabled by opt-in (swipeToSwitch: true)", () => {
+  it("moves to the next tab on a left swipe", () => {
+    // Arrange
+    const panes = phone({ swipeToSwitch: true });
+    // Act
+    swipe(panes.panes[0].element, -120);
+    // Assert
+    expect(panes.active).toBe("plot");
+  });
+
+  it("moves to the previous tab on a right swipe", () => {
+    // Arrange
+    const panes = phone({ swipeToSwitch: true });
+    panes.show("settings");
+    // Act
+    swipe(panes.panes[2].element, 120);
+    // Assert
+    expect(panes.active).toBe("plot");
+  });
+
+  it("ignores a mostly vertical gesture even when opted in", () => {
+    // Arrange
+    const panes = phone({ swipeToSwitch: true });
+    // Act
+    swipe(panes.panes[0].element, -80, 200);
+    // Assert
+    expect(panes.active).toBe("data");
+  });
+
+  it("does not swipe panes from inside a horizontal scroller (opted in)", () => {
+    // Arrange
+    const panes = phone({ swipeToSwitch: true });
+    const rail = document.getElementById("rail")!;
+    Object.defineProperty(rail, "scrollWidth", { value: 2000 });
+    Object.defineProperty(rail, "clientWidth", { value: 390 });
+    // Act
+    swipe(rail, -120);
+    // Assert
+    expect(panes.active).toBe("data");
+  });
+
+  it("does not swipe panes from a text field (opted in)", () => {
+    // Arrange
+    const panes = phone({ swipeToSwitch: true });
+    // Act
+    swipe(document.getElementById("field")!, -120);
+    // Assert
+    expect(panes.active).toBe("data");
+  });
+
+  it("does not switch when panning a PDF even when opted in", () => {
+    // Arrange — the card's hard requirement: never from PDF/canvas elements.
+    const panes = phone({ swipeToSwitch: true });
+    const page = document.getElementById("page")!;
+    // Act
+    swipe(page, -150);
+    // Assert
+    expect(panes.active).toBe("data");
+  });
+
+  it("does not switch when panning a graph (svg) even when opted in", () => {
+    // Arrange
+    const panes = phone({ swipeToSwitch: true });
+    const svg = document.querySelector<HTMLElement>("#graph svg")!;
+    // Act
+    swipe(svg, -150);
+    // Assert
+    expect(panes.active).toBe("data");
+  });
+
+  it("does not switch when swiping a table even when opted in", () => {
+    // Arrange
+    const panes = phone({ swipeToSwitch: true });
+    // Act
+    swipe(document.getElementById("table")!, -150);
     // Assert
     expect(panes.active).toBe("data");
   });

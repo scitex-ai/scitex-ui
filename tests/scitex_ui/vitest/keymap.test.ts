@@ -240,6 +240,58 @@ describe("Keymap runtime", () => {
     expect(undo.active).toBe(true);
     expect(undo.chords).toContain("M-/");
   });
+
+  /* ── Conditional consumption (the blocker-2 fix) ───────────────────────
+   * A command whose action reports a no-op (returns `false`) must NOT
+   * swallow the matched key, so native browser behavior is preserved for
+   * state-conditional commands (deselect/delete/nudge with no actionable
+   * selection). A command that consumed (void/true) still swallows it.
+   * This is the framework-level regression test from the figrecipe owner
+   * card scitex-ui-keymap-conditional-consumption-20260916.
+   */
+
+  it("consumes the key when the matched command has an actionable effect (backwards-compatible)", () => {
+    const run = vi.fn(() => {
+      /* returns void -> consumed, exactly like every pre-fix action */
+    });
+    reg.set({ id: "remove", label: "Remove", action: run });
+    expect(map.bind("global", "del", "remove")).toBeNull();
+    const ev = key({ key: "Delete" });
+    map["handleKeydown"](ev as any);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(ev._prevented.called).toBe(true); // always-actionable: swallowed
+  });
+
+  it("does NOT consume the key when the matched command is a no-op (returns false)", () => {
+    const run = vi.fn(() => false); // nothing selected -> no-op
+    reg.set({ id: "remove", label: "Remove", action: run });
+    expect(map.bind("global", "del", "remove")).toBeNull();
+    const ev = key({ key: "Delete" });
+    map["handleKeydown"](ev as any);
+    expect(run).toHaveBeenCalledTimes(1); // action WAS still invoked
+    expect(ev._prevented.called).toBe(false); // but native Delete is preserved
+  });
+
+  it("does NOT consume for a mode-inactive command even when bound", () => {
+    const run = vi.fn();
+    reg.set({ id: "ed:remove", label: "Remove", action: run, modes: new Set(["editor"]) });
+    expect(map.bind("editor", "del", "ed:remove")).toBeNull();
+    // No mode active -> the command is inactive -> not consumed.
+    const ev = key({ key: "Delete" });
+    map["handleKeydown"](ev as any);
+    expect(run).not.toHaveBeenCalled();
+    expect(ev._prevented.called).toBe(false);
+  });
+
+  it("registry.run() reports the consumption signal callers gate preventDefault on", () => {
+    const noop = vi.fn(() => false);
+    const consume = vi.fn(); // void
+    reg.set({ id: "noop", label: "Noop", action: noop });
+    reg.set({ id: "consume", label: "Consume", action: consume });
+    expect(reg.run("noop", { via: "keyboard" })).toBe(false);
+    expect(reg.run("consume", { via: "keyboard" })).toBe(true);
+    expect(reg.run("missing", { via: "keyboard" })).toBe(false);
+  });
 });
 
 /* ── Keymap overrides — the write-only defect (setOverride was ignored) ──────

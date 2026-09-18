@@ -24,6 +24,8 @@ import type {
   HelpGuide,
   HelpStorage,
   HelpStep,
+  TourChoice,
+  TourPreference,
 } from "./types";
 
 export const HELP_ATTRIBUTE = "data-stx-help";
@@ -45,6 +47,18 @@ const CLS_STEP_BODY = `${CLS}__step-body`;
 const CLS_CLOSE = `${CLS}__close`;
 const CLS_COUNT = `${CLS}__count`;
 const CLS_NAV = `${CLS}__nav`;
+//: The three first-use choices (SSOT hub PR 923 §8). One row, one hook each, so
+//: a leaf tests/styling a single answer does not have to match on its label —
+//: the labels are translated, the hooks are not.
+const CLS_CHOICES = `${CLS}__choices`;
+const CLS_CHOICE = `${CLS}__choice`;
+//: The bubble's replaceable body. The choices live BESIDE it inside the bubble,
+//: not inside it: the tour re-renders the step text on every step, and a row that
+//: lives in the replaced subtree survives exactly zero steps. Measured 2026-09-17
+//: in a browser: appended to the tour overlay instead, the row rendered at the
+//: overlay's top-left corner, outside the bubble's pointer-events, so the three
+//: answers could not be clicked at all — the primitive looked fine in jsdom.
+const CLS_ENTRY = `${CLS}__tour-entry`;
 
 /** Read the active language: document lang, else "en". */
 export function activeLanguage(doc: Document = document): string {
@@ -114,12 +128,16 @@ export class AppHelp {
     root.appendChild(this.button);
 
     if (options.autoStart === false) return;
-    if (!this.firstOpenDone() && this.tourSteps.length > 0) {
-      // Defer so the targets exist in the DOM by the time the tour highlights.
+    if (this.tourPreference() === "unseen" && !this.firstOpenDone() && this.tourSteps.length > 0) {
+      // FIRST USE IS AN ASK, NOT A LECTURE. The invite shows the three choices
+      // (§8) and highlights nothing; the coach marks only run once the user
+      // picks Watch tour. Auto-starting the tour here would drag a first-time
+      // user through steps before offering them "Later" — with no way to answer
+      // the question the product is asking. Defer so the page has settled.
       if (typeof requestAnimationFrame === "function") {
-        requestAnimationFrame(() => this.startTour());
+        requestAnimationFrame(() => this.showTourInvite());
       } else {
-        this.startTour();
+        this.showTourInvite();
       }
     }
   }
@@ -134,6 +152,68 @@ export class AppHelp {
       return this.storage?.getItem(`${STORAGE_PREFIX}${this.app}:done`) === "1";
     } catch {
       return true;
+    }
+  }
+
+  /**
+   * What the user answered at first use: "unseen" | "later" | "never".
+   *
+   * A SEPARATE KEY FROM `done` on purpose. `done` records that the guide was
+   * SEEN (a fact about the guide); this records what the user ASKED FOR (a fact
+   * about the user). Overwriting one with the other is how "Later" becomes
+   * indistinguishable from "Do not show again", and how a primitive ends up
+   * either re-offering a tour to someone who refused it or dropping it for
+   * someone who only postponed it.
+   */
+  tourPreference(): TourPreference {
+    try {
+      const stored = this.storage?.getItem(this.tourKey());
+      return stored === "later" || stored === "never" ? stored : "unseen";
+    } catch {
+      // Private mode / blocked storage: behave as unseen rather than throwing,
+      // so the guide still works; the choice simply does not persist.
+      return "unseen";
+    }
+  }
+
+  /** "Later": not now, and not a refusal. Suppresses the auto-start. */
+  deferTour(): void {
+    this.writeTourPreference("later");
+    this.closeTour();
+    this.emit({ view: "closed", choice: "later" });
+  }
+
+  /** "Do not show again": a refusal. Reversible only through reset. */
+  dismissTourForever(): void {
+    this.writeTourPreference("never");
+    this.closeTour();
+    this.emit({ view: "closed", choice: "never" });
+  }
+
+  /**
+   * Drop both the preference and the seen-flag, so Settings can re-offer the
+   * tour (SSOT: "reversible in Settings"). Deliberately clearing `done` too:
+   * a user who resets wants the tour offered again.
+   */
+  resetTourPreference(): void {
+    try {
+      this.storage?.removeItem(this.tourKey());
+      this.storage?.removeItem(`${STORAGE_PREFIX}${this.app}:done`);
+    } catch {
+      // Nothing to clean up if storage is unavailable.
+    }
+    this.emit({ view: "closed", choice: "watch" });
+  }
+
+  private tourKey(): string {
+    return `${STORAGE_PREFIX}${this.app}:tour`;
+  }
+
+  private writeTourPreference(preference: Exclude<TourPreference, "unseen">): void {
+    try {
+      this.storage?.setItem(this.tourKey(), preference);
+    } catch {
+      // Private mode / full quota: the tour still runs, the answer is not kept.
     }
   }
 
@@ -179,6 +259,26 @@ export class AppHelp {
       this.root.appendChild(this.tour);
     }
     this.showTourStep(0);
+    this.emit({ view: "tour", step: 0 });
+  }
+
+  /**
+   * Show the first-use invite: the tour bubble with the three choices and no
+   * highlight, so nothing is pointed at until the user asks to watch.
+   */
+  showTourInvite(): void {
+    this.closePanel();
+    if (!this.tour) {
+      this.tour = this.renderTour();
+      this.root.appendChild(this.tour);
+    }
+    const entry = this.tour.querySelector(`.${CLS_ENTRY}`);
+    if (entry) {
+      entry.innerHTML = `<div class="${CLS_STEP}"><div class="${CLS_STEP_TITLE}">${gettext(
+        "Take a quick tour?",
+      )}</div></div>`;
+    }
+    this.setChoicesVisible(true);
     this.emit({ view: "tour", step: 0 });
   }
 
@@ -233,17 +333,18 @@ export class AppHelp {
       });
       this.root.appendChild(this.highlight);
     }
-    const bubble = this.tour.querySelector(`.${CLS_TOUR_BUBBLE}`);
-    if (bubble) {
+    const entry = this.tour.querySelector(`.${CLS_ENTRY}`);
+    if (entry) {
       const icon = step.icon ? `<span class="${CLS_STEP_ICON}" aria-hidden="true">${step.icon}</span>` : "";
       const title = stepText(step.title, this.language) || gettext("Guide");
       const body = stepText(step.body, this.language);
-      bubble.innerHTML =
+      entry.innerHTML =
         `<div class="${CLS_STEP}">` +
         `${icon}<div class="${CLS_STEP_TITLE}">${title}</div>` +
         (body ? `<div class="${CLS_STEP_BODY}">${body}</div>` : "") +
         `</div>`;
     }
+    this.setChoicesVisible(false);
     const count = this.tour.querySelector(`.${CLS_COUNT}`);
     if (count) count.textContent = `${index + 1} / ${this.tourSteps.length}`;
     const nav = this.tour.querySelector(`.${CLS_NAV}`);
@@ -253,6 +354,47 @@ export class AppHelp {
       const next = nav.querySelector('[data-act="next"]') as HTMLButtonElement | null;
       if (next) next.textContent = index === this.tourSteps.length - 1 ? gettext("Done") : gettext("Next");
     }
+  }
+
+  /**
+   * The three first-use choices, each wired to its own outcome.
+   * Labels are translated; the `--watch/--later/--never` hooks are not, so a
+   * leaf can target one answer without matching on prose that changes per
+   * language.
+   */
+  private renderChoices(): HTMLElement {
+    const wrap = document.createElement("div");
+    wrap.className = CLS_CHOICES;
+    const choices: Array<[TourChoice, string]> = [
+      ["watch", gettext("Watch tour")],
+      ["later", gettext("Later")],
+      ["never", gettext("Do not show again")],
+    ];
+    for (const [choice, label] of choices) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `${CLS_CHOICE} ${CLS_CHOICE}--${choice}`;
+      button.dataset.choice = choice;
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        if (choice === "watch") {
+          this.startTour();
+          this.emit({ view: "tour", step: 0, choice });
+        } else if (choice === "later") {
+          this.deferTour();
+        } else {
+          this.dismissTourForever();
+        }
+      });
+      wrap.appendChild(button);
+    }
+    return wrap;
+  }
+
+  /** The choices belong to the invite, not to every step of a running tour. */
+  private setChoicesVisible(visible: boolean): void {
+    const choices = this.tour?.querySelector<HTMLElement>(`.${CLS_CHOICES}`);
+    if (choices) choices.hidden = !visible;
   }
 
   private renderButton(): HTMLButtonElement {
@@ -336,6 +478,11 @@ export class AppHelp {
 
     const bubble = document.createElement("div");
     bubble.className = CLS_TOUR_BUBBLE;
+    const entry = document.createElement("div");
+    entry.className = CLS_ENTRY;
+    bubble.appendChild(entry);
+    bubble.appendChild(this.renderChoices());
+    this.setChoicesVisible(false);
     tour.appendChild(bubble);
 
     const meta = document.createElement("div");

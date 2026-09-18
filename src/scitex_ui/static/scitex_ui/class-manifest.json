@@ -89,9 +89,23 @@
         "--dragging"
       ]
     },
+    "stx-app-header": {
+      "elements": [
+        "__action",
+        "__actions",
+        "__slot",
+        "__title",
+        "__version"
+      ],
+      "modifiers": [
+        "--project-selector"
+      ]
+    },
     "stx-app-help": {
       "elements": [
         "__button",
+        "__choice",
+        "__choices",
         "__close",
         "__count",
         "__footer",
@@ -107,6 +121,7 @@
         "__title",
         "__tour",
         "__tour-bubble",
+        "__tour-entry",
         "__tour-highlight",
         "__tour-meta"
       ],
@@ -236,6 +251,16 @@
       "elements": [
         "__btn",
         "__item"
+      ],
+      "modifiers": []
+    },
+    "stx-tour-player": {
+      "elements": [
+        "__chapter",
+        "__chapters",
+        "__control",
+        "__controls",
+        "__video"
       ],
       "modifiers": []
     },
