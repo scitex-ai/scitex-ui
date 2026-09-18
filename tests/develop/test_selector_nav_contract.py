@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Contract for the ONE hierarchical selector: tabs on desktop, cascade on mobile.
 
 OPERATOR DIRECTION 2026-09-17 (card sdk-mobile-app-shell-primitives-20260917):
@@ -49,8 +47,9 @@ _SIBLINGS = (
     css_dir() / "app" / "project-selector.css",
 )
 _TS = _STATIC / "ts" / "app" / "selector-nav"
+_BUNDLE = _STATIC / "js" / "app" / "selector-nav.js"
 
-_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
 _URL = re.compile(r"@media\s*\(\s*max-width:\s*(\d+)px\s*\)")
 
 _CASCADE = "--cascade"
@@ -150,6 +149,15 @@ def test_the_stylesheet_is_not_empty() -> None:
     size = len(css)
     # Assert
     assert size > 500
+
+
+def test_the_shipped_bundle_carries_cascade_depth() -> None:
+    # Arrange
+    bundle = _BUNDLE.read_text(errors="replace")
+    # Act
+    carries_depth = "data-stx-depth" in bundle
+    # Assert
+    assert carries_depth
 
 
 # ── The cascade shape ships styles, not just class names ───────────────────

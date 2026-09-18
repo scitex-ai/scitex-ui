@@ -1,5 +1,4 @@
-/* AUTO-GENERATED from ts/app/selector-nav/auto-mount.ts via esbuild — do not edit by hand. Rebuild: npx esbuild ts/app/selector-nav/auto-mount.ts --bundle --format=esm --outfile=js/app/selector-nav.js */
-// src/scitex_ui/static/scitex_ui/ts/_base/BaseComponent.ts
+// ts/_base/BaseComponent.ts
 var BaseComponent = class {
   container;
   config;
@@ -25,11 +24,11 @@ var BaseComponent = class {
   }
 };
 
-// src/scitex_ui/static/scitex_ui/ts/app/selector-nav/types.ts
+// ts/app/selector-nav/types.ts
 var SELECTOR_NAV_CHANGE = "stx-app-selector-nav:change";
 var SELECTOR_NAV_ATTRIBUTE = "data-stx-selector-nav";
 
-// src/scitex_ui/static/scitex_ui/ts/app/selector-nav/_SelectorNav.ts
+// ts/app/selector-nav/_SelectorNav.ts
 var CLS = "stx-app-selector-nav";
 var DEFAULT_BREAKPOINT = 600;
 var SelectorNav = class extends BaseComponent {
@@ -145,15 +144,16 @@ var SelectorNav = class extends BaseComponent {
     let depth = 0;
     while (level.length > 0) {
       const openNode = openPath[depth];
-      this.itemsEl.appendChild(this.buildCascadeLevel(level, current, openNode));
+      this.itemsEl.appendChild(this.buildCascadeLevel(level, current, openNode, depth));
       if (!openNode || !(openNode.children ?? []).length) break;
       level = openNode.children ?? [];
       depth += 1;
     }
   }
-  buildCascadeLevel(nodes, current, open) {
+  buildCascadeLevel(nodes, current, open, depth) {
     const list = document.createElement("div");
     list.className = `${CLS}__level`;
+    list.setAttribute("data-stx-depth", String(depth));
     list.setAttribute("role", "listbox");
     nodes.forEach((node, index) => {
       const button = this.buildButton(node, index, "option");
@@ -247,7 +247,7 @@ var SelectorNav = class extends BaseComponent {
   }
 };
 
-// src/scitex_ui/static/scitex_ui/ts/app/selector-nav/mount.ts
+// ts/app/selector-nav/mount.ts
 var MOUNTED_ATTRIBUTE = "data-stx-selector-nav-mounted";
 var instances = [];
 function readItems(element) {
@@ -293,7 +293,7 @@ var stxSelectorNav = {
   select: selectSelectorNav
 };
 
-// src/scitex_ui/static/scitex_ui/ts/app/selector-nav/auto-mount.ts
+// ts/app/selector-nav/auto-mount.ts
 window.stxSelectorNav = stxSelectorNav;
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => mountSelectorNavs());
