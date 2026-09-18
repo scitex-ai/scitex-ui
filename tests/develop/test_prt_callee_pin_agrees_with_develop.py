@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Guard: a `pull_request_target` workflow executed from the DEFAULT branch must
 pin the SAME org callee as develop.
 
@@ -39,6 +38,7 @@ from __future__ import annotations
 
 import pathlib
 import re
+import subprocess
 
 import pytest
 
@@ -62,7 +62,7 @@ _PRT = "pull_request_target"
 #: Requires the full org path (not just @sha) so an unrelated org pin cannot
 #: masquerade as the PRT callee.
 _CALLEE_PIN = re.compile(
-    r"uses:\s*scitex-ai/\.github/\.github/workflows/"
+    r"(?m)^[ \t-]*uses:\s*scitex-ai/\.github/\.github/workflows/"
     r"(?P<callee>[^\s'\"@]+)@(?P<sha>[0-9a-f]{7,40})"
 )
 
@@ -73,12 +73,12 @@ def _git_show(ref: str, path: str) -> str | None:
     this ref" signal, distinct from a transport failure (raises, caught by the
     fail-loud channel in the guard body)."""
     try:
-        return __import__("subprocess").check_output(
+        return subprocess.check_output(
             ["git", "-C", str(_PKG_ROOT), "show", f"{ref}:{path}"],
             text=True,
-            stderr=__import__("subprocess").DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
-    except __import__("subprocess").CalledProcessError:
+    except subprocess.CalledProcessError:
         return None
 
 
@@ -87,8 +87,6 @@ def _list_workflow_files(ref: str) -> list[str]:
     (ref:.github/workflows/) yields names relative to that dir, not full paths —
     the full-path form would make _git_show prepend the dir twice and read
     nothing, which the denominator probe then (correctly) refuses to call clean."""
-    import subprocess
-
     out = subprocess.check_output(
         ["git", "-C", str(_PKG_ROOT), "ls-tree", "--name-only", ref + ":.github/workflows/"],
         text=True,
@@ -122,6 +120,24 @@ def _CALLER_PIN(text: str):
     return _CALLEE_PIN.finditer(text)
 
 
+def test_callee_pin_detector_matches_a_real_uses_entry():
+    # Arrange
+    text = "    uses: scitex-ai/.github/.github/workflows/cla.yml@f5d19f5b"
+    # Act
+    match = _CALLEE_PIN.search(text)
+    # Assert
+    assert match
+
+
+def test_callee_pin_detector_ignores_a_comment_mention():
+    # Arrange
+    text = "# uses: scitex-ai/.github/.github/workflows/cla.yml@1c593985"
+    # Act
+    match = _CALLEE_PIN.search(text)
+    # Assert
+    assert match is None
+
+
 def pins_agree(main_pins, develop_pins) -> list[str]:
     """Pure comparison: return the divergence descriptions (empty = agree).
 
@@ -142,7 +158,7 @@ def _read_pins():
     """Read PRT callee pins for both refs. Fail-loud on unreadable ref."""
     try:
         main_pins = _prt_pins("origin/main")
-    except Exception as exc:
+    except (OSError, subprocess.SubprocessError) as exc:
         pytest.fail(
             f"cannot read origin/main PRT pins ({exc!r}). This guard compares "
             "the default branch against develop; if it cannot read the default "
@@ -151,7 +167,7 @@ def _read_pins():
         )
     try:
         develop_pins = _prt_pins("origin/develop")
-    except Exception as exc:
+    except (OSError, subprocess.SubprocessError) as exc:
         pytest.fail(
             f"cannot read origin/develop PRT pins ({exc!r}). Same fail-loud "
             "channel as origin/main: an unreadable ref is UNKNOWN, not clean."
@@ -186,7 +202,7 @@ def test_default_branch_prt_pins_agree_with_develop():
     # Assert — the default branch executes exactly what develop runs for PRs.
     assert not divergences, (
         "the DEFAULT branch's pull_request_target callee pins diverge from "
-        f"develop:\n  " + "\n  ".join(divergences) + "\n\n"
+        "develop:\n  " + "\n  ".join(divergences) + "\n\n"
         "pull_request_target executes the workflow from the DEFAULT branch, so "
         "a divergent pin means PRs are running a callee develop does not use — "
         "the silent-stale-execution defect of 2026-08-22 (main pinned an "
