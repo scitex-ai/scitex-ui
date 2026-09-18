@@ -214,20 +214,9 @@ _KNOWN_UNSTYLED: dict[str, str] = {
     "stx-shell-webcam-overlay": _inline_hook("ts/shell/chat/_webcam-capture.ts", "10 .style writes"),
     "stx-shell-webcam-panel": _inline_hook("ts/shell/chat/_webcam-capture.ts", "10 .style writes"),
     "ws-viewer-fallback-pre": _inline_hook("ts/shell/viewer/_ViewerManager.ts", "full rule in pre.style.cssText at :475"),
-    # (ws-viewer-placeholder is a FINDING, not a hook — it is an innerHTML
-    #  error box with no inline style of its own; listed once, below.)
-    # true findings (11)
-    "stx-shell-ai-context-menu": _FINDING,
-    "stx-shell-ai-context-menu-item": _FINDING,
-    "stx-shell-ai-image-thumb": _FINDING,
-    "stx-shell-ai-image-thumb-remove": _FINDING,
-    "stx-shell-ai-md-segment": _FINDING,
-    "stx-shell-ai-msg-thumb": _FINDING,
-    "stx-shell-ai-msg-thumbs": _FINDING,
-    "stx-shell-ai-session-rename": _FINDING,
-    "stx-shell-ai-tools": _FINDING,
-    "stx-shell-drop-target": _FINDING,
-    "ws-viewer-placeholder": _FINDING,
+    # True findings: none. PR #249 corrected the drop-target selector, and
+    # PR #255 styled the remaining nine chat classes plus viewer placeholder.
+    # The ratchet below now fails every newly emitted unstyled class.
 }
 
 

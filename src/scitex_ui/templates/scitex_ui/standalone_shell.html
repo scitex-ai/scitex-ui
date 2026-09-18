@@ -494,9 +494,20 @@
                   class="ws-module-pane"
                   {% if app_accent %}data-app-accent="{{ app_accent }}"{% endif %}>
                 {% block app_content %}
+                    <!-- ── The app mount container ──────────────────────────
+                         `data-app-version` carries the LEAF's own version to
+                         its badge (ts/app/app-header/types.ts resolves it from
+                         the mount root, then an ancestor, then <html>). It is
+                         stamped ONLY when a version was declared: a blank or
+                         missing input emits no attribute at all, because an
+                         empty one would read as a declared-but-empty version
+                         and the badge must be absent rather than wrong. No
+                         fallback to the shell's own version exists on this
+                         path — see scitex_ui.mount (APP VERSION CONTRACT). -->
                     <div id="root"
                          data-working-dir="{{ working_dir|default:'' }}"
-                         data-app-name="{{ app_name|default:'app' }}"></div>
+                         data-app-name="{{ app_name|default:'app' }}"
+                         {% if app_version %}data-app-version="{{ app_version }}"{% endif %}></div>
                 {% endblock %}
             </main>
         </div>
@@ -508,6 +519,12 @@
              template renders above. Self-guards: no-op when that container is
              absent or the viewport is wide. See ADR 0002. -->
         <script src="{% static 'scitex_ui/js/shell/mobile-swipe.js' %}"
+                defer></script>
+        <!-- Launcher overlay collision runtime (SSOT hub PR 923 §4): keeps the
+             app surface at the full viewport and clears/retracts the overlay
+             when a focused actionable control would sit behind it. Self-guards:
+             attaches nothing when this page renders no launcher. -->
+        <script src="{% static 'scitex_ui/js/shell/launcher-overlay.js' %}"
                 defer></script>
         {% block extra_js %}{% endblock %}
         <!-- Element inspector (Alt+I) — only emitted for DEBUG/staff -->

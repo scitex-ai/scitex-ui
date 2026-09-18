@@ -3,6 +3,7 @@
 
 from ._alert_banner import AlertBanner  # noqa: F401
 from ._app_help import AppHelp  # noqa: F401
+from ._app_header import AppHeader  # noqa: F401
 from ._app_launcher import AppLauncher  # noqa: F401
 from ._app_shell import AppShell  # noqa: F401
 from ._attachment import Attachment  # noqa: F401
@@ -39,3 +40,4 @@ from ._theme_provider import ThemeProvider  # noqa: F401
 from ._toast import Toast  # noqa: F401
 from ._toggle_switch import ToggleSwitch  # noqa: F401
 from ._tooltip import Tooltip  # noqa: F401
+from ._tour_player import TourPlayer  # noqa: F401

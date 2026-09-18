@@ -35,12 +35,23 @@
 
 /* ── Phone ─────────────────────────────────────────────────────────── */
 
+/* The phone height subtracts the header and NOT the launcher.
+ *
+ * It used to subtract `--site-dock-height` too, which is the band the launcher
+ * overlay reserves nowhere (card ui-shared-brand-dock-tour-primitives-20260917,
+ * SSOT hub PR 923 §4: "The floating launcher overlays content; it does not
+ * reserve a full-width bottom strip. Apps use the full available viewport.").
+ * Subtracting it here made the phone panes permanently shorter by a floating
+ * overlay's height — the reservation, spelled in the SDK instead of the hub —
+ * while ts/shell/launcher-overlay.ts handles the one moment a control can
+ * actually be covered. A caller that genuinely wants the old height sets
+ * `--stx-panes-phone-height` explicitly. */
 .stx-panes.stx-panes--single {
   display: flex;
   flex-direction: column;
   height: var(
     --stx-panes-phone-height,
-    calc(100dvh - var(--site-header-height, var(--header-height, 0px)) - var(--site-dock-height, 0px))
+    calc(100dvh - var(--site-header-height, var(--header-height, 0px)))
   );
   min-height: 0;
 }

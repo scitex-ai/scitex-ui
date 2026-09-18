@@ -400,3 +400,23 @@ class TestExemptionsStayHonest:
         assert not offenders, (
             f"_EXEMPT entries with no written reason: {', '.join(offenders)}."
         )
+
+# ── The exemption list is EMPTY, asserted rather than skipped ──────────────
+# Both TestExemptionsStayHonest arms are parametrized over `_EXEMPT`; an empty
+# list makes them SKIP with "got empty parameter set", which reads like a guard
+# that measures nothing (card
+# scitex-ui-two-parametrized-guards-collect-an-empty-set-20260905). Empty is the
+# DESIRED end state — the twins agree — so assert it.
+
+
+def test_the_exemption_list_is_empty_by_intent():
+    # Arrange — `_EXEMPT` holds divergences declared deliberate.
+    exemptions = _EXEMPT
+    # Act
+    remaining = sorted(exemptions)
+    # Assert
+    assert remaining == [], (
+        f"{remaining} is exempt from the twin agreement. If that divergence is "
+        "deliberate, delete this assertion in the same commit and record the "
+        "reason on the entry — that is the price of a silent exemption."
+    )

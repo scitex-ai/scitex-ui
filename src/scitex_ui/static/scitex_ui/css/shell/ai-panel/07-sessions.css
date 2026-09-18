@@ -108,3 +108,56 @@
 .stx-shell-ai-session-del:hover {
   color: #cf222e;
 }
+
+/* ── Inline rename input (replaces the chip title while editing) ──────────
+ * chat/_sessions-panel.ts swaps the title span for this <input>. Unstyled it
+ * rendered as a raw browser field, which is wider and taller than the chip it
+ * replaced and pushed the row out of the sessions bar. */
+.stx-shell-ai-session-rename {
+  min-width: 0;
+  max-width: 140px;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--workspace-border-subtle, rgba(110, 118, 129, 0.3));
+  border-radius: 3px;
+  background: var(--workspace-bg-elevated, transparent);
+  color: var(--text-primary, inherit);
+  font: inherit;
+  font-size: 0.6875rem;
+}
+
+/* ── The sessions context menu ────────────────────────────────────────────
+ * position: FIXED is load-bearing, not decoration: the component appends the
+ * menu to document.body and positions it from e.clientX/clientY, which are
+ * VIEWPORT coordinates. Absolute positioning would offset it by the scroll of
+ * the panel it was opened from.
+ * --z-dropdown (primitives/z-index.css) because a body-level menu must clear
+ * the panel chrome it was opened from. */
+.stx-shell-ai-context-menu {
+  position: fixed;
+  z-index: var(--z-dropdown, 1000);
+  min-width: 160px;
+  padding: 0.25rem 0;
+  border: 1px solid var(--workspace-border-subtle, rgba(110, 118, 129, 0.3));
+  border-radius: 4px;
+  background: var(--workspace-bg-elevated, var(--bg-surface, #fff));
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.25));
+  color: var(--text-primary, inherit);
+}
+
+/* A menu item is a div with an icon and a label (not a <button>), so the
+   cursor and the hover background are what make it read as actionable. */
+.stx-shell-ai-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--text-primary, inherit);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.stx-shell-ai-context-menu-item:hover {
+  background: var(--workspace-bg-hover, rgba(177, 186, 196, 0.08));
+}

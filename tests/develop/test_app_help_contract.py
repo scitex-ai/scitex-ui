@@ -128,3 +128,36 @@ def test_the_component_reads_the_guide_from_the_page_not_a_hardcoded_list() -> N
         "AppHelp must read its guide from the page's stx-app-help-<app> "
         "json_script element, not from a hardcoded step list"
     )
+
+
+def test_the_first_use_choices_are_44px_touch_targets() -> None:
+    """Watch / Later / Do not show again are asked at the moment of least patience."""
+    # Arrange
+    css = _css()
+    # Act
+    match = re.search(r"\.stx-app-help__choice\s*\{([^}]*)\}", css)
+    body = match.group(1) if match else ""
+    # Assert
+    assert "min-width: 44px" in body and "min-height: 44px" in body, (
+        "each first-use choice must be at least 44px on both axes"
+    )
+
+
+def test_each_first_use_choice_carries_its_own_class_hook() -> None:
+    """The hooks are stable while the labels are translated (hub PR 923 §8)."""
+    # Arrange
+    css = _css()
+    # Act
+    missing = [c for c in ("--watch", "--later", "--never") if f".stx-app-help__choice{c}" not in css]
+    # Assert
+    assert missing == [], f"a leaf cannot target an answer without a hook: missing {missing}"
+
+
+def test_the_choices_row_can_be_hidden_between_steps() -> None:
+    """The invite owns the choices; a running tour must be able to suppress them."""
+    # Arrange
+    css = _css()
+    # Act
+    hidden_rule = re.search(r"\.stx-app-help__choices\[hidden\]\s*\{([^}]*)\}", css)
+    # Assert
+    assert hidden_rule is not None and "display: none" in hidden_rule.group(1)

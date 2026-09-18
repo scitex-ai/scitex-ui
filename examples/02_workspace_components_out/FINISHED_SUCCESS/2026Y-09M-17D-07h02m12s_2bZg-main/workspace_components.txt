@@ -1,0 +1,4 @@
+theme-provider v0.1.0 — Light/dark theme manager with semantic color tokens
+app-shell v0.1.0 — Workspace layout shell with collapsible sidebar
+file-browser v0.1.0 — Tree view for navigating file hierarchies
+status-bar v0.1.0 — Bottom status bar with left/center/right sections

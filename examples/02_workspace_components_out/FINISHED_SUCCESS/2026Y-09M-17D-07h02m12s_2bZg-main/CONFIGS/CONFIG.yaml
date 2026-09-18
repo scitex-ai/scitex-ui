@@ -1,0 +1,13 @@
+ID: 2026Y-09M-17D-07h02m12s_2bZg
+PID: 41080
+START_DATETIME: 2026-09-17 07:02:12.982926
+FILE: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/02_workspace_components.py
+SDIR_OUT: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/02_workspace_components_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/02_workspace_components_out/RUNNING/2026Y-09M-17D-07h02m12s_2bZg-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-09-17 07:02:15.123836
+RUN_DURATION: 00:00:02
