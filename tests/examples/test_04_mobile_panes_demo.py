@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """Smoke test for examples/04_mobile_panes_demo.py.
 
@@ -42,7 +41,7 @@ def test_the_example_compiles_without_syntax_errors() -> None:
     # Arrange
     cmd = [sys.executable, "-m", "py_compile", str(EXAMPLE)]
     # Act
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
     # Assert
     assert result.returncode == 0, result.stderr
 
@@ -70,11 +69,12 @@ def _build_page() -> str:
     installed = "scitex_session" in sys.modules
     if not installed:
         stub = ModuleType("scitex_session")
-        # setattr, not attribute assignment: a module has no such attributes
-        # declared, and the static checkers read `stub.INJECTED = ...` on a
-        # ModuleType as an error rather than as the stand-in it is.
-        setattr(stub, "INJECTED", object())
-        setattr(stub, "session", lambda fn=None, *a, **k: fn if fn is not None else (lambda f: f))
+        # ModuleType has no declarations for these test-only attributes, so use
+        # its namespace directly rather than teaching static checkers fake APIs.
+        stub.__dict__["INJECTED"] = object()
+        stub.__dict__["session"] = (
+            lambda fn=None, *a, **k: fn if fn is not None else (lambda f: f)
+        )
         sys.modules["scitex_session"] = stub
 
     try:
@@ -105,13 +105,19 @@ def test_the_page_never_asks_a_server_for_an_asset_it_inlines() -> None:
     )
 
 
-def test_the_inlined_assets_are_the_shipped_stylesheet_and_module() -> None:
-    """Removing the dead references must not remove the working copies."""
+def test_the_inlined_stylesheet_is_the_shipped_stylesheet() -> None:
     # Arrange
     page = _build_page()
     # Act
     has_stylesheet = ".stx-panes__tab" in page and ".stx-panes--single" in page
-    has_module = "mountPanes" in page and "stx-panes--single" in page
     # Assert
     assert has_stylesheet, "the inlined css/app/panes.css must reach the page"
+
+
+def test_the_inlined_module_is_the_shipped_module() -> None:
+    # Arrange
+    page = _build_page()
+    # Act
+    has_module = "mountPanes" in page and "stx-panes--single" in page
+    # Assert
     assert has_module, "the inlined js/app/panes.js must reach the page"
