@@ -212,6 +212,18 @@
         "--open"
       ]
     },
+    "stx-app-selector-nav": {
+      "elements": [
+        "__footer",
+        "__item",
+        "__items",
+        "__label",
+        "__level"
+      ],
+      "modifiers": [
+        "--cascade"
+      ]
+    },
     "stx-app-tooltip": {
       "elements": [],
       "modifiers": []
