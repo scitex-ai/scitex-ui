@@ -35,8 +35,24 @@ export interface CommandDef {
   id: string;
   /** Human label for the help UI and agent introspection. */
   label: string;
-  /** The action. Receives an optional dispatch payload from the caller. */
-  action: (payload?: unknown) => void;
+  /**
+   * The action. Receives an optional dispatch payload from the caller.
+   *
+   * CONSUMPTION CONTRACT (conditional consumption): the action's RETURN
+   * decides whether a keyboard dispatch may call preventDefault on the matched
+   * chord.
+   *   - return `void`/`undefined`/`true` (the default, and what every
+   *     always-actionable command does) -> the chord is CONSUMED (swallowed).
+   *   - return `false` -> the action was invoked but had NO actionable effect
+   *     (e.g. "deselect" when nothing is selected, "delete" with no selection,
+   *     "nudge" with no selected figure) -> the chord is NOT consumed, so the
+   *     key's native browser behavior is preserved.
+   * This is how an app keeps native behavior for state-conditional commands
+   * without a leaf manual handler: the action already knows its own state, so
+   * it returns `false` on a no-op. `run()` reports the same signal back so the
+   * Keymap can gate preventDefault on it.
+   */
+  action: (payload?: unknown) => boolean | void;
   /**
    * Optional: this command only makes sense in certain modes. When present,
    * the command is inactive (and unbindable-by-default) outside those modes.
@@ -136,17 +152,24 @@ export class CommandRegistry {
   }
 
   /**
-   * Dispatch a command by ID. Returns true when a registered AND active
-   * command ran. A registered-but-inactive command (wrong mode) returns
-   * false without running — the binding that resolved to it was not a match.
-   * An unknown ID returns false. This is the ONE command function every
-   * caller converges on.
+   * Dispatch a command by ID. Returns whether the matched chord should be
+   * CONSUMED (i.e. the caller may call preventDefault on a keyboard chord).
+   *   - false: nothing ran (unknown ID, or registered-but-inactive command —
+   *     wrong mode) OR the command ran but its action reported a no-op
+   *     (returned `false`, e.g. "delete" with nothing selected). Either way
+   *     the caller must NOT swallow the key — native behavior is preserved.
+   *   - true: a registered AND active command ran AND consumed (the action
+   *     returned void/undefined/true — the default for always-actionable
+   *     commands).
+   * This is the ONE command function every caller converges on; buttons and
+   * agents ignore the boolean (a click is consumed by definition), while the
+   * Keymap uses it to gate preventDefault (conditional consumption).
    */
   run(id: string, caller?: CallerInfo, payload?: unknown): boolean {
     const def = this.commands.get(id);
     if (!def || !this.isActive(def)) return false;
-    def.action(payload);
-    return true;
+    const consumed = def.action(payload);
+    return consumed !== false;
   }
 }
 
