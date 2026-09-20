@@ -136,15 +136,19 @@ def mcp_start(dry_run, yes):
     if dry_run:
         click.echo("DRY RUN — would start scitex-ui MCP server (stdio transport)")
         return
-    try:
-        from ._mcp.server import mcp as mcp_server
-    except ImportError as e:
+    # `fastmcp` is the optional [mcp] extra. `_mcp.server` is importable without
+    # it (PS-233 guard) and reports the fact through FASTMCP_AVAILABLE, so the
+    # documented exit code 1 with the install command is produced HERE rather
+    # than being inferred from an ImportError that no longer escapes.
+    from ._mcp.server import FASTMCP_AVAILABLE, mcp as mcp_server
+
+    if not FASTMCP_AVAILABLE:
         click.secho(
             "Error: fastmcp not installed. pip install scitex-ui[mcp]",
             fg="red",
             err=True,
         )
-        raise SystemExit(1) from e
+        raise SystemExit(1)
     mcp_server.run()
 
 @mcp_group.command(
@@ -212,12 +216,14 @@ def mcp_doctor():
 @click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
 def mcp_list_tools(verbose, as_json):
     """List available MCP tools."""
-    try:
-        from ._mcp.server import mcp as mcp_server
-    except ImportError as e:
+    # Same optional-extra contract as `mcp start`: the module imports without
+    # fastmcp, the flag says whether the capability is live.
+    from ._mcp.server import FASTMCP_AVAILABLE, mcp as mcp_server
+
+    if not FASTMCP_AVAILABLE:
         raise click.ClickException(
-            f"fastmcp not installed. pip install scitex-ui[mcp]\n{e}"
-        ) from e
+            "fastmcp not installed. pip install scitex-ui[mcp]"
+        )
 
     import asyncio
 
@@ -382,7 +388,13 @@ def list_python_apis(verbose, as_json):
         if verbose >= 2 and api.get("doc"):
             click.echo(f"    {api['doc']}")
 
-# Wire shared subcommands from scitex-dev
+# Wire shared subcommands from scitex-dev.
+# PS-233 — this import is already guarded: `docs` / `skills` are the [cli]
+# extra's surface, so without scitex-dev they are simply not registered and the
+# console script still works. (These two sites appeared in the PS-233 report
+# only because the rule aggregates per DISTRIBUTION: one unguarded scitex-dev
+# import anywhere made every scitex-dev site report. With the remaining sites
+# guarded, they drop out — no behaviour change was needed here.)
 try:
     from scitex_dev.cli import docs_click_group, skills_click_group
 
@@ -419,6 +431,8 @@ from ._linter._cli import lint as _lint_command
 
 main.add_command(_lint_command, name="lint")
 
+# PS-233 — already guarded: shell completion is scitex-dev's, and its absence
+# costs only the completion commands, never the console script.
 try:
     from scitex_dev._cli._completion import attach_shell_completion
 

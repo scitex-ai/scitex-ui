@@ -1,13 +1,76 @@
 #!/usr/bin/env python3
-"""MCP server for scitex-ui — skills and documentation via Model Context Protocol."""
+"""MCP server for scitex-ui — skills and documentation via Model Context Protocol.
+
+fastmcp is the OPTIONAL ``[mcp]`` extra and this module is that extra's whole
+surface, so the distribution is imported under a guard (PS-233) and is NOT
+promoted into ``[project.dependencies]``. Serving MCP is a capability a
+consumer of the UI components must be able to install without; making fastmcp
+core would put it on every install of a Django/React component library.
+
+The guard degrades in a defined way rather than with a silent ``pass``:
+
+* the module stays importable without fastmcp, and each tool function below is
+  still defined and callable as a plain Python function;
+* ``FASTMCP_AVAILABLE`` is the caller-visible answer to "is the capability
+  present" — ``scitex-ui mcp start`` / ``mcp list-tools`` check it and report
+  the install command (exit 1, as documented in their help specs) instead of
+  crashing on a half-built server;
+* ``run_server()`` refuses with :data:`INSTALL_HINT` rather than letting an
+  AttributeError escape from a ``None``.
+
+``_AbsentFastMCP`` is what ``mcp`` binds to when the extra is missing: its
+``tool()`` decorator returns the function unchanged (the DEFINITIONS do not
+need fastmcp, the REGISTRATION does), and everything that would actually serve
+raises. Nothing is swallowed — running an MCP server without fastmcp still
+fails loudly, it just no longer makes the module unimportable.
+"""
 
 from __future__ import annotations
 
 import json as _json_mod
 
-from fastmcp import FastMCP
+try:
+    from fastmcp import FastMCP
+except ImportError:  # optional extra `[mcp]` — PS-233 guard
+    FastMCP = None  # type: ignore[assignment,misc]
 
-mcp = FastMCP("scitex-ui")
+#: Whether the optional ``[mcp]`` extra is importable in this environment.
+FASTMCP_AVAILABLE: bool = FastMCP is not None
+
+#: Shown when something tries to serve without the extra installed.
+INSTALL_HINT = (
+    "scitex-ui's MCP server needs the optional `mcp` extra: "
+    "pip install scitex-ui[mcp]"
+)
+
+
+class _AbsentFastMCP:
+    """Stand-in for ``FastMCP`` when the optional ``[mcp]`` extra is absent.
+
+    Deliberately not a fake server: registration is a no-op so the module and
+    its tool functions still import, and every serving entry point raises with
+    :data:`INSTALL_HINT`.
+    """
+
+    def tool(self, *args, **kwargs):
+        """No-op registration — returns the decorated function unchanged."""
+
+        def _register(fn):
+            return fn
+
+        return _register
+
+    def run(self, *args, **kwargs):
+        raise RuntimeError(INSTALL_HINT)
+
+    async def list_tools(self, *args, **kwargs):
+        raise RuntimeError(INSTALL_HINT)
+
+
+if FastMCP is None:  # optional extra absent — see FASTMCP_AVAILABLE
+    mcp = _AbsentFastMCP()
+else:
+    mcp = FastMCP("scitex-ui")
 
 
 def _json(obj):
@@ -182,7 +245,14 @@ def ui_get_docs_path() -> str:
 
 
 def run_server(transport: str = "stdio") -> None:
-    """Run the MCP server."""
+    """Run the MCP server.
+
+    Raises RuntimeError carrying the install command when the optional ``[mcp]``
+    extra is absent. Keeping this module importable is the guard's job; serving
+    without fastmcp is still a loud failure, never a no-op.
+    """
+    if not FASTMCP_AVAILABLE:
+        raise RuntimeError(INSTALL_HINT)
     mcp.run(transport=transport)
 
 
