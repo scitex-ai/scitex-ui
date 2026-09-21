@@ -12,6 +12,12 @@
   "modifiers_are_not_a_contract": "Modifiers are listed for fixtures only. Match them by grammar -- <entry>(?:--[\\w-]+)? -- because they are open-ended state.",
   "generated_by": "tests/develop/test_class_manifest_matches_source.py",
   "components": {
+    "stx-action-bar": {
+      "elements": [
+        "__item"
+      ],
+      "modifiers": []
+    },
     "stx-app-combobox": {
       "elements": [
         "__empty",

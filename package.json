@@ -29,6 +29,7 @@
     "./ts/*": "./src/scitex_ui/static/scitex_ui/ts/*",
     "./src/*": "./src/*",
     "./package.json": "./package.json",
+    "./ts/app/action-bar": "./src/scitex_ui/static/scitex_ui/ts/app/action-bar/index.ts",
     "./ts/app/ajax-loader": "./src/scitex_ui/static/scitex_ui/ts/app/ajax-loader/index.ts",
     "./ts/app/attachment": "./src/scitex_ui/static/scitex_ui/ts/app/attachment/index.ts",
     "./ts/app/app-launcher": "./src/scitex_ui/static/scitex_ui/ts/app/app-launcher/index.ts",
