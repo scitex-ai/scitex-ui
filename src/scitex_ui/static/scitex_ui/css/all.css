@@ -4,6 +4,7 @@
  * Do not edit manually. Regenerate with: npx tsx css/_build-index.ts
  */
 
+@import "./app/action-bar.css";
 @import "./app/alert-banner.css";
 @import "./app/app-header.css";
 @import "./app/app-help.css";
