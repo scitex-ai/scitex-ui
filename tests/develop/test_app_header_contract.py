@@ -429,6 +429,121 @@ def test_the_component_declares_the_manifest_class_convention() -> None:
     assert declared
 
 
+# ── Row order: the selector slot and the actions slot are a PAIR ───────────
+#
+# MEASURED DEFECT, 2026-09-21, reported by scitex-writer on adopting this header
+# (card scitex-ui-header-actions-render-left-of-the-project-selector-20260921).
+# The slot's `order: 1` sorted it AFTER `.stx-app-header__actions`, which
+# declared no order and so kept the default 0. Flexbox sorts by `order`
+# ascending, so a header with a FILLED actions slot rendered
+# [title][version][actions][selector] — the contract at the top of this file,
+# inverted. The slot's `margin-right: auto` then sat on the LAST item, so the
+# slack was absorbed to its own right and nothing reached the right edge either.
+#
+# WHY THE EXISTING GUARDS COULD NOT SEE IT, which is the reason this section is
+# written the way it is. Three guards covered this row and all three were green
+# while it rendered upside down:
+#
+#   test_the_project_slot_pins_an_explicit_order  asserts an `order` is present.
+#   test_header_slot_order_is_one                 asserts the literal `order: 1`,
+#                                                 with a docstring stating the
+#                                                 mechanism it trusts — "before
+#                                                 actions (order 2+)". Nothing
+#                                                 anywhere set order 2+.
+#   test_header_slot_uses_margin_right_auto       asserts the string is present,
+#                                                 which it is, and inert, because
+#                                                 the item carrying it sorts last.
+#
+# Each assertion was TRUE and the relation between them was never checked. So
+# these tests assert the RELATION — whatever the two values are, the actions must
+# sort strictly AFTER the slot — and changing one half alone fails here.
+
+
+def _order_of(block: str) -> int | None:
+    """The numeric `order` declared by `block`, or None when it declares none.
+
+    Anchored to its own line so a comment containing the word cannot satisfy it,
+    and returning None rather than a default so an ABSENT declaration is a
+    falsifiable answer instead of a silent 0 that reads as correct.
+    """
+    match = re.search(r"(?m)^\s*order:\s*(-?\d+)\s*;", block)
+    return int(match.group(1)) if match else None
+
+
+def _rule_block_in(css_text: str, selector: str) -> str:
+    """The body of the first rule in `css_text` whose selector list has `selector`."""
+    match = re.search(re.escape(selector) + r"\s*\{([^{}]*)\}", css_text)
+    return match.group(1) if match else ""
+
+
+def _actions_sort_after(slot_order: int | None, actions_order: int | None) -> bool:
+    """True when the actions slot is placed after the project-selector slot.
+
+    An absent order on EITHER side is False, not a default: that is exactly the
+    shipped defect (slot 1, actions absent), and a helper that defaulted to 0
+    would report it as correct.
+    """
+    if slot_order is None or actions_order is None:
+        return False
+    return actions_order > slot_order
+
+
+def test_the_order_extractor_reads_a_number_and_reports_absence() -> None:
+    """CONTROL: the extractor answers both a declared value and no declaration."""
+    # Arrange
+    declared = ".x {\n  order: 2;\n}"
+    absent = ".x {\n  display: flex;\n}"
+    # Act
+    read, missing = _order_of(declared), _order_of(absent)
+    # Assert
+    assert read == 2 and missing is None
+
+
+def test_the_row_order_check_accepts_an_ordered_pair() -> None:
+    """POSITIVE control over a LITERAL sample: slot 1, actions 2 is ordered."""
+    # Arrange
+    ordinal_pair = (1, 2)
+    # Act
+    ordered = _actions_sort_after(*ordinal_pair)
+    # Assert
+    assert ordered is True
+
+
+def test_the_row_order_check_rejects_the_pair_that_shipped_broken() -> None:
+    """NEGATIVE control over a LITERAL sample: the shipped pair is NOT ordered.
+
+    This is the defect verbatim — the slot's `order: 1` and an actions slot that
+    declares nothing — so a helper that stopped discriminating would report the
+    broken arrangement as correct rather than going quietly green.
+    """
+    # Arrange
+    shipped_broken_pair = (1, None)
+    # Act
+    ordered = _actions_sort_after(*shipped_broken_pair)
+    # Assert
+    assert ordered is False
+
+
+def test_the_actions_slot_sorts_after_the_project_selector() -> None:
+    """The pair that renders [title][version][selector] ... [actions].
+
+    The slot is owned by project-selector.css and the actions rule by this
+    component's stylesheet, so the relation spans two files and neither file can
+    assert it alone — which is how the two halves came apart in the first place.
+    """
+    # Arrange
+    slot_order = _order_of(_rule_block_in(_slot_css(), _SLOT))
+    actions_order = _order_of(_rule_block(_ACTIONS))
+    # Act
+    ordered = _actions_sort_after(slot_order, actions_order)
+    # Assert
+    assert ordered, (
+        "the actions slot must sort AFTER the project selector or the row "
+        f"renders [title][version][actions][selector]: slot order={slot_order}, "
+        f"actions order={actions_order}"
+    )
+
+
 # ── The mount-metadata contract (scitex-app) ───────────────────────────────
 
 

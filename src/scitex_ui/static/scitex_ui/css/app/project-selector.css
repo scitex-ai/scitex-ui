@@ -217,6 +217,18 @@
  * selector stays on the left, always, on every app, desktop and phone.
  * The guard is a SLOT the app wraps the selector in, not a per-app CSS
  * override, so there is no consumer-specific workaround to drift.
+ *
+ * `order: 1` IS HALF OF A PAIR, and the missing half cost a shipped defect.
+ * Flexbox sorts by `order` ascending, so this value places the slot after every
+ * default-order item — INCLUDING `.stx-app-header__actions`, which therefore has
+ * to declare `order: 2` (app-header.css). On develop as measured 2026-09-21 only
+ * this half existed, so every header that declared actions rendered
+ * [title][version][actions][selector] — and the auto-margin above, sitting on the
+ * last item, pushed nothing to the right edge at all. Measured in chromium,
+ * reported by scitex-writer on adopting the header, card
+ * scitex-ui-header-actions-render-left-of-the-project-selector-20260921.
+ * tests/develop/test_app_header_contract.py now asserts the RELATION between the
+ * two orders, not either literal, so this cannot recur one half at a time.
  */
 .stx-app-header__slot--project-selector {
   display: inline-flex;

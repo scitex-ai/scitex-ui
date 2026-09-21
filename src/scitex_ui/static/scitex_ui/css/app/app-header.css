@@ -23,7 +23,10 @@
  * tests/develop/test_project_selector_contract.py. That slot's `margin-right:
  * auto` is what pushes the actions to the right edge — so `__actions` must NOT
  * also take a left auto-margin, which would split the free space between them
- * and drift the selector toward the centre.
+ * and drift the selector toward the centre. The slot's `order: 1` is the other
+ * half of the same arrangement and needs `__actions` at a HIGHER order; with the
+ * actions left at the default 0 the row inverts. The pair is asserted as a
+ * RELATION (test_app_header_contract.py), so neither half can move alone.
  *
  * RESPONSIVE TOKENS: --stx-touch-target-min / --stx-safe-inset-* are declared in
  * shell/theme.css, which a page loading ONLY app.css does not include. The
@@ -75,11 +78,29 @@
   display: none;
 }
 
+/* ORDER 2 IS LOAD-BEARING, not decoration, and it is half of a PAIR: the
+   project-selector slot takes order 1 (project-selector.css), so the two
+   declarations together produce the row above. If this slot keeps the default
+   order 0 it sorts BEFORE the selector — flexbox sorts by `order` ascending —
+   and the row renders [title][version][actions][selector], the contract
+   inverted. The slot's `margin-right: auto` then sits on the LAST item, so the
+   slack is absorbed to its own right and nothing reaches the right edge either.
+
+   Measured in chromium (card
+   scitex-ui-header-actions-render-left-of-the-project-selector-20260921), with
+   a FILLED actions slot, header 1200px: without this declaration actions sit at
+   x=106 and the slot at x=157 with everything bunched left; with it they sit at
+   x=1145, flush to the 12px inline padding. Three existing guards passed while
+   the row was inverted, because each asserted a literal (`order` present,
+   `order: 1`, "margin-right: auto" present) rather than the relation, so
+   tests/develop/test_app_header_contract.py now asserts the RELATION and this
+   pair cannot drift apart again. */
 .stx-app-header__actions {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  order: 2;
 }
 
 /* One action control, rendered from the shell-props payload (`actions[]`) or
