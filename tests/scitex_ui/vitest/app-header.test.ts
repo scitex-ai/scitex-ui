@@ -266,7 +266,16 @@ describe("the resolver functions, in isolation", () => {
 });
 
 describe("actions and the project slot", () => {
-  it("appends actions AFTER the project slot, which is what keeps the selector left", () => {
+  it("appends actions AFTER the project slot in the DOM — the component's half of the row order", () => {
+    // THE OTHER HALF IS CSS, AND IT IS NOT VISIBLE HERE. jsdom does not lay out,
+    // so the `order` declarations in the stylesheets decide which element of this
+    // row renders where, and this DOM order cannot see them. That gap is how the
+    // header shipped rendering [title][version][actions][selector] for every app
+    // that declared actions: this test was green the whole time, because its old
+    // name ("appends actions AFTER the project slot, which is what keeps the
+    // selector left") stated a CAUSAL claim its assertion had no way to check.
+    // The CSS half is asserted as a RELATION between the two slots' `order`
+    // values in tests/develop/test_app_header_contract.py.
     // Arrange
     const container = root();
     const header = new AppHeader({ container, title: "X" });

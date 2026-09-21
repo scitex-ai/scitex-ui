@@ -7,6 +7,23 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **App header: a filled actions slot rendered LEFT of the project selector.** The
+  slot's `order: 1` (`project-selector.css`) sorts it after every default-order
+  item, and `.stx-app-header__actions` declared no order — so any app that declared
+  header actions rendered `[title][version][actions][selector]`, the contract at the
+  top of `app-header.css` inverted, with the slot's `margin-right: auto` on the last
+  item pushing nothing to the right edge. Reported by scitex-writer while adopting
+  the header; measured in chromium at 1280x400 (filled actions: BEFORE
+  `title > version > actions > slot` with actions at x=106 and nothing at the right
+  edge; AFTER `title > version > slot > actions` with actions at x=1225). The 390px
+  layout is coordinate-identical before and after, so phones are unaffected. The
+  actions slot now declares `order: 2`, and `tests/develop/test_app_header_contract.py`
+  asserts the RELATION between the two orders rather than either literal, because the
+  three guards that covered this row were all green while it rendered inverted —
+  each asserted a declaration the other half was assumed to match.
+
 ## [0.23.0] - 2026-09-17
 
 ### Added
