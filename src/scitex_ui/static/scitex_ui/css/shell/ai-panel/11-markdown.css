@@ -152,4 +152,148 @@
   margin-bottom: 0;
 }
 
+/* ── Code-block chrome ────────────────────────────────────────────────────
+ * chat/_markdown-render.ts wraps each fenced block in .stx-codeblock with a
+ * header row (language label + Copy button). The block body stays dark in
+ * both themes (ChatGPT convention), so hljs token colors below target the
+ * dark background unconditionally. */
+
+/* NOTE: .assistant scoping below is intentionally omitted — the wrapper is
+ * inserted by JS into assistant messages, history views, and the app-agent
+ * panel alike; the chrome must look identical everywhere. */
+
+.stx-codeblock {
+  background: #0d1117;
+  border: 1px solid var(--border-default, #30363d);
+  border-radius: 6px;
+  margin: 0.4rem 0;
+  overflow: hidden;
+}
+
+.stx-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-default, #30363d);
+  user-select: none;
+}
+
+.stx-codeblock-lang {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #8b949e;
+  text-transform: lowercase;
+  font-family: "JetBrains Mono", "Monaco", "Menlo", monospace;
+}
+
+.stx-codeblock-copy {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.72rem;
+  color: #8b949e;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+.stx-codeblock-copy:hover {
+  color: #e6edf3;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.stx-codeblock pre {
+  background: none;
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  overflow-x: auto;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #e6edf3;
+}
+
+.stx-codeblock pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  font-family: "JetBrains Mono", "Monaco", "Menlo", monospace;
+}
+
+/* highlight.js tokens (GitHub Dark palette) */
+.stx-codeblock .hljs-keyword,
+.stx-codeblock .hljs-selector-tag,
+.stx-codeblock .hljs-doctag,
+.stx-codeblock .hljs-template-tag {
+  color: #ff7b72;
+}
+
+.stx-codeblock .hljs-string,
+.stx-codeblock .hljs-regexp,
+.stx-codeblock .hljs-meta .hljs-string {
+  color: #a5d6ff;
+}
+
+.stx-codeblock .hljs-number,
+.stx-codeblock .hljs-literal {
+  color: #79c0ff;
+}
+
+.stx-codeblock .hljs-title,
+.stx-codeblock .hljs-title.function_,
+.stx-codeblock .hljs-section {
+  color: #d2a8ff;
+}
+
+.stx-codeblock .hljs-comment,
+.stx-codeblock .hljs-quote {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.stx-codeblock .hljs-name,
+.stx-codeblock .hljs-selector-id,
+.stx-codeblock .hljs-selector-class,
+.stx-codeblock .hljs-type,
+.stx-codeblock .hljs-built_in,
+.stx-codeblock .hljs-builtin-name {
+  color: #ffa657;
+}
+
+.stx-codeblock .hljs-variable,
+.stx-codeblock .hljs-template-variable,
+.stx-codeblock .hljs-attr,
+.stx-codeblock .hljs-attribute,
+.stx-codeblock .hljs-symbol,
+.stx-codeblock .hljs-params {
+  color: #79c0ff;
+}
+
+.stx-codeblock .hljs-operator,
+.stx-codeblock .hljs-punctuation {
+  color: #e6edf3;
+}
+
+.stx-codeblock .hljs-emphasis {
+  font-style: italic;
+}
+
+.stx-codeblock .hljs-strong {
+  font-weight: bold;
+}
+
+.stx-codeblock .hljs-addition {
+  color: #7ee787;
+  background: rgba(46, 160, 67, 0.15);
+}
+
+.stx-codeblock .hljs-deletion {
+  color: #ffa198;
+  background: rgba(248, 81, 73, 0.15);
+}
+
 /* EOF */
