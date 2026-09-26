@@ -48,10 +48,37 @@ def _resolve_rule_cls() -> type:
     import attempted. Any error from that import propagates. A cycle, or a
     genuinely broken scitex-dev, is a defect to surface — not an "absent"
     reading that quietly downgrades every rule to the fallback class.
+
+    PS-233 — WHY THIS IMPORT IS GUARDED, AND WHY NOTHING IS DECLARED FOR IT.
+    ``scitex-dev`` is a launcher this package talks to over an entry point
+    (``scitex_dev.linter.plugins``); it is never a runtime requirement of the
+    shipped UI. It is the optional ``[cli]`` extra, and the guard below is the
+    contract that keeps it optional: promoting it to
+    ``[project.dependencies]`` would make every consumer of scitex-ui install
+    the ecosystem's dev toolchain for a capability this code path can do
+    without. So the guard is the remedy and the extra stays an extra.
+
+    The guard deliberately does NOT downgrade to ``_FallbackRule``. By the
+    time execution reaches the import, ``find_spec`` has already answered the
+    absent case — an ImportError HERE means scitex-dev is installed but not
+    importable (partial install, mid-upgrade tree, import cycle), which is a
+    defect. Converting it into the fallback class is the silent downgrade
+    #141 was, and ``test_rule_class_is_scitex_devs_own_when_it_is_installed``
+    pins the class identity that would be lost. So the guard re-raises with
+    the distribution named and the remedy spelled out: guarded for the static
+    scan, loud for the human.
     """
     if importlib.util.find_spec("scitex_dev") is None:
         return _FallbackRule
-    from scitex_dev.linter._rules._base import Rule  # type: ignore[import-not-found]
+    try:
+        from scitex_dev.linter._rules._base import Rule  # type: ignore[import-not-found]
+    except ImportError as exc:  # pragma: no cover - broken install only
+        raise ImportError(
+            "scitex-dev is installed but scitex_ui could not import "
+            "scitex_dev.linter._rules._base.Rule, so the UI rule corpus "
+            "cannot be built from the canonical Rule class. Reinstall "
+            "scitex-dev: pip install --force-reinstall scitex-dev"
+        ) from exc
 
     return Rule
 

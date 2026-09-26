@@ -19,6 +19,10 @@ from django.apps import AppConfig
 
 _MIDDLEWARE = "scitex_ui.middleware.ElementInspectorMiddleware"
 _CONTEXT_PROCESSOR = "scitex_ui.context_processors.element_inspector"
+#: The generic development-feature visibility processor (L628): exposes
+#: ``stx_dev_features`` so any dev-only surface can be gated without
+#: re-deriving the DEBUG/staff/override precedence per feature.
+_DEV_FEATURES_PROCESSOR = "scitex_ui.context_processors.dev_features"
 
 
 def _ensure_middleware(settings) -> None:
@@ -35,8 +39,9 @@ def _ensure_middleware(settings) -> None:
 
 
 def _ensure_context_processor(settings) -> None:
-    """Append the ``element_inspector`` context processor to Django template
-    engines that lack it (keeps the ``{% include %}`` partial path working).
+    """Append the element-inspector and dev-features context processors to
+    Django template engines that lack them (keeps the ``{% include %}`` partial
+    path and the generic ``stx_dev_features`` gate working).
 
     Skips non-Django backends (e.g. Jinja2) and engines without a
     ``context_processors`` list. The middleware de-dupes, so this is belt
@@ -50,9 +55,22 @@ def _ensure_context_processor(settings) -> None:
             continue
         options = engine.setdefault("OPTIONS", {})
         processors = options.get("context_processors")
-        if processors is None or _CONTEXT_PROCESSOR in processors:
+        if processors is None:
+            # No processor list at all: create it carrying both of ours.
+            options["context_processors"] = [
+                _CONTEXT_PROCESSOR,
+                _DEV_FEATURES_PROCESSOR,
+            ]
             continue
-        options["context_processors"] = [*processors, _CONTEXT_PROCESSOR]
+        # Already lists our element-inspector processor: the generic
+        # dev-features one was introduced later, so add it if missing rather
+        # than assuming the two are always wired together.
+        existing = list(processors)
+        if _CONTEXT_PROCESSOR not in existing:
+            existing.append(_CONTEXT_PROCESSOR)
+        if _DEV_FEATURES_PROCESSOR not in existing:
+            existing.append(_DEV_FEATURES_PROCESSOR)
+        options["context_processors"] = existing
 
 
 class ScitexUiConfig(AppConfig):

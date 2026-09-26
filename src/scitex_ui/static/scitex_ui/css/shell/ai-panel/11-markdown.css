@@ -137,4 +137,19 @@
   height: auto;
 }
 
+/* ── Streaming/stored markdown segment wrapper ────────────────────────────
+ * chat/_chat-mode.ts wraps each assistant message's rendered markdown in this
+ * div (so a streamed message can be replaced as one unit) and gives it no
+ * inline style. It is a BLOCK wrapper, so it interposes a level between the
+ * message bubble and the markdown's own block elements — the bubble's
+ * first/last-child spacing rules therefore stop matching the content they were
+ * written for. These two rules restore that spacing without adding chrome. */
+.stx-shell-ai-md-segment > :first-child {
+  margin-top: 0;
+}
+
+.stx-shell-ai-md-segment > :last-child {
+  margin-bottom: 0;
+}
+
 /* EOF */

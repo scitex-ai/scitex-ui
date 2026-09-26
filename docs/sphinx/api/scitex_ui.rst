@@ -49,6 +49,48 @@ Registered in a consumer's ``settings.py`` rather than called directly.
    :undoc-members:
    :show-inheritance:
 
+Translations
+------------
+
+A leaf app's djangojs catalog, embedded with ``{% load scitex_i18n %}{% scitex_js_catalog "<app package>" %}``
+and read in TypeScript by ``gettext`` / ``ngettext`` / ``interpolate`` from ``ts/_base/gettext.ts``.
+
+.. automodule:: scitex_ui.i18n
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scitex_ui.templatetags.scitex_i18n
+   :members:
+
+Project scope
+-------------
+
+The project picker a project-scope app places in its own UI, fed by a provider of
+the projects the user can access. An explicit project always beats the last visited one.
+
+.. automodule:: scitex_ui.project_scope
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scitex_ui.templatetags.scitex_project_picker
+   :members:
+
+Keymap
+------
+
+Emacs major-mode keyboard primitive: a stable named command registry with global
+and per-page/app mode bindings. The framework-neutral TypeScript runtime lives in
+``ts/shell/keymap`` (CommandRegistry + Keymap); this module is the Django-side
+hook — ``render_keymap_init(app_id)`` emits the JSON payload the runtime reads on
+load, and ``keymap_defaults()`` gives the global command set apps inherit.
+
+.. automodule:: scitex_ui.keymap
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Registry
 --------
 

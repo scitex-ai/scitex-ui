@@ -37,6 +37,25 @@ The same shape already exists in this package: ``_linter/_rules.py`` resolves
 scitex-dev's ``Rule`` this way after a module-scope import of it silently
 deactivated the entire UI rule corpus (#141). This is that lesson applied
 before the fact rather than after.
+
+PS-233 — RUNTIME-IMPORT GUARD, ONE SITE
+---------------------------------------
+``_ecosystem_surface()`` below is the only place this module imports
+scitex-dev, and that import sits inside ``try/except ImportError``. That guard
+is not decoration, and it is the reason scitex-dev stays an optional ``[cli]``
+extra instead of moving into ``[project.dependencies]``:
+
+  * The rule reads IMPORT SITES. The ``find_spec`` pre-check answers "is
+    scitex-dev installed"; it does not answer "can this name be imported right
+    now", which is a different question — a partial or mid-upgrade install
+    passes the first and fails the second — and a branch before an import is
+    not a guard around it to a static scan.
+  * Degradation is DEFINED and identical to the absent path: None / () / {},
+    which is click's docstring help, this module's documented behaviour
+    without the extra.
+  * It is not a silent ``pass``. The capability's absence is the contract of
+    an optional extra, and ``help_available()`` is the caller-visible signal
+    for which world is live.
 """
 
 from __future__ import annotations
@@ -69,6 +88,31 @@ def help_available() -> bool:
     return _scitex_dev_present()
 
 
+def _ecosystem_surface(name: str) -> Any:
+    """Return ``scitex_dev.ecosystem.<name>``, or None when unavailable.
+
+    THE ONE GUARD THIS MODULE NEEDS (see the module docstring). Every
+    function below reaches scitex-dev's ecosystem surface through here, so the
+    optional-extra contract is expressed at exactly one import site — guarded
+    with ``try/except ImportError`` as PS-233 requires — rather than repeated
+    at four call sites.
+
+    Returns None when scitex-dev is absent, when importing it fails, or when
+    the name is missing from an older scitex-dev. All three are the same
+    defined degradation: the caller registers a plain click command/group with
+    no structured spec, exactly as it does without the extra. ``getattr`` with
+    a default is what keeps a version skew in that bucket instead of raising
+    an AttributeError from inside a decorator during import.
+    """
+    if not _scitex_dev_present():
+        return None
+    try:
+        import scitex_dev.ecosystem as ecosystem
+    except ImportError:
+        return None
+    return getattr(ecosystem, name, None)
+
+
 def cli_help(**kwargs: Any) -> Any:
     """Build a ``CliHelp``, or return None when scitex-dev is absent.
 
@@ -76,10 +120,9 @@ def cli_help(**kwargs: Any) -> Any:
     real spec, and when it is unavailable we are not using ``SpecCommand`` at
     all — click takes the docstring instead.
     """
-    if not _scitex_dev_present():
+    CliHelp = _ecosystem_surface("CliHelp")
+    if CliHelp is None:
         return None
-    from scitex_dev.ecosystem import CliHelp
-
     return CliHelp(**kwargs)
 
 
@@ -91,10 +134,9 @@ def examples(*pairs: tuple[str, str]) -> tuple[Any, ...]:
     what ``CliHelp(examples=...)`` would receive by default anyway — and the
     spec is not built at all in that case.
     """
-    if not _scitex_dev_present():
+    Example = _ecosystem_surface("Example")
+    if Example is None:
         return ()
-    from scitex_dev.ecosystem import Example
-
     return tuple(Example(cmd=c, note=n) for c, n in pairs)
 
 
@@ -105,17 +147,15 @@ def spec_command(spec: Any) -> dict[str, Any]:
     ``@group.command("x", **spec_command(SPEC))`` in both worlds and needs no
     conditional of its own.
     """
-    if spec is None or not _scitex_dev_present():
+    SpecCommand = _ecosystem_surface("SpecCommand")
+    if spec is None or SpecCommand is None:
         return {}
-    from scitex_dev.ecosystem import SpecCommand
-
     return {"cls": SpecCommand, "help_spec": spec}
 
 
 def spec_group(spec: Any, **extra: Any) -> dict[str, Any]:
     """Decorator kwargs for a group; ``extra`` carries command_categories."""
-    if spec is None or not _scitex_dev_present():
+    SpecGroup = _ecosystem_surface("SpecGroup")
+    if spec is None or SpecGroup is None:
         return {}
-    from scitex_dev.ecosystem import SpecGroup
-
     return {"cls": SpecGroup, "help_spec": spec, **extra}

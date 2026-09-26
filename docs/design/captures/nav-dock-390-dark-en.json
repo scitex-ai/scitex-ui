@@ -1,0 +1,41 @@
+{
+  "schema": "scitex-screenshot/1",
+  "id": "nav-dock-390-dark-en",
+  "file": "nav-dock-390-dark-en.png",
+  "surface": {
+    "app": "scitex-ui",
+    "route": "global dock (selector-nav) + local app tabs (panes) canary"
+  },
+  "source_commit": "264374e",
+  "environment": "dev-container",
+  "captured_at": "2026-09-17T16:04:00Z",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "dpr": 2,
+    "mobile": true
+  },
+  "theme": "dark",
+  "locale": "en",
+  "redaction": {
+    "applied": true,
+    "method": "canary fixture only (no real project, user, app or file data)",
+    "reason": "the dock's destinations are hardcoded fixture labels"
+  },
+  "rights": {
+    "owner": "scitex-ai",
+    "license": "internal-product"
+  },
+  "supports": [
+    "at 390x844 exactly ONE global destination carries aria-current=\"page\" and the selected background",
+    "class-based brand colours on INACTIVE dock icons compute to the neutral rgb(139,148,158); the defect's cause is dead for class-based colours",
+    "local app tabs select by a different attribute (aria-selected) with a different visual (inset underline + raised surface) than the dock's filled rail item",
+    "no horizontal overflow at 390 (scrollWidth == innerWidth)"
+  ],
+  "verified_by": "live getComputedStyle readback in the same browser session (values recorded in PR #260's body); guards: tests/develop/test_nav_single_active_destination.py",
+  "does_not_show": [
+    "AN INLINE brand colour is NOT neutralised: it still computed rgb(124,92,191). This frame therefore does NOT show Hub's dock fixed \u2014 that half is a render-site change (card scitex-hub-nav-dock-brand-colour-integration-20260917)",
+    "the Hub shell: this is a canary page with the released stylesheet, not the product's real dock",
+    "any dark-mode JA variant: this is ONE of the four variants for this surface"
+  ]
+}

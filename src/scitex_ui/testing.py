@@ -55,8 +55,15 @@ from __future__ import annotations
 
 import html.parser
 from dataclasses import dataclass
+from typing import Iterable
 
-__all__ = ["RouteAwayReport", "find_routes_away", "assert_has_route_away"]
+__all__ = [
+    "RouteAwayReport",
+    "find_routes_away",
+    "assert_has_route_away",
+    "find_untranslated",
+    "assert_no_untranslated",
+]
 
 #: ``href`` schemes that never navigate the visitor anywhere.
 _INERT_SCHEMES = ("javascript:", "data:", "vbscript:")
@@ -206,3 +213,61 @@ def assert_has_route_away(
         "scitex_ui.branding.shell_context(), or give the app its own navigation."
     )
     raise AssertionError("\n".join(lines))
+
+
+# ── Translation completeness ────────────────────────────────────────────────
+
+#: Attributes whose values a visitor reads or hears, so they must be translated too.
+_VISIBLE_ATTRIBUTES = ("title", "placeholder", "aria-label", "alt")
+
+#: Never shown; a json_script catalog holds English msgids as its keys.
+_INVISIBLE_ELEMENTS = ("script", "style", "template", "noscript")
+
+
+class _VisibleTextCollector(html.parser.HTMLParser):
+    """Collect whitespace-normalised text nodes and visible attribute values."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.texts: set[str] = set()
+        self._invisible_depth = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in _INVISIBLE_ELEMENTS:
+            self._invisible_depth += 1
+        for name, value in attrs:
+            if name in _VISIBLE_ATTRIBUTES and value:
+                self.texts.add(" ".join(value.split()))
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in _INVISIBLE_ELEMENTS and self._invisible_depth:
+            self._invisible_depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        text = " ".join(data.split())
+        if text and not self._invisible_depth:
+            self.texts.add(text)
+
+
+def find_untranslated(rendered_html: str, english_strings: Iterable[str]) -> list[str]:
+    """Return the strings from ``english_strings`` still shown verbatim in ``rendered_html``.
+
+    A string counts only as a whole text node or a whole title/placeholder/
+    aria-label/alt value, so "Save" does not match inside "Saved".
+    """
+    if not rendered_html or not rendered_html.strip():
+        raise ValueError("rendered_html is empty; the page did not render.")
+    collector = _VisibleTextCollector()
+    collector.feed(rendered_html)
+    collector.close()
+    return [text for text in english_strings if " ".join(text.split()) in collector.texts]
+
+
+def assert_no_untranslated(rendered_html: str, english_strings: Iterable[str]) -> None:
+    """Assert a translated render shows none of ``english_strings`` verbatim."""
+    leftovers = find_untranslated(rendered_html, english_strings)
+    if leftovers:
+        raise AssertionError(
+            "Untranslated strings on the rendered page:\n"
+            + "\n".join(f"  {text!r}" for text in leftovers)
+        )

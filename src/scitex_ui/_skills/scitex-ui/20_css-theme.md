@@ -60,25 +60,25 @@ color: var(--status-warning);  /* yellow/amber */
 color: var(--status-error);    /* red */
 ```
 
-## App Accent (per-app)
+## Brand palette (navy + gold)
 
-Each app declares its own accent in `theme.css`:
-
-```css
-/* Declare in your app's theme.css */
-:root {
-  --app-accent-myapp: #7c3aed;
-  --app-accent-myapp-tint: rgba(124, 58, 237, 0.1);
-}
-```
+Chrome is the same on every app: never pick a per-app colour for buttons,
+header strip, tabs, dock highlight, badges or links.
 
 ```css
-/* Use in component CSS */
-color: var(--app-accent-myapp);
-background: var(--app-accent-myapp-tint);
+background: var(--color-primary);      /* navy (light) / gold (dark) */
+color: var(--color-on-primary);        /* white (light) / navy (dark) */
+border-color: var(--stx-accent);       /* the one accent: gold */
+background: var(--stx-accent-tint);
+color: var(--stx-warning);             /* --stx-success / -danger / -info */
 ```
 
-Built-in accents: `--app-accent-writer`, `--app-accent-figrecipe`.
+Scales: `--stx-navy-50…950` (900 = #1a2a40), `--stx-gold-50…900`
+(500 = #b8956a anchor, 600 = #8c6c44 for gold text on light).
+
+`--stx-hue-{navy,steel,teal,sage,gold,copper,brick,slate}` is a fixed palette
+for app ICON tiles only. `--app-accent-*` names still exist for compatibility
+and all resolve to `--stx-accent`.
 
 ## Sizing Variables
 

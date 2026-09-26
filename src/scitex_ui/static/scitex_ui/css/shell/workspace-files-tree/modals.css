@@ -114,7 +114,7 @@
 }
 
 .wft-history-hash code {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono-font-family, monospace);
   background: var(--color-canvas-subtle, #2a2a2a);
   padding: 2px 6px;
   border-radius: 3px;
@@ -151,7 +151,7 @@
   margin-bottom: 12px;
   font-size: 12px;
   color: var(--color-fg-muted, #768390);
-  font-family: var(--font-mono, monospace);
+  font-family: var(--mono-font-family, monospace);
 }
 
 .wft-diff-content {
@@ -165,7 +165,7 @@
 .wft-diff-content pre {
   margin: 0;
   padding: 12px;
-  font-family: var(--font-mono, "JetBrains Mono", "Monaco", monospace);
+  font-family: var(--mono-font-family, "JetBrains Mono", "Monaco", monospace);
   font-size: 12px;
   line-height: 1.5;
   white-space: pre;

@@ -53,3 +53,43 @@ export type {
   Verdict,
   VerdictKind,
 } from "./dim";
+
+export { AppLauncher, APP_LAUNCHER_SELECT } from "./app-launcher";
+export type {
+  AppLauncherConfig,
+  AppOption,
+  AppLauncherSelectDetail,
+} from "./app-launcher";
+
+export {
+  Panes,
+  PANES_CHANGE,
+  mountPanes,
+  getPanes,
+  showPane,
+  stxPanes,
+} from "./panes";
+export type { PaneInfo, PanesChangeDetail, PanesOptions } from "./panes";
+
+export { ImportExport, IMPORT_EXPORT_CONFIRM } from "./import-export";
+export type {
+  ImportExportConfig,
+  FormatOption,
+  ImportExportDetail,
+} from "./import-export";
+
+export {
+  ProjectSelector,
+  PROJECT_SELECTOR_CHANGE,
+  fuzzyFilter,
+  fuzzyScore,
+  httpProjectProvider,
+  staticProjectProvider,
+  mountProjectPickers,
+} from "./project-selector";
+export type {
+  ProjectSelectorConfig,
+  ProjectOption,
+  ProjectListing,
+  ProjectProvider,
+} from "./project-selector";

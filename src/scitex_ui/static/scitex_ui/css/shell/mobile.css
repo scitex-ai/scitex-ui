@@ -242,10 +242,65 @@
    * ║  SHARED: rules that apply to both layouts                      ║
    * ╚══════════════════════════════════════════════════════════════════╝ */
 
-  /* Touch targets (Apple HIG: 44px) */
+  /* ── Shared responsive utilities (opt-in, additive; hub + leaf chrome) ──
+   * These are the "smallest shared responsive primitives" (card
+   * scitex-ui-responsive-shell-primitives-20260914). They are UTILITIES a
+   * consumer applies to its own container — the shared shell layout above is
+   * left untouched, so there is no leaf-local duplicate chrome and no risk to
+   * the pane-stacking contract that test_mobile_panes_stay_reachable pins.
+   *
+   * The tokens these and other responsive rules share (--stx-narrow-breakpoint,
+   * --stx-touch-target-min, --stx-safe-inset-*) are defined once in theme.css
+   * so hub and every leaf reference the SAME value instead of re-hardcoding
+   * 768px / 44px / env(safe-area-inset-*) per app. */
+
+  /* No-horizontal-overflow guard. `clip` (not `hidden`) so the container does
+   * NOT become a scroll container — `hidden` is what the pane rules above
+   * deliberately avoid, because it clips panes that are meant to scroll
+   * vertically. `clip` removes overflow painting without a scroll box. Applied
+   * at the narrow breakpoint only: at desktop widths a wide rail is legitimate
+   * and must not be clipped.
+   *
+   * CAVEAT (coordination, recorded on the card): this catches in-flow and
+   * ABSOLUTELY-positioned descendants. A nav control that is position:FIXED
+   * to the viewport escapes the containing block and is NOT clipped — if the
+   * hub's #mobile-hamburger-btn is fixed, the fix is to place it inside the
+   * .stx-viewport-fit container (or constrain it to the safe-area inset).
+   * The measured 48px overflow == --ui-collapsed-pane-width, the shell rail
+   * that the hub nav sits beside, which is why the rail/clip is the shared
+   * root rather than the button itself. */
+  .stx-viewport-fit {
+    overflow-x: clip;
+  }
+
+  /* Touch targets (Apple HIG: 44px) — shared token, not a per-app literal.
+   * --stx-touch-target-min is defined in theme.css so every consumer
+   * (hub + leaves) references the SAME 44px value. */
   .stx-shell-sidebar__header button,
   a.selector-nav-item {
-    min-height: 44px;
+    min-height: var(--stx-touch-target-min, 44px);
+  }
+
+  /* Shared touch-target utility. Apply to any interactive element that must
+   * meet the WCAG 2.5.5 / Apple HIG 44px minimum at the narrow breakpoint.
+   * Consolidates the ad-hoc 44px rules that were per-leaf before this
+   * primitive existed (the card's "avoid leaf-local duplicate chrome" aim). */
+  .stx-touch-min {
+    min-width: var(--stx-touch-target-min, 44px);
+    min-height: var(--stx-touch-target-min, 44px);
+  }
+
+  /* Shared keyboard-focus ring. Visible for keyboard users, suppressed for
+   * pointer users (:focus-visible), so a touch device doesn't show a focus
+   * outline on tap while a keyboard user still gets one. This is the
+   * "focus" half of the card's narrow-viewport contract — before this, each
+   * leaf re-implemented its own outline or shipped none. */
+  .stx-focus-ring:focus-visible {
+    outline: 2px solid var(--accent, #6d4cad);
+    outline-offset: 2px;
+  }
+  .stx-focus-ring:focus:not(:focus-visible) {
+    outline: none;
   }
 
   a.selector-nav-item {

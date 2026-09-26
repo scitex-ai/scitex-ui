@@ -1,0 +1,13 @@
+ID: 2026Y-09M-17D-07h01m50s_ilRC
+PID: 41025
+START_DATETIME: 2026-09-17 07:01:50.008760
+FILE: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components.py
+SDIR_OUT: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components_out/RUNNING/2026Y-09M-17D-07h01m50s_ilRC-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-09-17 07:02:10.586580
+RUN_DURATION: 00:00:20

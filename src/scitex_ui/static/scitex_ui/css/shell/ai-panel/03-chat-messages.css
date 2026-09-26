@@ -98,3 +98,45 @@
   font-size: 2rem;
   margin-bottom: 0.5rem;
 }
+
+/* ── Attachments ON a sent message ────────────────────────────────────────
+ * Written by chat/_image-input.ts (renderInlineThumbsInto) since the input
+ * gained attachments, and never styled — so the strip had no layout and every
+ * <img> rendered at its natural pixel size, pushing the bubble wider than the
+ * panel. The COMPOSING previews live in 04-chat-input.css; these are the
+ * sent-message pair, deliberately a separate, smaller box. */
+.stx-shell-ai-msg-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.stx-shell-ai-msg-thumbs:empty {
+  display: none;
+}
+
+.stx-shell-ai-msg-thumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border: 1px solid var(--workspace-border-subtle, rgba(110, 118, 129, 0.3));
+  border-radius: 4px;
+  background: var(--workspace-bg-tertiary, transparent);
+}
+
+/* ── Tool tags under an assistant message ─────────────────────────────────
+ * chat/_tool-tags.ts appends this container for every tool the model called.
+ * --text-secondary, not --text-muted: the muted token is below WCAG AA on
+ * every light surface (card scitex-ui-text-muted-fails-aa-against-any-light-
+ * surface-20260906), and this is 11px body text. */
+.stx-shell-ai-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--text-secondary, #4a4a4a);
+}

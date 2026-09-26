@@ -25,7 +25,7 @@
   line-height: normal;
 }
 
-.stx-shell-ai-console-terminal.drop-target {
+.stx-shell-ai-console-terminal.stx-shell-drop-target {
   outline: 2px dashed var(--accent-primary, #3b82f6);
   outline-offset: -2px;
 }

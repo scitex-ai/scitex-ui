@@ -79,9 +79,12 @@ def test_primitives_scan_finds_tokens() -> None:
     # Act
     definitions = _definitions_by_token()
     # Assert
-    assert definitions, (
-        f"no custom properties found under {_PRIMITIVES} — the scan did not "
-        "run, so a passing duplicate check below would prove nothing"
+    # Floor 30 (measured 45, develop @ f62f73f, 2026-09-10): a bad path or a broken regex
+    # returns 0 or a remnant — both must fail, not just 0.
+    assert len(definitions) >= 30, (
+        f"only {len(definitions)} custom properties under {_PRIMITIVES} "
+        "(floor 30) — the scan did not run, or the token regex drifted, so a "
+        "passing duplicate check below would prove nothing"
     )
 
 

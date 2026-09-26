@@ -5,7 +5,8 @@ from .._registry import register_component
 
 
 class FormControls:
-    """The single definition of input / select / textarea / checkbox.
+    """The single definition of input / select / textarea / checkbox / button,
+    including the standard control heights (--input-height / --button-height).
 
     Harvested from scitex-cards, which redefines the same controls in at least
     SEVEN places (``body select``, ``.tl-ctl select``, ``.filt-sort select``,
@@ -39,7 +40,7 @@ class FormControls:
 
     name = "form-controls"
     version = "0.1.0"
-    description = "Single definition of input/select/textarea/checkbox styling"
+    description = "Single definition of input/select/textarea/checkbox/button styling with standard control heights"
     ts_entry = None  # CSS-only component
     css_file = "scitex_ui/css/app/form-controls.css"
 

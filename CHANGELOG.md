@@ -7,6 +7,118 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **App header: a filled actions slot rendered LEFT of the project selector.** The
+  slot's `order: 1` (`project-selector.css`) sorts it after every default-order
+  item, and `.stx-app-header__actions` declared no order — so any app that declared
+  header actions rendered `[title][version][actions][selector]`, the contract at the
+  top of `app-header.css` inverted, with the slot's `margin-right: auto` on the last
+  item pushing nothing to the right edge. Reported by scitex-writer while adopting
+  the header; measured in chromium at 1280x400 (filled actions: BEFORE
+  `title > version > actions > slot` with actions at x=106 and nothing at the right
+  edge; AFTER `title > version > slot > actions` with actions at x=1225). The 390px
+  layout is coordinate-identical before and after, so phones are unaffected. The
+  actions slot now declares `order: 2`, and `tests/develop/test_app_header_contract.py`
+  asserts the RELATION between the two orders rather than either literal, because the
+  three guards that covered this row were all green while it rendered inverted —
+  each asserted a declaration the other half was assumed to match.
+
+## [0.23.0] - 2026-09-17
+
+### Added
+- Added the shared floating launcher overlay and host-shell version contract.
+- Added reusable app tour/help components and screenshot/design contracts.
+
+### Changed
+- Disabled swipe-to-switch-tab by default so touch gestures do not change panes unexpectedly.
+- Made PDF fit-width use the container content box and enforced one active navigation destination.
+
+### Fixed
+- Restored WCAG AA empty-state contrast and missing shell token aliases.
+- Added durable post-publish artifact verification to the release pipeline.
+
+## [0.22.0] - 2026-09-15
+
+### Added — keymap primitive: Emacs major-mode command registry + keyboard runtime
+
+- `ts/shell/keymap` (export `./ts/shell/keymap`): a framework-neutral command registry with stable named IDs, global and per-page/app-mode keymaps, and a single `CommandRegistry.run()` dispatch that button, keyboard, and agent calls all converge on. Macro support is future-only; the registry leaves a clean caller seam (`CallerInfo.via`) for it.
+- Emacs chord grammar (`C-x`, `M-g`, `S-A`, `M2-C-RET`, `RET`/`TAB`/`SPAC`/`F1..`/punctuation) with canonical normalization and round-trip display.
+- `Keymap` runtime: mode activate/deactivate, `bind()` with conflict detection (no silent one-wins), pending multi-chord prefix tracking with viability expiry, input/contenteditable suppression (bindings fire in inputs only with `inInput: true`), `dispatchSequence()` for programmatic/agent dispatch, `attach()`/`detach()` lifecycle cleanup for SPA navigation, and `help()` introspection.
+- Django hook `scitex_ui.keymap`: `render_keymap_init(app_id, app_defaults, mode)` emits the JSON payload the runtime reads on load (same pattern as `{% scitex_js_catalog %}`); `keymap_defaults()` returns the global command set (the 8 existing keyboard-shortcuts chords, so migration is mechanical).
+- Operator beta boundary (c_2e8da2f3c5a3): stable named Command Registry + global and app/page-local maps + customizable shortcut UI contract.
+- Keymap lint fix (e4e83e0): replaced 8 `no-explicit-any` casts in `_keymap.ts` with a `KeyboardEvent` type assertion and the `globalRegistry` default; no runtime change.
+
+### Added — project-selector: canonical app-header slot + one-primitive contract
+
+- One library-level project picker primitive (Hub, Stats, FigRecipe, Writer all place it; none forks it). Canonical desktop placement codified: LEFT of the app header, immediately after app identity/title, before app-specific actions — never arbitrarily right-aligned.
+- CSS guard `.stx-app-header__slot--project-selector` (order 1, margin-left 0, margin-right auto) structurally pins the selector left on every app, with no consumer-specific CSS workaround. On phones the same slot is order 0 + full-width (44px trigger spanning the row).
+- Entry rename: the distributable bundle is now `js/app/project-selector.js`; `js/app/project-picker.js` is a documented `@deprecated` alias that imports the canonical bundle (old pages keep working). The `{% scitex_project_picker %}` template loads the new name.
+- Stale "the global header never hosts it" prose updated in CSS and `_ProjectSelector.ts` to state the app-header-slot contract.
+- 27 contract tests (AAA + single-assert + positive/negative controls): left-slot pinning, phone full-width/order-0, no self-right-align, 44px targets, capped panel, anti-fork (app-scope-selector reuses ProjectSelector; SelectorNav is a different widget; project-picker.js is the alias not a copy), provider URL contract (listProjects/rememberProject, POST, same-origin).
+
+### Added — client i18n: Django-compatible gettext for TS-rendered strings
+
+- `ts/_base/gettext.ts` (export via `./ts/_base`): `gettext` / `ngettext` / `pgettext` / `npgettext` / `interpolate` / `gettext_noop` / `pluralidx` — the same names as Django's JS catalog. Catalogs are read from `{% scitex_js_catalog "<app package>" %}` json_script elements; with no catalog on the page every function returns the English msgid unchanged.
+- `scitex_ui.i18n.js_catalog(packages)` + `{% scitex_js_catalog %}` (scitex_ui.templatetags.scitex_i18n): embeds the active language's djangojs catalog for a list of installed app packages, in a json_script element the TS reader collects.
+- `scitex_ui.testing.assert_no_untranslated`: a contract test helper that walks a rendered page's DOM and asserts no visible text element still carries an untranslated msgid (opt-in per leaf).
+- The shell now embeds scitex_ui's own djangojs catalog, so viewer Viewer/Editor labels are no longer English on JA pages. `shellTranslate` / `SHELL_STRINGS` are untouched (moving them onto the djangojs catalog is a possible follow-up).
+
+### Added — host project provider as a host service
+
+- The hub advertises a project provider endpoint via `<meta name="stx-project-provider" content="<url>">`; leaf apps mount the shared ProjectSelector against it without knowing the hub's URL scheme. `httpProjectProvider(url)` implements the GET-list / POST-remember contract; `hostProjectProvider(doc)` reads the meta tag and returns the provider (or null). This is what lets FigRecipe and other project-scope apps place the picker in their own header without duplicating the hub's project list logic.
+
+### Added — SciTeX brand palette (navy + gold), one chrome accent on every app
+
+- Scales `--stx-navy-50…950` (900 = #1a2a40) and `--stx-gold-50…900` (500 = #b8956a, 300 = #d4a87a, 600 = #8c6c44 for gold text), in both `primitives/colors/_light.css` and `shell/theme.css`.
+- Roles `--stx-brand`, `--stx-gold`, `--stx-accent` (+`-tint`; light #8c6c44, dark #d4a87a) and semantic `--stx-success/-warning/-danger/-info`.
+- `--stx-hue-{navy,steel,teal,sage,gold,copper,brick,slate}`: a fixed palette for app ICON tiles only, no purple. Chrome never uses it.
+- Every `--app-accent-*` (and `-tint`) now resolves to `--stx-accent`, so the header strip, tab markers and accent text are the same brand gold on every app.
+- Dark theme: `--color-primary` family is the gold with navy text (`--color-on-primary` #1a2a40); primary buttons and `--accent` (was purple #a371f7) follow.
+- Warning is no longer the gold: `--status-warning`/`--warning-color` #c4561a light, #f59a52 dark.
+
+### Changed — light theme primary is the SciTeX navy
+
+- Light palette: new `--color-primary` #1a2a40 (`-hover` #243752, `-active` #121e2e), `--color-on-primary` #ffffff, `--color-primary-subtle`, `--focus-ring-color` (navy at 35%) and `--primary-color`. `--color-btn-primary-*` (and so `--role-primary-*`), `--color-accent-fg/-emphasis` and `--accent` (was purple #6d4cad, also in `shell/theme.css`) now resolve to the navy.
+- Dark palette unchanged: the new tokens are reset to `initial` there, so `var(--x, fallback)` sites keep rendering their fallbacks. Body links stay `--text-link`; semantic status colours and per-app accents are untouched.
+
+## [0.21.2] - 2026-09-15
+
+### Added — `{% app_static %}`: static URLs that change when the file does
+
+- `{% load scitex_static %}{% app_static 'app/js/app.js' %}` renders `/static/app/js/app.js?v=<12-hex content hash>`, so browsers fetch a fresh copy after every deploy or edit instead of reusing a heuristically cached one. The hash is cached per process and recomputed only when the file's mtime or size changes; a file the finders cannot locate renders as plain `{% static %}`.
+- `{% scitex_panes %}` now versions `panes.css` / `panes.js` the same way.
+
+## [0.21.1] - 2026-09-15
+
+### Added — mobile panes: one column per screen on phones
+
+- `{% load scitex_panes %}{% scitex_panes "<app>" columns=... %}{% scitex_pane "<id>" label=_("…") icon=... order=... %}…{% endscitex_pane %}{% endscitex_panes %}`, or the equivalent `data-stx-panes` / `data-stx-pane` markup. Above 640px the panes sit side by side in a grid (`--stx-panes-columns`, or `layout="app"` to keep the app's own layout).
+- At 640px and below: a sticky tab bar (icon plus short label, 44px targets, scrolls when crowded) above exactly one full-height pane; a horizontal swipe moves to the adjacent tab but never starts inside a horizontal scroller, a text field or `[data-stx-no-swipe]`. The active pane is remembered per app in sessionStorage.
+- `window.stxPanes.show(id[, app])` switches from code; `stx-panes:change` reports each switch. `ts/app/panes` exports `Panes`, `mountPanes`, `stxPanes`; `js/app/panes.js` is the pre-built auto-mounting module.
+- `<details class="stx-acc">` accordion for secondary settings inside a pane.
+- Skill page `42_mobile-panes.md`, demo `examples/04_mobile_panes_demo.py`, and a vitest suite (`npm test`).
+
+## [0.21.0] - 2026-09-14
+
+### Added — project picker and project scope (#232)
+
+- `{% load scitex_project_picker %}{% scitex_project_picker provider_url=... current=... %}`: renders only when the app scope is `project`; the prebuilt `js/app/project-picker.js` auto-mounts it and a pick navigates to `?project=<id>`.
+- The `ProjectSelector` dropdown gains fuzzy search, full keyboard support, combobox/listbox ARIA and 44px touch targets on narrow or coarse-pointer screens.
+- `ts/app/project-selector/provider.ts`: `ProjectProvider`, `httpProjectProvider(url)`, `staticProjectProvider(list)`.
+- `scitex_ui.project_scope`: `ProjectProvider` protocol, `LocalProjectProvider(root)`, `resolve_project(request, provider, explicit)` (an explicit project wins and never falls back when inaccessible), `project_listing_view(provider)`.
+
+### Changed — shared shell follows the host language (#229, first released as 0.20.4)
+
+- The shared shell is translatable: English default with complete Japanese.
+
+### Added — client translations from Django's gettext catalogs
+
+- `ts/_base/gettext.ts`: `gettext`, `ngettext`, `pgettext`, `npgettext`, `interpolate`, `gettext_noop`, `pluralidx` with Django's JS names. English passthrough when no catalog is on the page.
+- `scitex_ui.i18n.js_catalog(packages, language=None)` and `{% load scitex_i18n %}{% scitex_js_catalog "<app package>" %}`: the active language's `djangojs` catalog as a json_script element the TS module reads.
+- `scitex_ui.testing.find_untranslated` / `assert_no_untranslated`: a Japanese render shows none of a given list of English strings.
+- The standalone shell embeds scitex-ui's own `djangojs` catalog; the viewer's Viewer/Editor labels are the first strings using it.
+
 ## [0.20.2] - 2026-09-05
 
 - **FIX: a path quoted inside a CSS comment is a live reference to Django, and 0.20.1 shipped one.** `css/utils/effects.css` opened with a comment quoting the at-import line scitex-hub's `variables.css` carries. Quoting it verbatim was deliberate — an explanation that matches the real thing character-for-character is easier to trust — and it sat inside `/* … */`, so it looked inert. Django's staticfiles post-processor rewrites asset references BY REGEX, and below 6.1 it does not know what a comment is: it reads the quoted path as live, fails to resolve `utils/../utilities/effects.css`, and fails `collectstatic` for the entire consuming project. Every open scitex-hub PR went red on `MissingFileError`, gating a production rebuild.

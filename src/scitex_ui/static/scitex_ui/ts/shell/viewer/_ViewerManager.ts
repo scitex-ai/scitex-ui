@@ -11,6 +11,7 @@
  * - Edit / Preview mode toggle for markdown files
  */
 
+import { gettext } from "../../_base/gettext";
 import { MarkdownPreviewPanel } from "./_MarkdownPreview";
 import { TabManager } from "./_TabManager";
 import { ViewerRouter } from "./_ViewerRouter";
@@ -382,7 +383,7 @@ export class ViewerManager {
     if (!this.modeToggle) return;
     const isEdit = this.viewMode === "edit";
     const iconClass = isEdit ? "fas fa-eye" : "fas fa-pencil-alt";
-    const label = isEdit ? " Viewer" : " Editor";
+    const label = " " + (isEdit ? gettext("Viewer") : gettext("Editor"));
 
     if (this.modeToggle.classList.contains("ws-viewer-mode-toggle-title")) {
       this.modeToggle.innerHTML = `<i class="${iconClass}"></i>${label}`;
@@ -391,12 +392,12 @@ export class ViewerManager {
       if (icon) icon.className = iconClass;
     }
 
-    this.modeToggle.title = isEdit ? "Switch to Editor" : "Switch to Viewer";
+    this.modeToggle.title = isEdit ? gettext("Switch to Editor") : gettext("Switch to Viewer");
 
     const shortTitle = document.getElementById("ws-viewer-title-short");
     if (shortTitle) {
       shortTitle.innerHTML = `<i class="${iconClass}"></i>${label}`;
-      shortTitle.title = isEdit ? "Viewer" : "Editor";
+      shortTitle.title = isEdit ? gettext("Viewer") : gettext("Editor");
     }
   }
 

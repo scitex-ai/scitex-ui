@@ -89,6 +89,15 @@ export type {
   RecentFileEntry,
 } from "./repo-monitor";
 
+// App-scope project-selector consumer (stx-app-scope marker, TODO #48/#144-149):
+// mounts the shared ProjectSelector app-locally, only for project-scoped apps.
+export {
+  mountProjectSelectorByScope,
+  hostProjectProvider,
+  PROJECT_SELECTOR_CHANGE,
+} from "./app-scope-selector";
+export type { AppScopeSelectorOptions } from "./app-scope-selector";
+
 // Unified Resizer system (PointerEvent-based, with cascade and snap)
 export {
   Resizer,
@@ -125,3 +134,20 @@ export { detectAxis, getAxis } from "./workspace-panel-resizer";
 // standalone_shell.html get them with no wiring. Re-exported for consumers that
 // bundle the TypeScript themselves and want to control init order.
 export { init as initMobileSwipe } from "./mobile-swipe";
+
+// Launcher overlay collision runtime (card ui-shared-brand-dock-tour-primitives-
+// 20260917, SSOT hub PR 923 §4): the same two-mechanism wiring as mobile-swipe —
+// the shell loads js/shell/launcher-overlay.js, and it is re-exported here for
+// consumers whose bundler controls init order. Self-guards: attaches nothing
+// when the document renders no launcher.
+export {
+  initLauncherOverlay,
+  intersectsLauncher,
+  stxLauncherOverlay,
+  ACTIONABLE_SELECTOR,
+  LAUNCHER_OVERLAY_SELECTOR,
+  PRESSED_ATTRIBUTE,
+  RETRACT_ATTRIBUTE,
+} from "./launcher-overlay";
+export type { LauncherOverlayOptions } from "./launcher-overlay";
+

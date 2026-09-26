@@ -1,0 +1,13 @@
+ID: 2026Y-09M-17D-07h04m42s_PA97
+PID: 42296
+START_DATETIME: 2026-09-17 07:04:42.102032
+FILE: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components.py
+SDIR_OUT: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components_out/RUNNING/2026Y-09M-17D-07h04m42s_PA97-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-09-17 07:04:44.701417
+RUN_DURATION: 00:00:02

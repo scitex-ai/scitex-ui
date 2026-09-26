@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scitex-ui"
-version = "0.20.2"
+version = "0.23.1"
 description = "Shared frontend UI components for the SciTeX ecosystem"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -133,6 +133,18 @@ artifacts = [
     # generated figures but also matches packaged assets — the shipped favicon
     # was silently dropped from the 0.7.0 wheel until this line was added.
     "src/scitex_ui/static/**/*.svg",
+    # class-manifest.json — the BEM vocabulary consumers and future native
+    # clients read as DATA. Listed for the same reason as the svg above rather
+    # than because an ignore rule matches it today: this file is worthless to a
+    # consumer if it is absent from the wheel, and "not currently gitignored" is
+    # a fact about today's ignore rules, not a guarantee about tomorrow's.
+    "src/scitex_ui/static/**/*.json",
+    # The shipped JA translation catalog for the shared shell (locale/**/*.mo).
+    # The repo's blanket `*.mo` gitignore targets generated per-venv catalogs;
+    # this is a source asset Django must read at runtime, so it is force-included
+    # exactly like the svg/json above — a missing catalog would ship a shell
+    # that renders English on a Japanese host with no warning.
+    "src/scitex_ui/locale/**/*.mo",
 ]
 
 [tool.hatch.build.targets.wheel]

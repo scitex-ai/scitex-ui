@@ -4,7 +4,11 @@
  * Do not edit manually. Regenerate with: npx tsx css/_build-index.ts
  */
 
+@import "./app/action-bar.css";
 @import "./app/alert-banner.css";
+@import "./app/app-header.css";
+@import "./app/app-help.css";
+@import "./app/app-launcher.css";
 @import "./app/attachment.css";
 @import "./app/badge.css";
 @import "./app/collapsible-panel.css";
@@ -25,9 +29,12 @@
 @import "./app/file-browser/themes.css";
 @import "./app/file-tabs.css";
 @import "./app/form-controls.css";
+@import "./app/import-export.css";
 @import "./app/media-viewer.css";
 @import "./app/miller-columns.css";
 @import "./app/package-docs-sidebar.css";
+@import "./app/panes.css";
+@import "./app/project-selector.css";
 @import "./app/receipt.css";
 @import "./app/recent-pane.css";
 @import "./app/reply-quote.css";
@@ -37,6 +44,7 @@
 @import "./app/toast.css";
 @import "./app/toggle-switch.css";
 @import "./app/tooltip.css";
+@import "./app/tour-player.css";
 @import "./primitives/colors.css";
 @import "./primitives/spacing.css";
 @import "./primitives/typography-vars.css";
@@ -60,6 +68,7 @@
 @import "./shell/ai-panel/13-terminal-media.css";
 @import "./shell/app-shell.css";
 @import "./shell/chat.css";
+@import "./shell/launcher-overlay.css";
 @import "./shell/media-input.css";
 @import "./shell/media-viewer.css";
 @import "./shell/mobile.css";

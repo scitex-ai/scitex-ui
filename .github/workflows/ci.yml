@@ -43,6 +43,11 @@ concurrency:
 jobs:
   pytest-matrix:
     uses: scitex-ai/.github/.github/workflows/pytest-matrix.yml@main
+    with:
+      pre_test_command: >-
+        git fetch --no-tags --depth=1 origin
+        +refs/heads/main:refs/remotes/origin/main
+        +refs/heads/develop:refs/remotes/origin/develop
     secrets: inherit
 
   import-smoke:

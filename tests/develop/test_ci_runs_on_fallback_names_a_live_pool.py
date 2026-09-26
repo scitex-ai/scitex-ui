@@ -67,10 +67,27 @@ _DEAD_LABEL = "scitex-ci"
 _FALLBACK = re.compile(r"CI_RUNS_ON\s*\|\|\s*'(\[[^']*\])'")
 
 
+#: GitHub honours BOTH `.yml` and `.yaml` for workflow files, so a `*.yml`-only
+#: scan silently skips any workflow spelled the other way. Measured 2026-09-07:
+#: `auto-merge-to-develop.yaml` was invisible to this guard on develop AND on
+#: main. A detector that cannot SEE a file reports that file clean, which is the
+#: quiet half of the same defect this module exists to catch.
+_WORKFLOW_SUFFIXES = (".yml", ".yaml")
+
+
+def _workflow_files() -> list[pathlib.Path]:
+    """Every workflow file, in both extensions GitHub accepts."""
+    return sorted(
+        path
+        for path in _WORKFLOWS.iterdir()
+        if path.is_file() and path.suffix in _WORKFLOW_SUFFIXES
+    )
+
+
 def _fallbacks() -> list[tuple[str, str]]:
     """Every ``(workflow filename, fallback JSON)`` pair in .github/workflows."""
     found = []
-    for path in sorted(_WORKFLOWS.glob("*.yml")):
+    for path in _workflow_files():
         for match in _FALLBACK.finditer(path.read_text(encoding="utf-8")):
             found.append((path.name, match.group(1)))
     return found
@@ -170,4 +187,56 @@ def test_no_fallback_names_the_dead_label(fallbacks) -> None:
         f"a `runs-on` fallback names {_DEAD_LABEL!r}, which no online runner "
         "carries — if CI_RUNS_ON is ever unset these jobs queue forever and "
         "report nothing:\n" + "\n".join(offenders)
+    )
+
+
+@pytest.fixture
+def workflow_files_on_disk() -> set[str]:
+    """Workflow filenames actually present, or skip where there is no tree.
+
+    THE EXTENSIONS HERE ARE A LITERAL, deliberately NOT ``_WORKFLOW_SUFFIXES``.
+    Deriving the expectation from the constant under test makes the assertion
+    compare the scan against itself: narrowing the constant shrinks the
+    expectation in lockstep and the test still passes. Measured 2026-09-07 --
+    the first version did exactly that, and a mutation probe setting the
+    constant to ``(".yml",)`` stayed GREEN. These two extensions are GitHub's
+    rule, not ours, so the duplication is an independent oracle rather than a
+    DRY violation.
+
+    The skip lives in this fixture rather than in the test body because
+    ``pytest.skip`` counts as an assertion construct under STX-TQ007, so a body
+    holding both a skip and an assert carries two contracts. The sibling
+    ``fallbacks`` fixture already establishes this shape in this module.
+    """
+    if not _WORKFLOWS.is_dir():
+        pytest.skip(f"no workflow tree at {_WORKFLOWS} (installed layout)")
+    return {
+        path.name
+        for path in _WORKFLOWS.iterdir()
+        if path.is_file() and path.suffix in (".yml", ".yaml")
+    }
+
+
+def test_the_scan_covers_every_workflow_file(workflow_files_on_disk) -> None:
+    """The scan must see EVERY workflow on disk, not merely a non-zero number.
+
+    ``test_the_scan_finds_fallbacks_at_all`` is an anti-vacuity check: it proves
+    the scan found SOMETHING. That cannot distinguish a scan covering every
+    workflow from one covering all but a file whose extension it forgot -- both
+    return a healthy-looking count. This checks the DENOMINATOR instead: the
+    set of files scanned equals the set of workflow files present.
+
+    IF THIS FAILS a workflow is not being audited by any test in this module,
+    and its `runs-on` could name a pool with nothing online while the suite
+    stays green. Add the extension to ``_WORKFLOW_SUFFIXES``; do not narrow the
+    expectation.
+    """
+    # Arrange
+    on_disk = workflow_files_on_disk
+    # Act
+    scanned = {path.name for path in _workflow_files()}
+    # Assert
+    assert scanned == on_disk, (
+        f"the workflow scan covers {sorted(scanned)} but {sorted(on_disk)} are "
+        f"present; {sorted(on_disk - scanned)} would be audited by nothing"
     )

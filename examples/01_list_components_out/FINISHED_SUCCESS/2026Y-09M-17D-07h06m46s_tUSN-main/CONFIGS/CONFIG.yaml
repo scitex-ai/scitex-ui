@@ -1,0 +1,13 @@
+ID: 2026Y-09M-17D-07h06m46s_tUSN
+PID: 43010
+START_DATETIME: 2026-09-17 07:06:46.743449
+FILE: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components.py
+SDIR_OUT: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/scitex-ui/.worktrees/brand-dock-tour/examples/01_list_components_out/RUNNING/2026Y-09M-17D-07h06m46s_tUSN-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-09-17 07:06:49.394556
+RUN_DURATION: 00:00:02

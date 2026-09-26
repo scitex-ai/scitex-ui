@@ -65,6 +65,7 @@ _PINNED_DARK = {
 #: --accent, pinned on light instead. Kept apart from the dict above so the
 #: asymmetry is visible rather than buried in a data structure.
 _ACCENT_HISTORICAL = "#6d4cad"
+_ACCENT_LIGHT = "#1a2a40"  # SciTeX navy, operator 2026-09-15
 _ACCENT_DARK_REPLACEMENT = "#a371f7"
 
 #: Tokens used as `color:` somewhere, i.e. the ones a contrast floor applies
@@ -117,8 +118,8 @@ def test_dark_equals_the_literal_its_call_sites_already_rendered(token, literal)
     )
 
 
-def test_accent_light_keeps_the_historical_literal():
-    """--accent inverts the pattern: its no-op palette is LIGHT, not dark."""
+def test_accent_light_is_the_scitex_navy():
+    """Light --accent is the brand primary (was the purple #6d4cad)."""
     # Arrange
     light, _ = _palette_blocks()
 
@@ -126,10 +127,8 @@ def test_accent_light_keeps_the_historical_literal():
     declared = _resolve(light, _declared(light, "--accent") or "")
 
     # Assert
-    assert declared == _ACCENT_HISTORICAL, (
-        f"--accent light is {declared!r}; the historical literal "
-        f"{_ACCENT_HISTORICAL!r} belongs on THIS palette, where it measures "
-        "5.97:1. Moving it to dark reintroduces a 2.71:1 failure."
+    assert declared == _ACCENT_LIGHT, (
+        f"--accent light is {declared!r}, not the SciTeX navy {_ACCENT_LIGHT!r}."
     )
 
 

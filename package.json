@@ -1,7 +1,7 @@
 {
   "name": "@scitex/ui",
   "private": true,
-  "version": "0.20.2",
+  "version": "0.23.1",
   "description": "Shared React UI components for the SciTeX ecosystem",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
@@ -29,8 +29,10 @@
     "./ts/*": "./src/scitex_ui/static/scitex_ui/ts/*",
     "./src/*": "./src/*",
     "./package.json": "./package.json",
+    "./ts/app/action-bar": "./src/scitex_ui/static/scitex_ui/ts/app/action-bar/index.ts",
     "./ts/app/ajax-loader": "./src/scitex_ui/static/scitex_ui/ts/app/ajax-loader/index.ts",
     "./ts/app/attachment": "./src/scitex_ui/static/scitex_ui/ts/app/attachment/index.ts",
+    "./ts/app/app-launcher": "./src/scitex_ui/static/scitex_ui/ts/app/app-launcher/index.ts",
     "./ts/app/combobox": "./src/scitex_ui/static/scitex_ui/ts/app/combobox/index.ts",
     "./ts/app/confirm-modal": "./src/scitex_ui/static/scitex_ui/ts/app/confirm-modal/index.ts",
     "./ts/app/context-menu": "./src/scitex_ui/static/scitex_ui/ts/app/context-menu/index.ts",
@@ -41,20 +43,25 @@
     "./ts/app/empty": "./src/scitex_ui/static/scitex_ui/ts/app/empty/index.ts",
     "./ts/app/file-browser": "./src/scitex_ui/static/scitex_ui/ts/app/file-browser/index.ts",
     "./ts/app/file-tabs": "./src/scitex_ui/static/scitex_ui/ts/app/file-tabs/index.ts",
+    "./ts/app/import-export": "./src/scitex_ui/static/scitex_ui/ts/app/import-export/index.ts",
     "./ts/app/media-viewer": "./src/scitex_ui/static/scitex_ui/ts/app/media-viewer/index.ts",
     "./ts/app/monaco-editor": "./src/scitex_ui/static/scitex_ui/ts/app/monaco-editor/index.ts",
     "./ts/app/package-docs-sidebar": "./src/scitex_ui/static/scitex_ui/ts/app/package-docs-sidebar/index.ts",
+    "./ts/app/panes": "./src/scitex_ui/static/scitex_ui/ts/app/panes/index.ts",
     "./ts/app/pdf-viewer": "./src/scitex_ui/static/scitex_ui/ts/app/pdf-viewer/index.ts",
+    "./ts/app/project-selector": "./src/scitex_ui/static/scitex_ui/ts/app/project-selector/index.ts",
     "./ts/app/receipt": "./src/scitex_ui/static/scitex_ui/ts/app/receipt/index.ts",
     "./ts/app/reply-quote": "./src/scitex_ui/static/scitex_ui/ts/app/reply-quote/index.ts",
     "./ts/app/toast": "./src/scitex_ui/static/scitex_ui/ts/app/toast/index.ts",
     "./ts/app/tooltip": "./src/scitex_ui/static/scitex_ui/ts/app/tooltip/index.ts",
+    "./ts/app/tour-player": "./src/scitex_ui/static/scitex_ui/ts/app/tour-player/index.ts",
     "./ts/_base": "./src/scitex_ui/static/scitex_ui/ts/_base/index.ts",
     "./ts/shell/app-shell": "./src/scitex_ui/static/scitex_ui/ts/shell/app-shell/index.ts",
     "./ts/shell/auto-response": "./src/scitex_ui/static/scitex_ui/ts/shell/auto-response/index.ts",
     "./ts/shell/chat": "./src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts",
     "./ts/shell/file-tree": "./src/scitex_ui/static/scitex_ui/ts/shell/file-tree/index.ts",
     "./ts/shell/keyboard-shortcuts": "./src/scitex_ui/static/scitex_ui/ts/shell/keyboard-shortcuts/index.ts",
+    "./ts/shell/keymap": "./src/scitex_ui/static/scitex_ui/ts/shell/keymap/index.ts",
     "./ts/shell/repo-monitor": "./src/scitex_ui/static/scitex_ui/ts/shell/repo-monitor/index.ts",
     "./ts/shell/resizer": "./src/scitex_ui/static/scitex_ui/ts/shell/resizer/index.ts",
     "./ts/shell/status-bar": "./src/scitex_ui/static/scitex_ui/ts/shell/status-bar/index.ts",
@@ -64,7 +71,10 @@
     "./ts/shell/viewer": "./src/scitex_ui/static/scitex_ui/ts/shell/viewer/index.ts",
     "./ts/shell/workspace-files-tree": "./src/scitex_ui/static/scitex_ui/ts/shell/workspace-files-tree/index.ts",
     "./ts/shell/workspace-panel-resizer": "./src/scitex_ui/static/scitex_ui/ts/shell/workspace-panel-resizer/index.ts",
-    "./ts/utils/_element-inspector": "./src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/index.ts"
+    "./ts/utils/_element-inspector": "./src/scitex_ui/static/scitex_ui/ts/utils/_element-inspector/index.ts",
+    "./ts/app/app-header": "./src/scitex_ui/static/scitex_ui/ts/app/app-header/index.ts",
+    "./ts/app/app-help": "./src/scitex_ui/static/scitex_ui/ts/app/app-help/index.ts",
+    "./ts/app/selector-nav": "./src/scitex_ui/static/scitex_ui/ts/app/selector-nav/index.ts"
   },
   "files": [
     "src/scitex_ui/static/scitex_ui/react/**/*.ts",
@@ -78,7 +88,8 @@
   ],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "publishConfig": {
     "access": "public"
@@ -96,12 +107,15 @@
   "devDependencies": {
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.21.5",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "jsdom": "^27.3.0",
     "monaco-editor": "^0.45.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "typescript": "^5.5.0",
-    "typescript-eslint": "^8.69.0"
+    "typescript-eslint": "^8.69.0",
+    "vitest": "^4.1.11"
   }
 }

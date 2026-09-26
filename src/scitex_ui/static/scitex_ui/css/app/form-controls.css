@@ -1,4 +1,6 @@
-/* Form controls — the single definition of input / select / textarea / checkbox.
+/* Form controls — the single definition of input / select / textarea /
+ * checkbox / button, including the standard control heights
+ * (--input-height / --button-height, defined in primitives/spacing.css).
  *
  * WHY THIS EXISTS. scitex-cards redefines the same controls in at least seven
  * places (`body select`, `.tl-ctl select`, `.filt-sort select`,
@@ -41,6 +43,9 @@
 .stx-input,
 .stx-select,
 .stx-textarea {
+  /* Stated locally on purpose: this bundle has no global border-box reset,
+     so a height set without it would be content-box in most apps. */
+  box-sizing: border-box;
   padding: 6px 10px;
 
   color: var(--text-primary, #333);
@@ -63,6 +68,55 @@
 
 .stx-select {
   cursor: pointer;
+}
+
+/* Standard input height (compass L616). Single-line controls only —
+   .stx-textarea keeps min-height + resize so it can grow. */
+.stx-input,
+.stx-select {
+  height: var(--input-height, 36px);
+}
+
+/* Standard button (compass L617). The neutral base: one standard height,
+   the --color-btn-* token triplet, the shared control radius and font.
+   Per-component buttons (confirm-modal__btn, media-viewer__btn, ...) adopt
+   this class for a consistent height and keep their own modifiers. */
+.stx-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs, 4px);
+  height: var(--button-height, 36px);
+  padding: 0 12px;
+
+  border: 1px solid var(--color-btn-border, #999);
+  border-radius: var(--radius-md, 4px);
+  background: var(--color-btn-bg, #f8f7f5);
+  color: var(--color-btn-text, #333);
+
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.stx-button:hover:not(:disabled) {
+  background: var(--color-btn-hover-bg, #eee);
+}
+
+.stx-button--primary {
+  background: var(--color-btn-primary-bg, #24292f);
+  border-color: var(--color-btn-primary-border, #24292f);
+  color: var(--color-btn-primary-text, #fff);
+}
+
+.stx-button--primary:hover:not(:disabled) {
+  background: var(--color-btn-primary-hover-bg, #000);
+}
+
+.stx-button:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
 }
 
 .stx-input:hover:not(:disabled),

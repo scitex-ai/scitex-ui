@@ -245,3 +245,22 @@ class TestMobileSwipeReachesTheShell:
             "js/shell/mobile-swipe.js does not reference #workspace-three-col; "
             "the committed bundle is stale or was built from the wrong entry"
         )
+
+# ── The orphan allow-list is EMPTY, asserted rather than skipped ───────────
+# `test_allowlist_has_no_stale_entries` is parametrized over this dict; empty
+# means SKIP, which cannot be told apart from "no guard ran" (card
+# scitex-ui-two-parametrized-guards-collect-an-empty-set-20260905). Empty is
+# where we want to be, so pin it.
+
+
+def test_the_orphan_allow_list_is_empty_by_intent():
+    # Arrange — every entry is a module allowed to be unreachable.
+    allowed = _ALLOWED_ORPHANS
+    # Act
+    remaining = sorted(allowed)
+    # Assert
+    assert remaining == [], (
+        f"{remaining} is allow-listed as a known orphan again. Allow-listing is "
+        "a decision with a reason attached; delete this assertion in the same "
+        "commit and state the reason, so the list cannot refill silently."
+    )

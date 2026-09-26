@@ -1,0 +1,51 @@
+{
+  "schema": "scitex-screenshot/1",
+  "id": "shell-390-light-en",
+  "file": "shell-390-light-en.png",
+  "surface": {
+    "app": "scitex-ui",
+    "route": "standalone_shell.html + [data-stx-app-header] mount"
+  },
+  "source_commit": "1e4a4d2",
+  "composed_of": [
+    {
+      "commit": "1e4a4d2",
+      "branch": "feat/app-version-contract",
+      "contributes": "the shell template + mount.py APP VERSION CONTRACT (stamps data-app-version)"
+    },
+    {
+      "commit": "60dbb34",
+      "branch": "feat/app-header-primitive",
+      "contributes": "the app-header bundle that reads the stamp and renders the badge"
+    }
+  ],
+  "environment": "dev-container",
+  "captured_at": "2026-09-17T15:41:00Z",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "dpr": 2,
+    "mobile": true
+  },
+  "theme": "light",
+  "locale": "en",
+  "redaction": {
+    "applied": true,
+    "method": "fixture data only (no real project, user or file names)",
+    "reason": "the canary page carries a synthetic project payload"
+  },
+  "rights": {
+    "owner": "scitex-ai",
+    "license": "internal-product"
+  },
+  "supports": [
+    "at 390x844 the shell stamps the leaf's version on the mount container and the app header renders it as a visible badge",
+    "no horizontal overflow at 390 (documentElement.scrollWidth == innerWidth)"
+  ],
+  "verified_by": "live DOM readback in the same browser session: root[data-app-version]=9.9.9-canary, .stx-app-header__version=v9.9.9-canary (visible), overflowX=0; backing tests: tests/scitex_ui/test_mount.py (contract) + tests/scitex_ui/vitest/app-header.test.ts (reader)",
+  "does_not_show": [
+    "the JS-constructed shell layout: .stx-shell-layout was ABSENT in the readback, so this frame must not be used for a 'the whole workspace renders' claim",
+    "the sidebar/AI panel content, which the canary page does not populate",
+    "any real project or file: the payload is a fixture"
+  ]
+}

@@ -13,11 +13,27 @@ class TestSelectorNav:
         # Assert
         assert check_metadata(SelectorNav) is SelectorNav
 
-    def test_is_css_only(self):
+    def test_ships_a_ts_entry(self):
         # Arrange
+        component = SelectorNav
         # Act
+        entry = component.ts_entry
         # Assert
-        assert SelectorNav.ts_entry is None
+        assert entry == "scitex_ui/ts/app/selector-nav/index"
 
+    def test_ships_a_prebuilt_module_for_pages_without_a_bundler(self):
+        # Arrange
+        component = SelectorNav
+        # Act
+        module = component.js_file
+        # Assert
+        assert module == "scitex_ui/js/app/selector-nav.js"
 
-# EOF
+    def test_description_names_both_presentations(self):
+        # Arrange — the description is what a consumer reads to know whether
+        # this is the primitive they want; ONE shape would undersell it.
+        component = SelectorNav
+        # Act
+        description = component.description.lower()
+        # Assert
+        assert "tab strip" in description and "cascading" in description

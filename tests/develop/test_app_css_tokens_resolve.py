@@ -308,3 +308,24 @@ def test_app_bundle_does_not_import_typography_rules():
         "app.css imports primitives/typography.css, which sets element-level "
         "rules on body and headings — app.css must contribute tokens only"
     )
+
+# ── The ceiling is EMPTY, and that is asserted rather than skipped ─────────
+# `test_ceiling_entry_is_still_broken` is parametrized over this set; when the
+# set is empty pytest reports "got empty parameter set" as a SKIP, which is
+# indistinguishable from a guard that asserts nothing (card
+# scitex-ui-two-parametrized-guards-collect-an-empty-set-20260905). The empty
+# set is the DESIRED state here — the debt was paid — so say so out loud.
+
+
+def test_the_inert_token_ceiling_is_empty_by_intent():
+    # Arrange — this set holds tokens known to be inert; every member is
+    # checked by the parametrized reverse test above.
+    ceiling = _KNOWN_BROKEN_IN_ALL
+    # Act
+    remaining = sorted(ceiling)
+    # Assert
+    assert remaining == [], (
+        f"{remaining} is back on the ceiling. That is allowed, but it must be a "
+        "DECISION, not a silent re-addition: delete this assertion in the same "
+        "commit and say in the message which token went in and why."
+    )

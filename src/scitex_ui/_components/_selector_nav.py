@@ -15,10 +15,16 @@ class SelectorNav:
     """
 
     name = "selector-nav"
-    version = "0.1.0"
-    description = "Vertical icon+label navigation strip with footer section"
-    ts_entry = None  # CSS-only component
+    version = "0.2.0"
+    description = (
+        "Hierarchical selector/navigation: one tree, rendered as a tab strip on "
+        "desktop and a cascading dropdown on mobile (stxSelectorNav)"
+    )
+    ts_entry = "scitex_ui/ts/app/selector-nav/index"
     css_file = "scitex_ui/css/app/selector-nav.css"
+    # Pre-built module for pages without a bundler; also auto-mounts every
+    # [data-stx-selector-nav] root and sets window.stxSelectorNav.
+    js_file = "scitex_ui/js/app/selector-nav.js"
 
 
 register_component(SelectorNav.name, SelectorNav)

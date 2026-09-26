@@ -111,7 +111,7 @@
 }
 
 .ws-worktree-actions .sort-toggle.active {
-  color: var(--accent-color, #58a6ff);
+  color: var(--accent);
 }
 
 /* Empty state when no project is selected */
@@ -144,8 +144,7 @@
   padding: 0 2px 0 0; /* right: clear resizer so scrollbar is not obscured */
   /* Shared font for Files tree + Recent pane — single source of truth */
   font-size: 13px;
-  font-family: var(
-    --font-mono,
+  font-family: var(--mono-font-family,
     "JetBrains Mono",
     "Monaco",
     "Menlo",
@@ -401,7 +400,7 @@ body.stx-shell-ai-open #workspace-three-col #main-content {
 }
 
 .ai-settings-links a:hover {
-  color: var(--accent-color, #58a6ff);
+  color: var(--accent);
 }
 
 /* --- Tab-switch fade transition --- */

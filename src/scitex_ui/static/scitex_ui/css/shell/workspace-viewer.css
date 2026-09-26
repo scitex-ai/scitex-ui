@@ -277,3 +277,21 @@
    then hid it anyway via `.mobile-active-pane`, a third name no code
    ever wrote. Three files, three spellings, no writer.
    ============================================================ */
+
+/* ── The viewer's error box ────────────────────────────────────────────────
+ * shell/viewer/_ViewerManager.ts builds this with innerHTML for both failure
+ * paths (unsupported type, load error) and gives it no inline style, so it
+ * rendered as raw body text pinned to the top-left of the content area — an
+ * error that looks like unformatted page content.
+ * --text-secondary, not --text-muted: this is 0.85rem body text and the muted
+ * token is below WCAG AA on every light surface (card
+ * scitex-ui-text-muted-fails-aa-against-any-light-surface-20260906). */
+.ws-viewer-placeholder {
+  padding: 1rem 1.25rem;
+  color: var(--text-secondary, #4a4a4a);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  /* The messages carry pre-formatted paths and multi-line errors. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
