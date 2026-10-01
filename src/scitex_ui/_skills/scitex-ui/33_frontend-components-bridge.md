@@ -36,10 +36,13 @@ Safe to call multiple times. Must run before any API fetch.
 
 ```typescript
 mountReactApp(container: HTMLElement, element: React.ReactElement): void
-unmountReactApp(): void   // tears down React root
+unmountReactApp(container?: HTMLElement): void
 ```
 
-`mountReactApp` always unmounts the previous root first.
+`mountReactApp` always unmounts the previous root first. Leaf cleanup should call
+`unmountReactApp(container)` with the element it mounted. Cleanup from an outgoing
+app then leaves a successor mounted in another element intact. The no-argument
+call still tears down the current root, for callers that own the whole bridge.
 
 ### emitBridgeEvent / onBridgeEvent
 
