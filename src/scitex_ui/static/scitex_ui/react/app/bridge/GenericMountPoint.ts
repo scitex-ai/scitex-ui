@@ -10,6 +10,7 @@ import { createRoot, Root } from "react-dom/client";
 import type { BridgeConfig } from "./BridgeContract";
 
 let root: Root | null = null;
+let rootContainer: HTMLElement | null = null;
 const installedOverrides = new Set<string>();
 
 /**
@@ -54,15 +55,19 @@ export function mountReactApp(
     root = null;
   }
   root = createRoot(container);
+  rootContainer = container;
   root.render(element);
 }
 
 /**
- * Unmount the currently mounted React app and clean up.
+ * Unmount the currently mounted React app and clean up. A container lets an
+ * outgoing app clean up its own mount without tearing down its successor.
  */
-export function unmountReactApp(): void {
+export function unmountReactApp(container?: HTMLElement): void {
+  if (container && container !== rootContainer) return;
   if (root) {
     root.unmount();
     root = null;
+    rootContainer = null;
   }
 }
