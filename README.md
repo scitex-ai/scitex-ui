@@ -1,3 +1,5 @@
+> **⚠️ Retired:** This repository is archived. UI code is maintained in [`scitex-sdk`](https://github.com/scitex-ai/scitex-sdk) (`scitex_sdk.ui`).
+
 # SciTeX UI (<code>scitex-ui</code>)
 
 <p align="center">
